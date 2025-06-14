@@ -1,0 +1,61 @@
+{
+  "name": "@vibe/core",
+  "version": "1.0.0",
+  "exports": {
+    ".": "./src/index.ts",
+    "./daemon": "./src/daemon/index.ts",
+    "./mcp-server": "./src/mcp-server/index.ts",
+    "./cli": "./src/cli/index.ts"
+  },
+  "tasks": {
+    "dev": "deno run --watch --allow-all src/cli/index.ts",
+    "daemon": "deno run --allow-all src/daemon/index.ts",
+    "mcp-server": "deno run --allow-all src/mcp-server/index.ts",
+    "build": "deno compile --allow-all --output vibe src/cli/index.ts",
+    "build:daemon": "deno compile --allow-all --output vibe-daemon src/daemon/index.ts",
+    "test": "deno test --allow-all",
+    "lint": "deno lint",
+    "fmt": "deno fmt",
+    "check": "deno check src/**/*.ts"
+  },
+  "imports": {
+    "@std/": "jsr:@std/",
+    "@effect/": "npm:@effect/",
+    "effect": "npm:effect@^3.10.15",
+    "zod": "npm:zod@^3.25.0",
+    "ts-pattern": "npm:ts-pattern@^5.5.0",
+    "es-toolkit": "npm:es-toolkit@^1.30.0",
+    "neverthrow": "npm:neverthrow@^8.1.0",
+    "chokidar": "npm:chokidar@^4.0.1",
+    "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk@^1.0.1",
+    "commander": "npm:commander@^12.1.0"
+  },
+  "compilerOptions": {
+    "lib": ["deno.ns", "es2022"],
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "semiColons": false,
+    "singleQuote": true,
+    "proseWrap": "preserve"
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "exclude": [
+    "node_modules/",
+    "dist/",
+    "coverage/"
+  ]
+}

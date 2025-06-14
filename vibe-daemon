@@ -1,0 +1,4 @@
+#!/usr/bin/env -S deno run --allow-all
+
+// Daemon entry point for vibe
+import './src/daemon/index.ts'

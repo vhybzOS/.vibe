@@ -26,14 +26,20 @@ vibe mcp-server
 
 ## 🚀 Core Features
 
-- **🎯 One Configuration, All Tools**: Write rules once, works with Cursor, Windsurf, Claude Desktop, and more
-- **🤖 Automatic Decision Capture**: AI conversations become searchable architectural history in DIARY.txt
-- **📚 Smart Documentation**: Auto-generates llms.txt from codebase analysis
-- **🧠 Evolving Intelligence**: System learns and improves rules from usage patterns
-- **🔌 Zero-Friction Integration**: MCP server handles everything behind the scenes
-- **⚡ Local-First**: No cloud dependencies, everything runs on your machine
-- **📦 Dependency Discovery**: Auto-finds llms.txt from your project dependencies
-- **🔄 Cross-Platform Sync**: Move seamlessly between development environments
+- **🎯 Universal Rule Engine**: Write rules once, auto-compiles to all AI tool formats (.cursorrules, .windsurfrules, etc.)
+- **🤖 Persistent Daemon**: Background service that never sleeps - auto-discovers projects, monitors changes, serves MCP
+- **🔄 Bidirectional Sync**: Change any tool's config file → .vibe updates; change .vibe rules → all tools regenerate
+- **🧠 Automatic Decision Capture**: AI conversations become searchable architectural history in DIARY.txt
+- **📚 Smart Documentation**: Auto-generates llms.txt from codebase analysis and dependency discovery
+- **🔌 Single MCP Server**: One endpoint serves all AI tools - no per-tool plugin hell
+- **⚡ Local-First Architecture**: Zero cloud dependencies, semantic search with local embeddings
+- **📦 Intelligent Dependency Discovery**: Auto-harvests llms.txt from project dependencies (npm, PyPI, etc.)
+- **🌐 Cross-Platform Magic**: Seamless context sync across WSL2, Windows, macOS, cloud environments
+- **👀 Real-Time File Watching**: Auto-sync configs, debounced updates, conflict resolution
+- **🎯 Auto-Tool Detection**: Discovers Cursor, Windsurf, Claude, Copilot configs automatically
+- **📊 Semantic Memory Search**: Local embeddings for conversation history and decision lookup
+- **🔧 Self-Healing**: Health monitoring, auto-restart, graceful degradation when components fail
+- **⚙️ System Service Ready**: Install as systemd service (Linux/macOS) or Task Scheduler (Windows)
 
 ## 🏗️ How It Works (The Magic)
 
@@ -69,13 +75,38 @@ git pull
 
 Your AI assistant context, rules, and memory follow you everywhere.
 
-## 🛠️ Technology
+## 🤖 The Daemon Architecture
 
-- **Deno** runtime for modern JavaScript/TypeScript
-- **Effect-TS** for composable functional operations
-- **Zod v4** for type-safe schemas
-- **MCP (Model Context Protocol)** for universal AI tool integration
-- **Local storage** - your data stays on your machine
+**The secret sauce**: Instead of CLI tools that run and die, .vibe runs a **persistent background daemon** that:
+
+- 🔍 **Auto-Discovery**: Scans and monitors all `.vibe` projects on your system
+- 🔄 **Real-Time Sync**: Watches file changes and syncs configs instantly  
+- 📡 **MCP Server**: Serves a single endpoint for all AI tools to connect
+- 💚 **Health Monitoring**: Auto-restart failed components, graceful degradation
+- 🌐 **Cross-Platform**: Same daemon works on Linux, macOS, Windows, WSL2
+- ⚙️ **System Service**: Install once, runs on boot, never think about it again
+
+```bash
+# Start daemon (runs forever)
+vibe-daemon
+
+# Install as system service
+systemctl --user enable vibe-daemon.service  # Linux/macOS
+schtasks /create /tn "VibeDaemon" /tr "vibe-daemon" /sc onstart  # Windows
+```
+
+**The Result**: Your AI tools stay connected to your project context **even when you switch environments**. Code in Claude on WSL2, continue in Windsurf on Windows - the daemon keeps everything in sync! 🎯
+
+## 🛠️ Technology Stack
+
+- **🦕 Deno Runtime**: Native TypeScript, URL imports, security by default, web standard APIs
+- **⚡ Effect-TS**: Functional composition, type-safe error handling, resource management
+- **🔮 Zod v4**: Schema validation with `z.output` types, enhanced performance and APIs
+- **🔌 MCP Protocol**: Model Context Protocol for universal AI tool integration
+- **👀 Chokidar**: Cross-platform file watching with debouncing and conflict resolution
+- **🎯 ts-pattern**: Exhaustive pattern matching for type-safe branching logic
+- **🛠️ es-toolkit**: Modern utility library (3x faster than Lodash, 97% smaller)
+- **📁 Local Storage**: JSON + Markdown files, local embeddings, zero cloud dependencies
 
 ## 📁 What Gets Created
 

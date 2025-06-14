@@ -1,14 +1,16 @@
 import { Effect, pipe } from 'effect'
-import { readFile, writeFile, mkdir } from 'node:fs/promises'
-import { dirname, resolve } from 'node:path'
+import { dirname, resolve } from '@std/path'
 import { match } from 'ts-pattern'
 import { 
   AIToolType, 
   ToolSyncResult, 
   DetectedTool 
-} from '../../schemas/ai-tool-config.js'
-import { UniversalRule } from '../../schemas/universal-rule.js'
-import { TOOL_CONFIGS } from './detection.js'
+} from '../../schemas/ai-tool-config.ts'
+import { UniversalRule } from '../../schemas/universal-rule.ts'
+import { TOOL_CONFIGS } from './detection.ts'
+import { parseCursorRulesToUniversal } from './parsers/cursor.ts'
+import { parseWindsurfRulesToUniversal } from './parsers/windsurf.ts'
+import { parseClaudeCommandsToUniversal } from './parsers/claude.ts'
 
 export const syncToolConfigs = (
   projectPath: string, 
@@ -202,27 +204,41 @@ const compileTabnineConfig = (rules: UniversalRule[]): string => {
   return JSON.stringify(config, null, 2)
 }
 
+/**
+ * Writes tool configuration to file using Deno APIs
+ * 
+ * @param filePath - Path to write the file
+ * @param content - File content
+ * @returns Effect that completes when file is written
+ */
 const writeToolConfig = (filePath: string, content: string) =>
   pipe(
     Effect.tryPromise({
-      try: () => mkdir(dirname(filePath), { recursive: true }),
+      try: () => Deno.mkdir(dirname(filePath), { recursive: true }),
       catch: () => new Error(`Failed to create directory for ${filePath}`),
     }),
     Effect.flatMap(() => 
       Effect.tryPromise({
-        try: () => writeFile(filePath, content, 'utf-8'),
+        try: () => Deno.writeTextFile(filePath, content),
         catch: () => new Error(`Failed to write ${filePath}`),
       })
     )
   )
 
+/**
+ * Imports tool configuration and converts it to Universal Rules
+ * 
+ * @param tool - AI tool type
+ * @param configPath - Path to the config file
+ * @returns Effect that resolves to imported rules
+ */
 export const importToolConfig = (
   tool: AIToolType,
   configPath: string
 ) =>
   pipe(
     Effect.tryPromise({
-      try: () => readFile(configPath, 'utf-8'),
+      try: () => Deno.readTextFile(configPath),
       catch: () => new Error(`Failed to read ${configPath}`),
     }),
     Effect.flatMap(content => parseToolConfigToRules(tool, content)),
@@ -233,48 +249,43 @@ export const importToolConfig = (
     }))
   )
 
+/**
+ * Parses tool-specific configuration content into Universal Rules
+ * Uses specialized parsers for each tool type
+ * 
+ * @param tool - AI tool type
+ * @param content - Configuration file content
+ * @returns Effect that resolves to array of Universal Rules
+ */
 const parseToolConfigToRules = (tool: AIToolType, content: string) =>
   match(tool)
     .with('cursor', () => parseCursorRulesToUniversal(content))
     .with('windsurf', () => parseWindsurfRulesToUniversal(content))
     .with('claude', () => parseClaudeCommandsToUniversal(content))
-    .with('copilot', () => parseCopilotInstructionsToUniversal(content))
-    .with('codeium', () => parseCodeiumInstructionsToUniversal(content))
-    .with('cody', () => parseCodyInstructionsToUniversal(content))
+    .with('copilot', () => parseMarkdownInstructionsToUniversal(content, 'copilot'))
+    .with('codeium', () => parseMarkdownInstructionsToUniversal(content, 'codeium'))
+    .with('cody', () => parseMarkdownInstructionsToUniversal(content, 'cody'))
     .with('tabnine', () => parseTabnineConfigToUniversal(content))
     .exhaustive()
 
-// Simplified parsers - in production, these would be more sophisticated
-const parseCursorRulesToUniversal = (content: string) =>
+/**
+ * Generic parser for markdown-based instructions (used by tools without specialized parsers)
+ * 
+ * @param content - Markdown content
+ * @param toolName - Name of the tool
+ * @returns Effect that resolves to array of Universal Rules
+ */
+const parseMarkdownInstructionsToUniversal = (content: string, toolName: string) =>
   Effect.succeed([
-    createUniversalRuleFromContent('cursor', 'Imported Cursor Rules', content)
+    createUniversalRuleFromContent(toolName as AIToolType, `Imported ${toolName} Instructions`, content)
   ])
 
-const parseWindsurfRulesToUniversal = (content: string) =>
-  Effect.succeed([
-    createUniversalRuleFromContent('windsurf', 'Imported Windsurf Rules', content)
-  ])
-
-const parseClaudeCommandsToUniversal = (content: string) =>
-  Effect.succeed([
-    createUniversalRuleFromContent('claude', 'Imported Claude Commands', content)
-  ])
-
-const parseCopilotInstructionsToUniversal = (content: string) =>
-  Effect.succeed([
-    createUniversalRuleFromContent('copilot', 'Imported Copilot Instructions', content)
-  ])
-
-const parseCodeiumInstructionsToUniversal = (content: string) =>
-  Effect.succeed([
-    createUniversalRuleFromContent('codeium', 'Imported Codeium Instructions', content)
-  ])
-
-const parseCodyInstructionsToUniversal = (content: string) =>
-  Effect.succeed([
-    createUniversalRuleFromContent('cody', 'Imported Cody Instructions', content)
-  ])
-
+/**
+ * Parses Tabnine JSON configuration
+ * 
+ * @param content - JSON content
+ * @returns Effect that resolves to array of Universal Rules
+ */
 const parseTabnineConfigToUniversal = (content: string) =>
   pipe(
     Effect.try({
@@ -286,6 +297,15 @@ const parseTabnineConfigToUniversal = (content: string) =>
     ])
   )
 
+/**
+ * Creates a Universal Rule from imported tool content
+ * Used as fallback for tools without specialized parsers
+ * 
+ * @param tool - AI tool type
+ * @param name - Rule name
+ * @param content - Rule content
+ * @returns UniversalRule object
+ */
 const createUniversalRuleFromContent = (
   tool: AIToolType,
   name: string,

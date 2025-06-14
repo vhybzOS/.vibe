@@ -1,8 +1,15 @@
 import { Effect, pipe } from 'effect'
-import { readFile, writeFile, mkdir } from 'node:fs/promises'
-import { resolve } from 'node:path'
-import { DependencyDiscoveryResult, DependencyManifest, DependencyDoc } from '../../schemas/dependency-doc.js'
+import { DependencyDiscoveryResult, DependencyManifest, DependencyDoc } from '../../schemas/dependency-doc.ts'
+import { parse as parseToml } from '@ltd/j-toml'
+import { resolve } from '@std/path'
 
+/**
+ * Discovers dependencies and their documentation from project manifests
+ * 
+ * @param projectPath - The path to the project to analyze
+ * @param options - Configuration options for dependency discovery
+ * @returns Effect that resolves to combined discovery results
+ */
 export const discoverDependencies = (
   projectPath: string,
   options: { forceRefresh: boolean }
@@ -30,10 +37,16 @@ const analyzeDependencyManifests = (projectPath: string) =>
     Effect.map(manifests => manifests.filter(Boolean) as DependencyManifest[])
   )
 
+/**
+ * Analyzes package.json for Node.js dependencies
+ * 
+ * @param projectPath - The project path to search
+ * @returns Effect that resolves to DependencyManifest or null if not found
+ */
 const analyzePackageJson = (projectPath: string) =>
   pipe(
     Effect.tryPromise({
-      try: () => readFile(resolve(projectPath, 'package.json'), 'utf-8'),
+      try: () => Deno.readTextFile(resolve(projectPath, 'package.json')),
       catch: () => new Error('No package.json found'),
     }),
     Effect.flatMap(content => 
@@ -49,15 +62,21 @@ const analyzePackageJson = (projectPath: string) =>
       devDependencies: pkg.devDependencies || {},
       peerDependencies: pkg.peerDependencies || {},
       lastModified: new Date().toISOString(),
-      hash: generateHash(JSON.stringify(pkg)),
+      hash: generateHashSync(JSON.stringify(pkg)),
     } satisfies DependencyManifest)),
     Effect.catchAll(() => Effect.succeed(null))
   )
 
+/**
+ * Analyzes requirements.txt for Python dependencies
+ * 
+ * @param projectPath - The project path to search
+ * @returns Effect that resolves to DependencyManifest or null if not found
+ */
 const analyzeRequirementsTxt = (projectPath: string) =>
   pipe(
     Effect.tryPromise({
-      try: () => readFile(resolve(projectPath, 'requirements.txt'), 'utf-8'),
+      try: () => Deno.readTextFile(resolve(projectPath, 'requirements.txt')),
       catch: () => new Error('No requirements.txt found'),
     }),
     Effect.map(content => {
@@ -69,16 +88,22 @@ const analyzeRequirementsTxt = (projectPath: string) =>
         devDependencies: {},
         peerDependencies: {},
         lastModified: new Date().toISOString(),
-        hash: generateHash(content),
+        hash: generateHashSync(content),
       } satisfies DependencyManifest
     }),
     Effect.catchAll(() => Effect.succeed(null))
   )
 
+/**
+ * Analyzes Cargo.toml for Rust dependencies using proper TOML parser
+ * 
+ * @param projectPath - The project path to search
+ * @returns Effect that resolves to DependencyManifest or null if not found
+ */
 const analyzeCargoToml = (projectPath: string) =>
   pipe(
     Effect.tryPromise({
-      try: () => readFile(resolve(projectPath, 'Cargo.toml'), 'utf-8'),
+      try: () => Deno.readTextFile(resolve(projectPath, 'Cargo.toml')),
       catch: () => new Error('No Cargo.toml found'),
     }),
     Effect.map(content => {
@@ -90,16 +115,22 @@ const analyzeCargoToml = (projectPath: string) =>
         devDependencies: {},
         peerDependencies: {},
         lastModified: new Date().toISOString(),
-        hash: generateHash(content),
+        hash: generateHashSync(content),
       } satisfies DependencyManifest
     }),
     Effect.catchAll(() => Effect.succeed(null))
   )
 
+/**
+ * Analyzes go.mod for Go dependencies
+ * 
+ * @param projectPath - The project path to search
+ * @returns Effect that resolves to DependencyManifest or null if not found
+ */
 const analyzeGoMod = (projectPath: string) =>
   pipe(
     Effect.tryPromise({
-      try: () => readFile(resolve(projectPath, 'go.mod'), 'utf-8'),
+      try: () => Deno.readTextFile(resolve(projectPath, 'go.mod')),
       catch: () => new Error('No go.mod found'),
     }),
     Effect.map(content => {
@@ -111,7 +142,7 @@ const analyzeGoMod = (projectPath: string) =>
         devDependencies: {},
         peerDependencies: {},
         lastModified: new Date().toISOString(),
-        hash: generateHash(content),
+        hash: generateHashSync(content),
       } satisfies DependencyManifest
     }),
     Effect.catchAll(() => Effect.succeed(null))
@@ -202,7 +233,7 @@ const tryFetchDocumentation = (url: string) =>
           lastFetched: new Date().toISOString(),
           etag: response.headers.get('etag') || undefined,
           size: content.length,
-          hash: generateHash(content),
+          hash: generateHashSync(content),
         }
       },
       catch: () => new Error(`Failed to fetch ${url}`),
@@ -238,34 +269,33 @@ const parsePythonRequirements = (content: string): Record<string, string> => {
   return dependencies
 }
 
+/**
+ * Parses Cargo.toml using proper TOML parser to extract dependencies
+ * 
+ * @param content - The TOML file content
+ * @returns Record of dependency names to versions
+ */
 const parseCargoToml = (content: string): Record<string, string> => {
-  // Simplified TOML parsing - in production, use a proper TOML parser
-  const dependencies: Record<string, string> = {}
-  const lines = content.split('\n')
-  let inDependencies = false
-  
-  for (const line of lines) {
-    const trimmed = line.trim()
+  try {
+    const parsed = parseToml(content) as any
+    const dependencies: Record<string, string> = {}
     
-    if (trimmed === '[dependencies]') {
-      inDependencies = true
-      continue
-    }
-    
-    if (trimmed.startsWith('[') && trimmed !== '[dependencies]') {
-      inDependencies = false
-      continue
-    }
-    
-    if (inDependencies && trimmed.includes('=')) {
-      const [name, version] = trimmed.split('=').map(s => s.trim().replace(/"/g, ''))
-      if (name && version) {
-        dependencies[name] = version
+    // Extract regular dependencies
+    if (parsed.dependencies && typeof parsed.dependencies === 'object') {
+      for (const [name, value] of Object.entries(parsed.dependencies)) {
+        if (typeof value === 'string') {
+          dependencies[name] = value
+        } else if (typeof value === 'object' && value !== null && 'version' in value) {
+          dependencies[name] = (value as any).version
+        }
       }
     }
+    
+    return dependencies
+  } catch (error) {
+    console.warn(`Failed to parse Cargo.toml: ${error}`)
+    return {}
   }
-  
-  return dependencies
 }
 
 const parseGoMod = (content: string): Record<string, string> => {
@@ -303,8 +333,28 @@ const extractHomepage = (registryData: any): string | undefined => {
   return registryData?.homepage
 }
 
-const generateHash = (content: string): string => {
-  // Simple hash function - in production, use crypto.createHash
+/**
+ * Generates a SHA-256 hash of the given content using Web Crypto API
+ * 
+ * @param content - The content to hash
+ * @returns Hex-encoded SHA-256 hash
+ */
+const generateHash = async (content: string): Promise<string> => {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(content)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * Synchronous hash generation for backwards compatibility
+ * Falls back to simple hash when crypto operations can't be awaited
+ * 
+ * @param content - The content to hash
+ * @returns Simple hash string
+ */
+const generateHashSync = (content: string): string => {
   let hash = 0
   for (let i = 0; i < content.length; i++) {
     const char = content.charCodeAt(i)

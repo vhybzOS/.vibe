@@ -9,6 +9,7 @@ export const DaemonConfigSchema = z.object({
     logLevel: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
     pidFile: z.string().default('/tmp/vibe-daemon.pid'),
     logFile: z.string().default('/tmp/vibe-daemon.log'),
+    controlPort: z.number().min(1000).max(65535).default(3002),
   }),
   mcpServer: z.object({
     enabled: z.boolean().default(true),
@@ -25,6 +26,7 @@ export const DaemonConfigSchema = z.object({
     autoDiscover: z.boolean().default(true),
     maxDepth: z.number().min(1).max(10).default(3),
     ignorePaths: z.array(z.string()).default(['node_modules', '.git', 'dist', 'build']),
+    projectScanRoots: z.array(z.string()).default(['~/']),
   }),
 })
 

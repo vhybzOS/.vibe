@@ -41,6 +41,8 @@ class VibeDaemon {
     },
   }
 
+  private httpServer?: Deno.HttpServer
+
   private config: DaemonConfig = {
     daemon: {
       name: DAEMON_NAME,
@@ -49,6 +51,7 @@ class VibeDaemon {
       logLevel: 'info',
       pidFile: '/tmp/vibe-daemon.pid',
       logFile: '/tmp/vibe-daemon.log',
+      controlPort: 3002,
     },
     mcpServer: {
       enabled: true,
@@ -73,6 +76,7 @@ class VibeDaemon {
       Effect.log(`🚀 Starting ${DAEMON_NAME} v${DAEMON_VERSION}...`),
       Effect.flatMap(() => this.loadConfiguration()),
       Effect.flatMap(() => this.setupPidFile()),
+      Effect.flatMap(() => this.startHttpServer()),
       Effect.flatMap(() => this.startMcpServer()),
       Effect.flatMap(() => this.discoverProjects()),
       Effect.flatMap(() => this.startFileWatchers()),
@@ -103,6 +107,74 @@ class VibeDaemon {
           Effect.map(() => this.config)
         )
       })
+    )
+
+  /**
+   * Starts the HTTP server for daemon control API
+   * Provides endpoints for status checking and shutdown commands
+   */
+  private startHttpServer = () =>
+    pipe(
+      Effect.tryPromise({
+        try: async () => {
+          const handler = (req: Request): Response => {
+            const url = new URL(req.url)
+            
+            switch (url.pathname) {
+              case '/status':
+                return new Response(JSON.stringify({
+                  daemon: {
+                    name: this.config.daemon.name,
+                    version: this.config.daemon.version,
+                    isRunning: this.state.isRunning,
+                    startedAt: this.state.startedAt,
+                    pid: Deno.pid,
+                  },
+                  mcpServer: this.state.mcpServer,
+                  projects: Array.from(this.state.projects.entries()).map(([path, state]) => ({
+                    path,
+                    ...state,
+                  })),
+                  config: this.config,
+                }), {
+                  headers: { 'Content-Type': 'application/json' },
+                })
+              
+              case '/shutdown':
+                if (req.method === 'POST') {
+                  // Initiate graceful shutdown
+                  setTimeout(() => {
+                    Effect.runFork(this.shutdown())
+                  }, 100)
+                  return new Response(JSON.stringify({ message: 'Shutdown initiated' }), {
+                    headers: { 'Content-Type': 'application/json' },
+                  })
+                }
+                return new Response('Method not allowed', { status: 405 })
+              
+              case '/health':
+                return new Response(JSON.stringify({ 
+                  status: 'healthy',
+                  timestamp: new Date().toISOString(),
+                }), {
+                  headers: { 'Content-Type': 'application/json' },
+                })
+              
+              default:
+                return new Response('Not found', { status: 404 })
+            }
+          }
+          
+          this.httpServer = Deno.serve({
+            port: this.config.daemon.controlPort,
+            hostname: 'localhost',
+          }, handler)
+          
+          return this.httpServer
+        },
+        catch: (error) => new Error(`Failed to start HTTP server: ${error}`),
+      }),
+      Effect.tap(() => Effect.log(`🌐 Control server running on http://localhost:${this.config.daemon.controlPort}`))
     )
 
   private setupPidFile = () =>
@@ -144,31 +216,76 @@ class VibeDaemon {
       )
     )
 
+  /**
+   * Scans configured root directories for .vibe projects using expandGlob
+   * Respects maxDepth and ignorePaths configuration settings
+   * 
+   * @returns Effect that resolves to array of project paths
+   */
   private scanForVibeProjects = () =>
     pipe(
       Effect.tryPromise({
         try: async () => {
           const projects: string[] = []
-          const homeDir = Deno.env.get('HOME') || '/home'
+          const config = this.config.projects
           
-          // Simple project discovery - in production would be more sophisticated
-          for await (const entry of Deno.readDir(homeDir)) {
-            if (entry.isDirectory) {
-              const vibePath = resolve(homeDir, entry.name, '.vibe')
-              try {
-                await Deno.stat(vibePath)
-                projects.push(resolve(homeDir, entry.name))
-              } catch {
-                // .vibe directory doesn't exist, skip
+          for (const scanRoot of config.projectScanRoots) {
+            const expandedRoot = this.expandPath(scanRoot)
+            
+            try {
+              // Check if scan root exists
+              const rootStat = await Deno.stat(expandedRoot)
+              if (!rootStat.isDirectory) continue
+              
+              // Use expandGlob to recursively search for .vibe directories
+              const globPattern = `${expandedRoot}/**/.vibe`
+              
+              for await (const entry of Deno.expandGlob(globPattern, {
+                maxDepth: config.maxDepth,
+                followSymlinks: false,
+                exclude: config.ignorePaths.map(path => `**/${path}/**`),
+              })) {
+                if (entry.isDirectory) {
+                  // Get the parent directory (the actual project directory)
+                  const projectPath = resolve(entry.path, '..')
+                  
+                  // Avoid duplicates and validate it's actually a .vibe project
+                  if (!projects.includes(projectPath)) {
+                    try {
+                      const vibeConfigPath = resolve(projectPath, '.vibe', 'config.json')
+                      await Deno.stat(vibeConfigPath)
+                      projects.push(projectPath)
+                    } catch {
+                      // Not a valid .vibe project (no config.json), skip
+                    }
+                  }
+                }
               }
+            } catch (error) {
+              console.warn(`Failed to scan ${expandedRoot}: ${error}`)
+              continue
             }
           }
           
-          return projects
+          return projects.slice(0, config.maxProjects) // Respect maxProjects limit
         },
-        catch: () => new Error('Failed to scan for projects'),
+        catch: (error) => new Error(`Failed to scan for projects: ${error}`),
       })
     )
+
+  /**
+   * Expands path with home directory if it starts with ~
+   * 
+   * @param path - Path to expand
+   * @returns Expanded absolute path
+   */
+  private expandPath = (path: string): string => {
+    if (path.startsWith('~/')) {
+      const home = Deno.env.get('HOME') || Deno.env.get('USERPROFILE') || '/home'
+      return path.replace('~', home)
+    }
+    return path
+  }
 
   private registerProject = (projectPath: string) =>
     pipe(
@@ -297,8 +414,15 @@ class VibeDaemon {
     pipe(
       Effect.log('🛑 Shutting down daemon...'),
       Effect.tryPromise({
-        try: () => Deno.remove(this.config.daemon.pidFile),
-        catch: () => new Error('Failed to remove PID file'),
+        try: async () => {
+          // Close HTTP server if running
+          if (this.httpServer) {
+            await this.httpServer.shutdown()
+          }
+          // Remove PID file
+          await Deno.remove(this.config.daemon.pidFile).catch(() => {})
+        },
+        catch: () => new Error('Failed during shutdown'),
       }),
       Effect.tap(() => Effect.log('✅ Daemon stopped')),
       Effect.flatMap(() => Effect.sync(() => Deno.exit(0)))

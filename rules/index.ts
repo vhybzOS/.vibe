@@ -8,7 +8,7 @@ import { resolve } from '@std/path'
 import { UniversalRule, UniversalRuleSchema } from '../schemas/universal-rule.ts'
 import { readJSONFile, writeJSONFile, listFiles } from '../lib/fs.ts'
 import { parseJSON, logWithContext } from '../lib/effects.ts'
-import { VibeError } from '../lib/errors.ts'
+import type { VibeError } from '../lib/errors.ts'
 
 /**
  * Loads all rules from the .vibe/rules directory

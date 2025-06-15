@@ -216,25 +216,111 @@ const checkRepositoryForRules = (githubRepo: string, token: string) =>
         Effect.catchAll(() => Effect.succeed(null))
       ),
     ]),
-    Effect.map(([vibeDir, cursorrules]) => {
+    Effect.flatMap(([vibeDir, cursorrules]) => {
       const rules: DiscoveredRule[] = []
       
-      // TODO: Parse .vibe directory contents
-      if (vibeDir) {
-        // This would involve fetching and parsing .vibe rules
-        // For now, create a placeholder rule
-        rules.push(createRepositoryRule(githubRepo, 'Found .vibe directory'))
-      }
+      // Parse .vibe directory contents
+      const vibeEffect = vibeDir ? parseVibeDirectory(githubRepo, token, vibeDir) : Effect.succeed([])
       
-      // TODO: Parse .cursorrules file
-      if (cursorrules) {
-        // This would involve fetching and parsing .cursorrules content
-        // For now, create a placeholder rule
-        rules.push(createRepositoryRule(githubRepo, 'Found .cursorrules file'))
-      }
+      // Parse .cursorrules file content
+      const cursorruleEffect = cursorrules ? parseCursorrules(githubRepo, token, cursorrules) : Effect.succeed([])
       
-      return rules
+      return pipe(
+        Effect.all([vibeEffect, cursorruleEffect]),
+        Effect.map(([vibeRules, cursorruleRules]) => [...vibeRules, ...cursorruleRules])
+      )
     })
+  )
+
+/**
+ * Parses .vibe directory contents from GitHub API response
+ */
+const parseVibeDirectory = (githubRepo: string, token: string, vibeDir: any) =>
+  pipe(
+    Effect.sync(() => {
+      if (!Array.isArray(vibeDir)) {
+        return []
+      }
+      
+      // Find JSON files in .vibe directory
+      const jsonFiles = vibeDir.filter((item: any) => 
+        item.type === 'file' && item.name.endsWith('.json')
+      )
+      
+      return jsonFiles
+    }),
+    Effect.flatMap(jsonFiles => 
+      Effect.all(
+        jsonFiles.map((file: any) =>
+          pipe(
+            makeHttpRequest(file.download_url, {
+              headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json',
+              },
+            }),
+            Effect.flatMap(content => {
+              try {
+                const rules = JSON.parse(typeof content === 'string' ? content : JSON.stringify(content))
+                if (Array.isArray(rules)) {
+                  return Effect.succeed(rules.map((rule: any) => convertUniversalRuleToDiscovered(rule, {
+                    name: githubRepo.split('/')[1] || 'unknown',
+                    version: 'latest',
+                    description: 'Repository rules from .vibe directory',
+                  })))
+                }
+                return Effect.succeed([])
+              } catch {
+                return Effect.succeed([])
+              }
+            }),
+            Effect.catchAll(() => Effect.succeed([]))
+          )
+        )
+      )
+    ),
+    Effect.map(results => results.flat())
+  )
+
+/**
+ * Parses .cursorrules file content from GitHub API response
+ */
+const parseCursorrules = (githubRepo: string, token: string, cursorrules: any) =>
+  pipe(
+    Effect.sync(() => cursorrules.download_url),
+    Effect.flatMap(downloadUrl =>
+      makeHttpRequest(downloadUrl, {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      })
+    ),
+    Effect.flatMap(content => {
+      try {
+        const contentStr = typeof content === 'string' ? content : JSON.stringify(content)
+        // Import parseToolConfig function
+        return pipe(
+          Effect.tryPromise(async () => {
+            const { parseToolConfig } = await import('../../tools/parsers.ts')
+            return parseToolConfig('cursor', contentStr)
+          }),
+          Effect.map(rules => rules.map(rule => convertUniversalRuleToDiscovered(rule, {
+            name: githubRepo.split('/')[1] || 'unknown',
+            version: 'latest',
+            description: 'Repository rules from .cursorrules',
+          }))),
+          Effect.catchAll(() => Effect.succeed([
+            createRepositoryRule(githubRepo, 'Found .cursorrules file but failed to parse')
+          ]))
+        )
+      } catch {
+        return Effect.succeed([
+          createRepositoryRule(githubRepo, 'Found .cursorrules file but failed to parse')
+        ])
+      }
+    }),
+    Effect.catchAll(() => Effect.succeed([]))
   )
 
 /**

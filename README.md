@@ -8,7 +8,7 @@
 
 ## 💸 How do you make money? Is this a bait-and-switch?
 
-We don't make any $$$ from this! `rm -rf The_VC_Oligarcy`, someone please! We built `.vibe` to supercharge our dev flow and figured it might help others too. If it makes you happy, we're happy ❤️
+We don't make any $$$ from this! `rm -rf The_VC_Oligarcy`; someone please. We built `.vibe` to supercharge our dev flow and figured it might help others too. If it makes you happy, we're happy ❤️
 
 Want to support us? Do one of these:
 

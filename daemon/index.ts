@@ -2,18 +2,18 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { startFileWatcher, createDefaultWatcherConfig } from '../utils/file-watcher.ts'
-import { startMcpServer } from '../mcp-server/server.ts'
-import { DaemonConfig, loadDaemonConfig, saveDaemonConfig } from './config.ts'
-import { setupSignalHandlers } from './signals.ts'
-import { ensureVibeDirectory } from './setup.ts'
+import { startFileWatcher, createDefaultWatcherConfig } from '../src/utils/file-watcher.ts'
+import { startMcpServer } from '../src/mcp-server/server.ts'
+import { DaemonConfig, loadDaemonConfig, saveDaemonConfig } from '../src/daemon/config.ts'
+import { setupSignalHandlers } from '../src/daemon/signals.ts'
+import { ensureVibeDirectory } from '../src/daemon/setup.ts'
 import { 
   getSecretsStatus, 
   setSecret, 
   validateSecretFormat, 
   type SecretProvider 
 } from './services/secrets_service.ts'
-import { globalDiscoveryService } from '../../daemon/services/discovery_service.ts'
+import { globalDiscoveryService } from './services/discovery_service.ts'
 
 const DAEMON_VERSION = '1.0.0'
 const DAEMON_NAME = 'vibe-daemon'
@@ -37,7 +37,7 @@ export interface ProjectState {
   ruleCount: number
 }
 
-class VibeDaemon {
+export class VibeDaemon {
   private state: DaemonState = {
     isRunning: false,
     startedAt: new Date().toISOString(),
@@ -811,7 +811,7 @@ if (import.meta.main) {
   
   if (args.includes('--mcp-only')) {
     // Just start MCP server for AI tool integration
-    import('../mcp-server/index.ts')
+    import('../src/mcp-server/index.ts')
   } else {
     // Start full daemon
     daemon.start().catch(error => {

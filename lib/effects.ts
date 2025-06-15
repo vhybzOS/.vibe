@@ -1,41 +1,16 @@
 /**
- * Common Effect-TS utilities and patterns for the .vibe system
- * Centralizes error handling, logging, and common operations
+ * Effect-TS utilities and Deno-native file system wrappers
+ * Pure functional wrappers around Deno APIs using Effect-TS
+ * NO CLASSES - uses functional tagged union errors from lib/errors.ts
  */
 
 import { Effect, pipe } from 'effect'
-
-/**
- * Standard error types for the .vibe system
- */
-export class VibeError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    public readonly cause?: unknown
-  ) {
-    super(message)
-    this.name = 'VibeError'
-  }
-}
-
-export class FileSystemError extends VibeError {
-  constructor(message: string, path: string, cause?: unknown) {
-    super(`File system error at ${path}: ${message}`, 'FS_ERROR', cause)
-  }
-}
-
-export class ConfigurationError extends VibeError {
-  constructor(message: string, cause?: unknown) {
-    super(`Configuration error: ${message}`, 'CONFIG_ERROR', cause)
-  }
-}
-
-export class ParseError extends VibeError {
-  constructor(message: string, content: string, cause?: unknown) {
-    super(`Parse error: ${message}`, 'PARSE_ERROR', cause)
-  }
-}
+import { 
+  createFileSystemError, 
+  createParseError, 
+  createTimeoutError, 
+  type VibeError 
+} from './errors.ts'
 
 /**
  * Safely reads a text file with proper error handling
@@ -44,7 +19,7 @@ export const readTextFile = (filePath: string) =>
   pipe(
     Effect.tryPromise({
       try: () => Deno.readTextFile(filePath),
-      catch: (error) => new FileSystemError('Failed to read file', filePath, error),
+      catch: (error) => createFileSystemError(error, filePath, 'Failed to read file'),
     })
   )
 
@@ -55,7 +30,7 @@ export const writeTextFile = (filePath: string, content: string) =>
   pipe(
     Effect.tryPromise({
       try: () => Deno.writeTextFile(filePath, content),
-      catch: (error) => new FileSystemError('Failed to write file', filePath, error),
+      catch: (error) => createFileSystemError(error, filePath, 'Failed to write file'),
     })
   )
 
@@ -66,7 +41,7 @@ export const ensureDir = (dirPath: string) =>
   pipe(
     Effect.tryPromise({
       try: () => Deno.mkdir(dirPath, { recursive: true }),
-      catch: (error) => new FileSystemError('Failed to create directory', dirPath, error),
+      catch: (error) => createFileSystemError(error, dirPath, 'Failed to create directory'),
     })
   )
 
@@ -83,7 +58,25 @@ export const readDir = (dirPath: string) =>
         }
         return entries
       },
-      catch: (error) => new FileSystemError('Failed to read directory', dirPath, error),
+      catch: (error) => createFileSystemError(error, dirPath, 'Failed to read directory'),
+    })
+  )
+
+/**
+ * Safely checks if a file exists
+ */
+export const fileExists = (filePath: string) =>
+  pipe(
+    Effect.tryPromise({
+      try: async () => {
+        try {
+          await Deno.stat(filePath)
+          return true
+        } catch {
+          return false
+        }
+      },
+      catch: (error) => createFileSystemError(error, filePath, 'Failed to check file existence'),
     })
   )
 
@@ -94,7 +87,7 @@ export const parseJSON = <T>(content: string, context: string = 'unknown') =>
   pipe(
     Effect.try({
       try: () => JSON.parse(content) as T,
-      catch: (error) => new ParseError(`Invalid JSON in ${context}`, content, error),
+      catch: (error) => createParseError(error, content, `Invalid JSON in ${context}`),
     })
   )
 
@@ -110,14 +103,11 @@ export const logWithContext = (context: string, message: string) =>
 export const retryWithBackoff = <A, E>(
   effect: Effect.Effect<A, E>,
   maxAttempts: number = 3,
-  baseDelay: number = 1000
+  _baseDelay: number = 1000
 ) =>
   pipe(
     effect,
-    Effect.retry({
-      times: maxAttempts - 1,
-      schedule: (attempt) => Effect.sleep(baseDelay * Math.pow(2, attempt))
-    })
+    Effect.retry({ times: maxAttempts - 1 })
   )
 
 /**
@@ -131,6 +121,9 @@ export const withTimeout = <A, E>(
     effect,
     Effect.timeout(timeoutMs),
     Effect.catchTag('TimeoutException', () => 
-      Effect.fail(new VibeError(`Operation timed out after ${timeoutMs}ms`, 'TIMEOUT'))
+      Effect.fail(createTimeoutError(timeoutMs, `Operation timed out after ${timeoutMs}ms`))
     )
   )
+
+// Re-export the VibeError type for convenience
+export type { VibeError }

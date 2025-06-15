@@ -109,12 +109,18 @@ deno run --allow-all src/mcp-server/index.ts
 
 ## Implementation Guidelines
 
-1. **Functional Style**: Use pure functions, avoid classes
-2. **Type Safety**: Define Zod v4 schemas first, use `z.output` types
-3. **Effect Composition**: Use Effect-TS for composable operations
-4. **Deno APIs**: Use native Deno APIs instead of Node.js equivalents
-5. **Local Storage**: Everything stored as JSON/Markdown files
-6. **Progressive Enhancement**: Basic features first, advanced features later
+### 🚨 CRITICAL: Functional Programming Rules
+1. **NO CLASSES EVER**: The entire codebase must be functional. Do not introduce class constructs for any reason.
+2. **Tagged Union Errors**: Use data-first, tagged union errors instead of custom error classes. Import from `lib/errors.ts`.
+3. **Functions and Data**: Logic should be encapsulated in pure, exportable functions that operate on plain data structures.
+4. **Effect-TS for Everything**: All async operations, file I/O, and error handling must use Effect-TS, not raw async/await.
+
+### Other Guidelines
+5. **Type Safety**: Define Zod v4 schemas first, use `z.output` types
+6. **Effect Composition**: Use Effect-TS for composable operations
+7. **Deno APIs**: Use native Deno APIs instead of Node.js equivalents
+8. **Local Storage**: Everything stored as JSON/Markdown files
+9. **Progressive Enhancement**: Basic features first, advanced features later
 
 ## Key Schemas (Zod v4)
 

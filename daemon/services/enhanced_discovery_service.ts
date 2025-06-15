@@ -10,6 +10,7 @@ import { z } from 'zod/v4'
 import { resolve } from '@std/path'
 import { match } from 'ts-pattern'
 import { VibeError, ensureDir, writeTextFile } from '../../lib/effects.ts'
+import { createNetworkError } from '../../lib/errors.ts'
 import { 
   PackageMetadata, 
   DiscoveredRule, 
@@ -328,12 +329,26 @@ const parseCursorrules = (githubRepo: string, token: string, cursorrules: any) =
  */
 const fetchLlmsTxt = (url: string) =>
   pipe(
-    makeHttpRequest(url),
-    Effect.map(response => {
-      if (typeof response === 'string') {
-        return response
-      }
-      return null
+    Effect.tryPromise({
+      try: async () => {
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'vibe-discovery/1.0.0',
+            'Accept': 'text/plain',
+          },
+        })
+        
+        if (!response.ok) {
+          return null
+        }
+        
+        return await response.text()
+      },
+      catch: () => createNetworkError(
+        new Error('Failed to fetch llms.txt'),
+        `llms.txt fetch failed for ${url}`,
+        url
+      ),
     }),
     Effect.catchAll(() => Effect.succeed(null))
   )
@@ -569,8 +584,11 @@ export const enhancedDiscoverRules = (metadata: PackageMetadata) =>
         ...homepageResult.rules,
       ]
       
-      // If we found rules via direct discovery, use them
-      if (directRules.length > 0) {
+      // Check if any direct method succeeded (not just if rules were found)
+      const anyDirectSuccess = repoResult.success || homepageResult.success
+      
+      // If any direct discovery method succeeded, use direct
+      if (anyDirectSuccess || directRules.length > 0) {
         return Effect.succeed({
           method: 'direct' as const,
           results: [repoResult, homepageResult],

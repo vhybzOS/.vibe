@@ -269,40 +269,42 @@ const detectSingleTool = (
 /**
  * Checks for configuration files
  */
-const checkConfigFiles = (projectPath: string, config: AIToolConfig): Effect.Effect<ConfigFileInfo[], VibeError> =>
-  pipe(
-    Effect.all(
-      config.detection.files.map(file => {
-        const fullPath = resolve(projectPath, file)
+const checkConfigFiles = (projectPath: string, config: AIToolConfig): Effect.Effect<ConfigFileInfo[], VibeError> => {
+  const checkSingleFile = (file: string): Effect.Effect<ConfigFileInfo, VibeError> => {
+    const fullPath = resolve(projectPath, file)
+    return pipe(
+      fileExists(fullPath),
+      Effect.flatMap(exists => {
+        if (!exists) {
+          return Effect.fail({ _tag: 'FileNotFound', file } as const)
+        }
         return pipe(
-          fileExists(fullPath),
-          Effect.flatMap(exists => {
-            if (!exists) {
-              return Effect.succeed(null)
-            }
-            return pipe(
-              Effect.tryPromise(async () => {
-                const stat = await Deno.stat(fullPath)
-                const result: ConfigFileInfo = {
-                  path: file,
-                  exists: true,
-                  lastModified: stat.mtime?.toISOString(),
-                  size: stat.size,
-                }
-                return result
-              }),
-              Effect.catchAll(() => Effect.succeed({
-                path: file,
-                exists: true,
-              } as ConfigFileInfo))
-            )
+          Effect.tryPromise(async () => {
+            const stat = await Deno.stat(fullPath)
+            return {
+              path: file,
+              exists: true,
+              lastModified: stat.mtime?.toISOString(),
+              size: stat.size,
+            } as ConfigFileInfo
           }),
-          Effect.catchAll(() => Effect.succeed(null))
+          Effect.catchAll(() => Effect.succeed({
+            path: file,
+            exists: true,
+          } as ConfigFileInfo))
         )
       })
+    )
+  }
+
+  return pipe(
+    Effect.partition(
+      config.detection.files, 
+      file => checkSingleFile(file)
     ),
-    Effect.map(results => results.filter((file): file is NonNullable<typeof file> => file !== null))
+    Effect.map(([_notFound, existingFiles]) => existingFiles)
   )
+}
 
 /**
  * Checks for configuration directories

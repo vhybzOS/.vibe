@@ -322,9 +322,9 @@ describe('✨ Enhanced Discovery Service Unit Tests', () => {
         publishedAt: '2023-01-01T00:00:00.000Z',
       }
 
-      // Mock responses for complex URLs
+      // Mock responses for complex URLs - apex domain extraction should create example.com/llms.txt
       globalThis.fetch = ((url: string) => {
-        if (url.includes('complex.example.com/llms.txt')) {
+        if (url === 'https://example.com/llms.txt') {
           return Promise.resolve({
             ok: true,
             text: () => Promise.resolve('# Complex Package\n\nAdvanced documentation for LLMs.'),

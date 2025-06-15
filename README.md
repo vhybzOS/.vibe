@@ -1,10 +1,18 @@
-# .vibe
+# `.vibe`
 
 > Unified AI coding tools configuration and memory management system
 
-## 🎯 What is .vibe?
+## 🎯 What is `.vibe`?
 
-.vibe creates the missing standard for AI coding assistant configuration. Write rules once, works everywhere. Your AI conversations become searchable architectural history, and your codebase becomes LLM-readable automatically.
+**`.vibe`** creates the missing standard for AI coding assistant configuration. Write rules once, works everywhere. Your AI conversations become searchable architectural history, and your codebase becomes LLM-readable automatically.
+
+## 💸 How do you make money? Is this a bait-and-switch?
+
+We don't make any $$$ from this! `rm -rf The_VC_Oligarcy`, someone please! We built `.vibe` to supercharge our dev flow and figured it might help others too. If it makes you happy, we're happy ❤️
+
+If you want to support us, do one of the following:
+
+> [Join WhatsApp Community](https://chat.whatsapp.com/C0Sm15m3gWlAmAktGggGUX) • [Subscribe on YouTube](https://www.youtube.com/@vhybZ) • [Buy a `localhost:4242` T-Shirt](https://en.wikipedia.org/wiki/Coming_Soon) • [Sponsor Us](https://github.com/sponsors/vhybzOS)
 
 ## ⚡ Quick Start
 

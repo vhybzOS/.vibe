@@ -123,7 +123,7 @@ const discoverFromRepository = (metadata: PackageMetadata) =>
                 url: `https://github.com/${githubRepo}`,
                 rules: [],
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: error instanceof Error ? error.message : 'An unknown error occurred',
               })
             )
           )
@@ -376,11 +376,6 @@ const generateRulesWithAI = (metadata: PackageMetadata, readmeContent: string, a
   pipe(
     Effect.tryPromise({
       try: async () => {
-        // Set the API key in the environment for the AI SDK
-        const originalApiKey = Deno.env.get('OPENAI_API_KEY')
-        Deno.env.set('OPENAI_API_KEY', apiKey)
-        
-        try {
           const prompt = `You are an expert-level software developer and technical writer tasked with creating a set of rules for an AI pair programming assistant. Your goal is to provide high-quality, actionable guidance for using a specific software library.
 
 You must generate a valid JSON array of 'UniversalRule' objects based on the provided package information and its README.
@@ -436,7 +431,7 @@ const value = useExampleHook();
 
 Now, generate the JSON array of UniversalRule objects for the '${metadata.name}' library.`
 
-          const model = openai('gpt-4o-mini')
+          const model = openai('gpt-4o-mini', { apiKey })
           const { object, usage } = await generateObject({
             model,
             prompt,
@@ -455,14 +450,6 @@ Now, generate the JSON array of UniversalRule objects for the '${metadata.name}'
               totalTokens: usage.totalTokens,
             },
           }
-        } finally {
-          // Restore original API key
-          if (originalApiKey) {
-            Deno.env.set('OPENAI_API_KEY', originalApiKey)
-          } else {
-            Deno.env.delete('OPENAI_API_KEY')
-          }
-        }
       },
       catch: error => new Error(`AI inference failed: ${error instanceof Error ? error.message : String(error)}`),
     })

@@ -6,7 +6,8 @@
 import { Effect, pipe } from 'effect'
 import { UniversalRule } from '../schemas/universal-rule.ts'
 import { AIToolType } from '../schemas/ai-tool-config.ts'
-import { VibeError, ParseError, logWithContext } from '../lib/effects.ts'
+import { VibeError, logWithContext } from '../lib/effects.ts'
+import { createParseError } from '../lib/errors.ts'
 
 /**
  * Parses tool configuration content into Universal Rules
@@ -29,10 +30,10 @@ export const parseToolConfig = (tool: AIToolType, content: string) =>
           case 'tabnine':
             return parseTabnineConfig(content)
           default:
-            throw new ParseError(`Unsupported tool: ${tool}`, content)
+            throw createParseError(new Error(`Unsupported tool: ${tool}`), content, `Unsupported tool: ${tool}`)
         }
       },
-      catch: (error) => new ParseError(`Failed to parse ${tool} config: ${error}`, content),
+      catch: (error) => createParseError(error, content, `Failed to parse ${tool} config: ${error}`),
     }),
     Effect.tap(rules => logWithContext('Parser', `Parsed ${rules.length} rules from ${tool}`))
   )
@@ -122,7 +123,7 @@ const parseTabnineConfig = (content: string): UniversalRule[] => {
     const config = JSON.parse(content)
     return [createUniversalRule('Tabnine Configuration', JSON.stringify(config, null, 2), 'tabnine')]
   } catch {
-    throw new ParseError('Invalid Tabnine JSON configuration', content)
+    throw createParseError(new Error('Invalid Tabnine JSON configuration'), content, 'Invalid Tabnine JSON configuration')
   }
 }
 

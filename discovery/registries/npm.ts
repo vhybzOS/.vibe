@@ -4,7 +4,6 @@
  */
 
 import { Effect, pipe } from 'effect'
-import { VibeError } from '../../lib/effects.ts'
 import {
   RegistryFetcher,
   PackageMetadata,
@@ -91,31 +90,40 @@ export class NpmRegistryFetcher implements RegistryFetcher {
       const versionData = registryData.versions[targetVersion]
       
       if (!versionData) {
-        throw new VibeError(`Version ${targetVersion} not found`, 'VERSION_NOT_FOUND')
+        throw new Error(`Version ${targetVersion} not found`)
       }
+
+      const publishedAt = registryData.time[targetVersion] || new Date().toISOString()
+      
+      // Create a minimal metadata object for framework inference
+      const inferenceMetadata: PackageMetadata = {
+        name: versionData.name,
+        version: targetVersion,
+        publishedAt,
+        ...(versionData.description && { description: versionData.description }),
+        ...(versionData.keywords && { keywords: versionData.keywords }),
+      }
+      
+      const detectedFramework = inferFramework(versionData.name, inferenceMetadata)
 
       const metadata: PackageMetadata = {
         name: versionData.name,
         version: targetVersion,
-        description: versionData.description,
-        homepage: versionData.homepage,
-        repository: typeof versionData.repository === 'string' 
-          ? { type: 'git', url: versionData.repository }
-          : versionData.repository,
-        license: versionData.license,
-        keywords: versionData.keywords,
-        maintainers: versionData.maintainers,
-        dependencies: versionData.dependencies,
-        peerDependencies: versionData.peerDependencies,
-        engines: versionData.engines,
-        publishedAt: registryData.time[targetVersion] || new Date().toISOString(),
-        framework: inferFramework(versionData.name, {
-          name: versionData.name,
-          version: targetVersion,
-          description: versionData.description,
-          keywords: versionData.keywords,
-          publishedAt: registryData.time[targetVersion] || new Date().toISOString(),
+        ...(versionData.description && { description: versionData.description }),
+        ...(versionData.homepage && { homepage: versionData.homepage }),
+        ...(versionData.repository && {
+          repository: typeof versionData.repository === 'string' 
+            ? { type: 'git', url: versionData.repository }
+            : versionData.repository
         }),
+        ...(versionData.license && { license: versionData.license }),
+        ...(versionData.keywords && { keywords: versionData.keywords }),
+        ...(versionData.maintainers && { maintainers: versionData.maintainers }),
+        ...(versionData.dependencies && { dependencies: versionData.dependencies }),
+        ...(versionData.peerDependencies && { peerDependencies: versionData.peerDependencies }),
+        ...(versionData.engines && { engines: versionData.engines }),
+        publishedAt,
+        ...(detectedFramework && { framework: detectedFramework }),
       }
 
       return metadata

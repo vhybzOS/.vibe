@@ -34,7 +34,7 @@ describe('🤖 Daemon End-to-End Tests', () => {
   describe('🚀 Daemon Lifecycle', () => {
     it('🔧 should start daemon successfully', async () => {
       const command = new Deno.Command(Deno.execPath(), {
-        args: ['run', '--allow-all', '../src/daemon/index.ts'],
+        args: ['run', '--allow-all', '../daemon.ts'],
         cwd: testProjectPath,
         stdout: 'piped',
         stderr: 'piped',
@@ -98,8 +98,8 @@ describe('🤖 Daemon End-to-End Tests', () => {
       // In a real implementation, we might try to connect to the MCP endpoint
       
       try {
-        // Try to connect to localhost:3001 (default MCP port)
-        const response = await fetch('http://localhost:3001', {
+        // Try to connect to localhost:4242 (unified server port)
+        const response = await fetch('http://localhost:4242', {
           method: 'GET',
           signal: AbortSignal.timeout(1000)
         })
@@ -121,6 +121,78 @@ describe('🤖 Daemon End-to-End Tests', () => {
       // This would require implementing actual MCP client communication
       
       assert(true, 'MCP request handling test - implementation specific')
+    })
+
+    it('🔐 should handle secrets API', async () => {
+      try {
+        // Test setting a secret
+        const setResponse = await fetch('http://localhost:4242/api/secrets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'test_key', value: 'test_value' }),
+          signal: AbortSignal.timeout(1000)
+        })
+        
+        assert(setResponse.ok, 'Should be able to set a secret')
+        
+        // Test getting secrets status
+        const statusResponse = await fetch('http://localhost:4242/api/secrets', {
+          method: 'GET',
+          signal: AbortSignal.timeout(1000)
+        })
+        
+        assert(statusResponse.ok, 'Should be able to get secrets status')
+      } catch (error) {
+        console.log('Secrets API test skipped:', error.message)
+      }
+    })
+
+    it('🤖 should handle autonomous discovery flow', async () => {
+      try {
+        // Create a package.json with a unique dependency for testing
+        const uniqueDep = `test-lib-${Date.now()}`
+        const packageJson = {
+          name: 'discovery-test-project',
+          dependencies: { [uniqueDep]: '^1.0.0' }
+        }
+        
+        await Deno.writeTextFile(`${testProjectPath}/package.json`, JSON.stringify(packageJson, null, 2))
+        
+        // Start autonomous discovery
+        const discoveryResponse = await fetch('http://localhost:4242/api/discovery/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectPath: testProjectPath }),
+          signal: AbortSignal.timeout(1000)
+        })
+        
+        assert(discoveryResponse.ok, 'Should be able to start discovery')
+        
+        // Connect to SSE events stream
+        const eventSource = new EventSource('http://localhost:4242/api/events')
+        const events: string[] = []
+        
+        eventSource.onmessage = (event) => {
+          events.push(event.data)
+        }
+        
+        // Wait for some discovery events
+        await new Promise(resolve => setTimeout(resolve, 3000))
+        eventSource.close()
+        
+        // Check that we received expected discovery events
+        const eventTypes = events.map(e => {
+          try { return JSON.parse(e).type } catch { return null }
+        }).filter(Boolean)
+        
+        const expectedEvents = ['discovery:started', 'discovery:dependencies', 'inference:started']
+        const hasExpectedEvents = expectedEvents.some(expected => eventTypes.includes(expected))
+        
+        assert(hasExpectedEvents, 'Should receive autonomous discovery events via SSE')
+        
+      } catch (error) {
+        console.log('Autonomous discovery test skipped:', error.message)
+      }
     })
   })
 

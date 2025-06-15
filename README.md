@@ -37,6 +37,9 @@ vibe mcp-server
 - **🌐 Cross-Platform Magic**: Seamless context sync across WSL2, Windows, macOS, cloud environments
 - **👀 Real-Time File Watching**: Auto-sync configs, debounced updates, conflict resolution
 - **🎯 Auto-Tool Detection**: Discovers Cursor, Windsurf, Claude, Copilot configs automatically
+- **🧠 Autonomous Rule Inference**: Automatically generates coding rules for new dependencies using LLMs
+- **🌐 Real-time Dashboard**: A web-based UI served on localhost:4242 to monitor projects and manage AI context
+- **📦 Autonomous Dependency Analysis**: Discovers AI configurations from dependency source code or infers them on the fly
 - **📊 Semantic Memory Search**: Local embeddings for conversation history and decision lookup
 - **🔧 Self-Healing**: Health monitoring, auto-restart, graceful degradation when components fail
 - **⚙️ System Service Ready**: Install as systemd service (Linux/macOS) or Task Scheduler (Windows)
@@ -45,11 +48,12 @@ vibe mcp-server
 
 1. **Install & Initialize**: `vibe init` in your project
 2. **Start Daemon**: `vibe-daemon` runs as persistent background service
-3. **Add MCP Server**: One-time setup in your AI tools
-4. **Code Anywhere**: Work on WSL2, switch to Windows, cloud dev - everything syncs
-5. **Everything Automated**:
+3. **Open Dashboard**: Visit `http://localhost:4242` for web-based project management
+4. **Add MCP Server**: One-time setup in your AI tools
+5. **Code Anywhere**: Work on WSL2, switch to Windows, cloud dev - everything syncs
+6. **Everything Automated**:
    - AI conversations monitored and decisions captured
-   - Rules generated from code patterns
+   - Rules automatically inferred for new dependencies
    - Documentation stays up-to-date
    - Tool configs auto-synced
    - Memory persists across environments
@@ -96,6 +100,19 @@ schtasks /create /tn "VibeDaemon" /tr "vibe-daemon" /sc onstart  # Windows
 ```
 
 **The Result**: Your AI tools stay connected to your project context **even when you switch environments**. Code in Claude on WSL2, continue in Windsurf on Windows - the daemon keeps everything in sync! 🎯
+
+## 💻 The Vibe Dashboard
+
+The unified daemon now serves an interactive web interface on `http://localhost:4242` that provides:
+
+- **📊 Project Overview**: Real-time status of all discovered .vibe projects
+- **🔍 Autonomous Discovery**: Monitor dependency analysis and rule inference in real-time
+- **⚙️ Settings Management**: Configure AI provider API keys and global preferences
+- **📈 Activity Monitoring**: Live feed of daemon activities and file changes
+- **🤖 Rule Management**: Browse, edit, and organize universal rules across projects
+- **📚 Documentation Hub**: View auto-generated project documentation and dependency insights
+
+The dashboard combines the power of the persistent daemon with a modern, responsive UI for seamless project management.
 
 ## 🛠️ Technology Stack
 

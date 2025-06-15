@@ -1,5 +1,14 @@
 # .vibe - Unified AI Code Assistant Configuration
 
+### 🚨 CRITICAL: Functional Programming & Architectural Rules
+
+**This project uses functional programming principles but remains pragmatic.**
+
+1. **NO CUSTOM CLASSES**: Don't create OOP structs of our own. Avoid `class` for business logic and data structures.
+2. **Idiomatic Library Usage**: It's fine to use classes where idiomatic to the library (e.g., `new Error()`, `new Date()`, built-in JS/TS classes).
+3. **Functions and Data**: Logic should be encapsulated in pure, exportable functions that operate on plain data structures.
+4. **Effect-TS for Everything**: All async operations, file I/O, and error handling must use Effect-TS, not raw async/await.
+
 ## Project Overview
 
 .vibe is a **Deno-based TypeScript system** that creates a unified standard for AI coding assistant configuration. It combines the functionality of .cursorrules, .claude/commands, and other AI tool configurations into a single, powerful system with a persistent daemon architecture.
@@ -38,16 +47,20 @@
 
 ```
 .vibe/
-├── mcp-server/         # MCP server for AI tool integration
-├── core/              # Pure functional modules
-│   ├── rules/         # Universal rule system
-│   ├── docs/          # Documentation generation
-│   ├── memory/        # Memory management
-│   ├── diary/         # Decision capture
-│   └── patterns/      # Pattern recognition
-├── schemas/           # Zod schemas
-├── data/             # Local storage
-└── cli/              # Command-line interface
+├── daemon/            # Daemon service and background processes
+│   └── services/      # Service implementations
+├── discovery/         # Autonomous discovery engine
+│   ├── manifests/     # Package manifest parsers
+│   └── registries/    # Registry fetchers (npm, PyPI, etc.)
+├── cli/               # Command-line interface
+│   └── commands/      # Individual command implementations
+├── mcp-server/        # MCP server for AI tool integration
+├── lib/               # Shared libraries and utilities
+├── schemas/           # Zod v4 schemas
+├── tests/             # Test suites
+│   ├── unit/          # Unit tests
+│   └── e2e/           # End-to-end tests
+└── docs/              # Documentation files
 ```
 
 ## Quick Start
@@ -64,7 +77,7 @@ git clone <repository-url>
 cd .vibe
 
 # Cache dependencies
-deno cache --reload src/**/*.ts
+deno cache --reload **/*.ts
 
 # Initialize a project
 ./vibe init
@@ -80,47 +93,40 @@ deno cache --reload src/**/*.ts
 
 ```bash
 # Quick validation (essential tests only)
-deno run --allow-all scripts/test.ts
+deno task test
 
-# Full test suite (all tests)
-deno run --allow-all scripts/test.ts --full
+# Full test suite (all tests) 
+deno task test:full
 
 # Performance benchmarks
-deno run --allow-all scripts/test.ts --perf
+deno task test:perf
 
 # Format code
-deno fmt
+deno task fmt
 
 # Lint code
-deno lint
+deno task lint
 
 # Type check
-deno check src/**/*.ts
+deno task check
 
 # Run specific CLI command
-deno run --allow-all src/cli/index.ts --help
+deno task cli --help
 
 # Start daemon directly
-deno run --allow-all src/daemon/index.ts
+deno task daemon
 
 # Start MCP server only
-deno run --allow-all src/mcp-server/index.ts
+deno task mcp-server
 ```
 
 ## Implementation Guidelines
 
-### 🚨 CRITICAL: Functional Programming Rules
-1. **NO CLASSES EVER**: The entire codebase must be functional. Do not introduce class constructs for any reason.
-2. **Tagged Union Errors**: Use data-first, tagged union errors instead of custom error classes. Import from `lib/errors.ts`.
-3. **Functions and Data**: Logic should be encapsulated in pure, exportable functions that operate on plain data structures.
-4. **Effect-TS for Everything**: All async operations, file I/O, and error handling must use Effect-TS, not raw async/await.
-
-### Other Guidelines
-5. **Type Safety**: Define Zod v4 schemas first, use `z.output` types
-6. **Effect Composition**: Use Effect-TS for composable operations
-7. **Deno APIs**: Use native Deno APIs instead of Node.js equivalents
-8. **Local Storage**: Everything stored as JSON/Markdown files
-9. **Progressive Enhancement**: Basic features first, advanced features later
+1. **Type Safety**: Define Zod v4 schemas first, use `z.output` types
+2. **Effect Composition**: Use Effect-TS for composable operations
+3. **Deno APIs**: Use native Deno APIs instead of Node.js equivalents
+4. **Local Storage**: Everything stored as JSON/Markdown files
+5. **Progressive Enhancement**: Basic features first, advanced features later
 
 ## Key Schemas (Zod v4)
 
@@ -163,13 +169,13 @@ The MCP server provides:
 ### Test Commands
 ```bash
 # Quick tests (2-3 minutes)
-deno run --allow-all scripts/test.ts
+deno task test
 
 # Full regression suite (5-10 minutes)
-deno run --allow-all scripts/test.ts --full
+deno task test:full
 
 # Performance benchmarks
-deno run --allow-all scripts/test.ts --perf
+deno task test:perf
 ```
 
 ### CI/CD Integration
@@ -248,7 +254,7 @@ deno run --allow-all scripts/test.ts --perf
 **Daemon won't start**:
 ```bash
 # Check if port is already in use
-lsof -i :3001
+lsof -i :4242
 
 # Check daemon logs
 tail -f /tmp/vibe-daemon.log
@@ -267,7 +273,7 @@ ls -la vibe vibe-daemon  # Check executable permissions
 **Tests failing**:
 ```bash
 # Check dependencies
-deno cache --reload src/**/*.ts
+deno cache --reload **/*.ts
 
 # Run individual test suites
 deno test tests/unit/schemas.test.ts --allow-all

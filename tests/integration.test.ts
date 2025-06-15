@@ -5,12 +5,12 @@ import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
 
 // Import our schemas and core functions
-import { UniversalRuleSchema, AIToolConfigSchema } from '../src/schemas/index.ts'
-import { detectAITools, syncToolConfigs } from '../src/core/tools/index.ts'
-import { loadRules, saveRule, generateRulesFromProject } from '../src/core/rules/index.ts'
-import { searchMemory, storeMemory } from '../src/core/memory/index.ts'
-import { searchDiary, captureDecision } from '../src/core/diary/index.ts'
-import { discoverDependencies } from '../src/core/docs/index.ts'
+import { UniversalRuleSchema, AIToolConfigSchema } from '../schemas/index.ts'
+import { detectAITools, syncToolConfigs } from '../tools/index.ts'
+import { loadRules, saveRule, generateRulesFromProject } from '../rules/index.ts'
+import { searchMemory, storeMemory } from '../memory/index.ts'
+import { searchDiary, captureDecision } from '../diary/index.ts'
+import { discoverDependencies } from '../docs/index.ts'
 
 // Test environment setup
 const TEST_PROJECT_PATH = '/tmp/vibe-test-project'

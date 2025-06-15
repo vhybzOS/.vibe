@@ -151,17 +151,70 @@ File watchers + debouncing + conflict resolution = **magic that just works**:
 - 🔄 Automatic retry on failures
 - 📊 Health monitoring and auto-healing
 
-## 🎪 The Dependency Discovery Circus
+## 🤖 The Autonomous Discovery Engine
 
-Here's a fun one: **automatic dependency documentation harvesting**! 🎭
+The crown jewel of .vibe's intelligence: **fully autonomous dependency analysis and rule inference**! 🎭
 
-The system:
-1. 🔍 Scans your `package.json`, `requirements.txt`, `Cargo.toml`, etc.
-2. 🌐 Tries to find `llms.txt` files from each dependency's website
-3. 📚 Auto-integrates found documentation into your project context
-4. 🔄 Updates when dependencies change
+### The New Superior Flow:
 
-**Example**: Add Hono to your project → .vibe automatically discovers `hono.dev/llms.txt` → your AI now knows Hono patterns without you lifting a finger! 🎯
+1. **🔍 Change Detection**: Daemon's file watcher detects a change in `package.json`
+2. **📦 Registry Fetch**: Discovery job fetches package metadata from npm/PyPI/etc to find the source repo URL  
+3. **🕵️ Direct Discovery**: Inspects the repository for existing `.vibe/` configs or known AI tool files (`.cursorrules`)
+4. **🧠 Autonomous Inference**: If nothing is found, triggers LLM-powered inference:
+   - Feeds the library's `README.md` and key source files to a configured LLM
+   - Generates comprehensive `UniversalRule`s tailored to the library
+   - Creates best practices, usage patterns, and integration guidelines
+5. **💾 Smart Caching**: Results are cached locally and version-aware in `.vibe/dependencies/`
+
+### The Intelligence Layer:
+
+Unlike simple documentation harvesting, this system **actively reasons** about dependencies:
+- 🧠 **Pattern Recognition**: Understands framework types, testing libraries, build tools
+- 🎯 **Context Aware**: Generates rules specific to your project's tech stack
+- 🔄 **Version Sensitive**: Updates rules when dependency versions change
+- 📊 **Confidence Scoring**: Rates the quality and applicability of generated rules
+
+**Example**: Add a new React testing library → Autonomous engine fetches its README → LLM generates testing best practices → Your AI assistant now knows advanced testing patterns for that specific library! 🎯
+
+This isn't just documentation discovery - it's **AI-powered project understanding** that scales infinitely.
+
+## ✨ The Fresh Dashboard & Real-Time API
+
+The daemon now serves a full web application built with **Fresh** on port **4242**, creating an interactive, responsive experience for managing your AI development workflow.
+
+### The Architecture:
+
+**🌐 Unified Server**: The `vibe-daemon` runs a single HTTP server that serves both:
+- Fresh-powered web UI for human interaction
+- RESTful API endpoints (`/api/*`) for programmatic access
+- Real-time updates via **Server-Sent Events (`/api/events`)**
+
+### The API Structure:
+
+```typescript
+/api/projects       // Project discovery and management
+/api/discovery      // Autonomous discovery control
+/api/secrets       // Encrypted API key management  
+/api/rules         // Universal rule CRUD operations
+/api/events        // SSE stream for real-time updates
+```
+
+### Real-Time Intelligence:
+
+The **Server-Sent Events** architecture pushes live updates to connected clients:
+- 🔍 Discovery progress (`discovery:started`, `discovery:dependencies`, `inference:started`)
+- 📁 File system changes (`file:modified`, `config:updated`)
+- 🤖 Rule generation events (`rule:generated`, `rule:applied`)
+- ⚠️ Error notifications and system health updates
+
+### The User Experience:
+
+- 📊 **Live Dashboard**: Watch dependency analysis happen in real-time
+- ⚙️ **Instant Configuration**: Change settings and see effects immediately
+- 🔐 **Secure Secrets**: Manage API keys with client-side encryption UI
+- 📈 **Activity Feed**: Never miss important system events
+
+This creates an **interactive development environment** where the AI assistance infrastructure is as responsive and visible as your code editor.
 
 ## 🚀 Performance Obsessions
 

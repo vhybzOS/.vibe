@@ -1,5 +1,5 @@
 import { Effect, pipe } from 'effect'
-import { resolve } from 'node:path'
+import { resolve } from '@std/path'
 import { z } from 'zod'
 import { detectAITools, syncToolConfigs } from '../core/tools/index.js'
 import { loadRules, saveRule, generateRulesFromProject } from '../core/rules/index.js'

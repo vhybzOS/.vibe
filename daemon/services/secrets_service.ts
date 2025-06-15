@@ -6,7 +6,7 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { readTextFile, writeTextFile, ensureDir, fileExists, VibeError } from '../../lib/effects.ts'
+import { readTextFile, writeTextFile, ensureDir, fileExists } from '../../lib/effects.ts'
 
 /**
  * Supported secret providers
@@ -27,7 +27,7 @@ interface EncryptedSecretsFile {
 /**
  * Raw secrets object (before encryption)
  */
-export interface Secrets {
+export type Secrets = {
   [key in SecretProvider]?: string
 }
 
@@ -106,7 +106,7 @@ const deriveEncryptionKey = (salt: Uint8Array) =>
         
         return key
       },
-      catch: (error) => new VibeError(`Failed to derive encryption key: ${error}`, 'CRYPTO_ERROR'),
+      catch: (error) => new Error(`Failed to derive encryption key: ${error}`),
     })
   )
 
@@ -148,7 +148,7 @@ const encryptSecrets = (secrets: Secrets) =>
         
         return encryptedFile
       },
-      catch: (error) => new VibeError(`Failed to encrypt secrets: ${error}`, 'CRYPTO_ERROR'),
+      catch: (error) => new Error(`Failed to encrypt secrets: ${error}`),
     })
   )
 
@@ -190,7 +190,7 @@ const decryptSecrets = (encryptedFile: EncryptedSecretsFile) =>
         
         return secrets
       },
-      catch: (error) => new VibeError(`Failed to decrypt secrets: ${error}`, 'CRYPTO_ERROR'),
+      catch: (error) => new Error(`Failed to decrypt secrets: ${error}`),
     })
   )
 
@@ -211,7 +211,7 @@ export const loadSecrets = () =>
         Effect.flatMap(content => 
           Effect.try({
             try: () => JSON.parse(content) as EncryptedSecretsFile,
-            catch: () => new VibeError('Invalid secrets file format', 'PARSE_ERROR'),
+            catch: () => new Error('Invalid secrets file format'),
           })
         ),
         Effect.flatMap(encryptedFile => decryptSecrets(encryptedFile)),

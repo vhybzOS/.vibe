@@ -190,7 +190,8 @@ const loadSingleMemory = (filePath: string) =>
  */
 const convertDocumentToMemory = (document: SearchDocument): Memory => {
   // This is a simplified conversion - in practice, we'd store more metadata
-  const contentParts = document.content.split('\n\nKeywords:')\  const mainContent = contentParts[0] || ''
+  const contentParts = document.content.split('\n\nKeywords:')
+  const mainContent = contentParts[0] || ''
   
   return {
     id: document.id,

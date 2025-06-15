@@ -1,6 +1,6 @@
 import { Effect, pipe } from 'effect'
 import { generateRulesFromProject, saveRule } from '../../core/rules/index.js'
-import { resolve } from 'node:path'
+import { resolve } from '@std/path'
 
 export const generateCommand = (
   projectPath: string,

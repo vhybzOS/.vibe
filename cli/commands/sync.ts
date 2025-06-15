@@ -1,7 +1,7 @@
 import { Effect, pipe } from 'effect'
 import { detectAITools, syncToolConfigs } from '../../core/tools/index.js'
 import { loadRules } from '../../core/rules/index.js'
-import { resolve } from 'node:path'
+import { resolve } from '@std/path'
 
 export const syncCommand = (
   projectPath: string,

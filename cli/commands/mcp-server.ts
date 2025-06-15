@@ -1,6 +1,5 @@
 import { Effect, pipe } from 'effect'
-import { spawn } from 'node:child_process'
-import { resolve } from 'node:path'
+import { resolve } from '@std/path'
 
 export const mcpServerCommand = (
   options: { port: string; host: string }

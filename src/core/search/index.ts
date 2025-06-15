@@ -1,6 +1,6 @@
 import { Effect, pipe } from 'effect'
 import { create, insert, search, save, load } from '@orama/orama'
-import { embeddings } from '@orama/plugin-embeddings'
+import { pluginEmbeddings } from '@orama/plugin-embeddings'
 import { persist, restore } from '@orama/plugin-data-persistence'
 import { resolve } from '@std/path'
 import { OramaSchemaConfig, VibeDocument, SearchQuery, SearchResponse, SearchResult } from './schema.ts'
@@ -57,7 +57,7 @@ export const initializeSearchDatabase = (
           oramaDb = await create({
             schema: OramaSchemaConfig,
             plugins: [
-              embeddings({
+              pluginEmbeddings({
                 embeddings: {
                   model: options.embeddingModel || '@tensorflow/universal-sentence-encoder',
                   verbose: false,

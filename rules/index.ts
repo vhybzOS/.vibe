@@ -1,77 +1,63 @@
+/**
+ * Universal Rules management
+ * Handles loading, saving, and generating rules
+ */
+
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { match } from 'ts-pattern'
-import { UniversalRule, UniversalRuleSchema } from '../../schemas/universal-rule.ts'
+import { UniversalRule, UniversalRuleSchema } from '../schemas/universal-rule.ts'
+import { readJSONFile, writeJSONFile, listFiles } from '../lib/fs.ts'
+import { parseJSON, logWithContext, VibeError } from '../lib/effects.ts'
 
+/**
+ * Loads all rules from the .vibe/rules directory
+ */
 export const loadRules = (vibePath: string) =>
   pipe(
-    Effect.tryPromise({
-      try: async () => {
-        const rulesDir = resolve(vibePath, 'rules')
-        const files = []
-        
-        try {
-          for await (const entry of Deno.readDir(rulesDir)) {
-            if (entry.isFile && entry.name.endsWith('.json')) {
-              files.push(entry.name)
-            }
-          }
-        } catch {
-          return [] // Directory doesn't exist
-        }
-        
-        return files
-      },
-      catch: () => new Error('Failed to read rules directory'),
-    }),
-    Effect.flatMap(files => 
-      Effect.all(
-        files.map(file => loadRule(resolve(vibePath, 'rules', file)))
-      )
+    listFiles(resolve(vibePath, 'rules'), entry => entry.name.endsWith('.json')),
+    Effect.flatMap(ruleFiles => 
+      Effect.all(ruleFiles.map(loadSingleRule))
     ),
-    Effect.map(rules => rules.filter(Boolean) as UniversalRule[]),
+    Effect.map(rules => rules.filter((rule): rule is UniversalRule => rule !== null)),
+    Effect.tap(rules => logWithContext('Rules', `Loaded ${rules.length} rules`)),
     Effect.catchAll(() => Effect.succeed([] as UniversalRule[]))
   )
 
-const loadRule = (filePath: string) =>
+/**
+ * Loads a single rule file
+ */
+const loadSingleRule = (filePath: string) =>
   pipe(
-    Effect.tryPromise({
-      try: () => Deno.readTextFile(filePath),
-      catch: () => new Error(`Failed to read rule file: ${filePath}`),
-    }),
-    Effect.flatMap(content => 
-      Effect.try({
-        try: () => JSON.parse(content),
-        catch: () => new Error(`Invalid JSON in rule file: ${filePath}`),
-      })
-    ),
+    readJSONFile<unknown>(filePath),
     Effect.flatMap(data => 
       Effect.try({
         try: () => UniversalRuleSchema.parse(data),
-        catch: (error) => new Error(`Invalid rule schema: ${error}`),
+        catch: (error) => new VibeError(`Invalid rule schema in ${filePath}: ${error}`, 'SCHEMA_ERROR'),
       })
     ),
-    Effect.catchAll(() => Effect.succeed(null))
+    Effect.catchAll(error => {
+      logWithContext('Rules', `Failed to load ${filePath}: ${error.message}`)
+      return Effect.succeed(null)
+    })
   )
 
+/**
+ * Saves a Universal Rule to the rules directory
+ */
 export const saveRule = (vibePath: string, rule: UniversalRule) =>
   pipe(
-    Effect.tryPromise({
-      try: () => Deno.mkdir(resolve(vibePath, 'rules'), { recursive: true }),
-      catch: () => new Error('Failed to create rules directory'),
-    }),
-    Effect.flatMap(() => {
+    Effect.sync(() => {
       const fileName = `${rule.metadata.name.toLowerCase().replace(/\s+/g, '-')}.json`
-      const filePath = resolve(vibePath, 'rules', fileName)
-      
-      return Effect.tryPromise({
-        try: () => Deno.writeTextFile(filePath, JSON.stringify(rule, null, 2)),
-        catch: () => new Error(`Failed to save rule: ${filePath}`),
-      })
+      return resolve(vibePath, 'rules', fileName)
     }),
+    Effect.flatMap(filePath => writeJSONFile(filePath, rule)),
+    Effect.tap(() => logWithContext('Rules', `Saved rule: ${rule.metadata.name}`)),
     Effect.map(() => rule)
   )
 
+/**
+ * Generates rules from project analysis
+ */
 export const generateRulesFromProject = (
   projectPath: string, 
   options: { threshold: number; includePatterns: string[] }
@@ -81,26 +67,30 @@ export const generateRulesFromProject = (
     Effect.map(patterns => 
       patterns
         .filter(pattern => pattern.confidence >= options.threshold)
-        .map(pattern => createRuleFromPattern(pattern))
+        .map(createRuleFromPattern)
     ),
-    Effect.flatMap(rules => 
-      Effect.all(rules.map(rule => 
-        Effect.succeed(rule) // In a real implementation, this would validate and process
-      ))
+    Effect.tap(rules => 
+      logWithContext('Generation', `Generated ${rules.length} rules from project analysis`)
     )
   )
 
+/**
+ * Analyzes project for common patterns
+ */
 const analyzeProjectPatterns = (projectPath: string) =>
   pipe(
     Effect.tryPromise({
       try: () => analyzeCodebaseStructure(projectPath),
-      catch: () => new Error('Failed to analyze project structure'),
+      catch: () => new VibeError('Failed to analyze project structure', 'ANALYSIS_ERROR'),
     }),
     Effect.map(structure => extractPatterns(structure))
   )
 
+/**
+ * Simplified codebase structure analysis
+ */
 const analyzeCodebaseStructure = async (projectPath: string) => {
-  // Simplified analysis - in production, this would be much more sophisticated
+  // In a real implementation, this would use AST analysis
   return {
     languages: ['typescript', 'javascript'],
     frameworks: ['react', 'nextjs'],
@@ -121,6 +111,9 @@ const analyzeCodebaseStructure = async (projectPath: string) => {
   }
 }
 
+/**
+ * Extracts patterns with metadata
+ */
 const extractPatterns = (structure: any) =>
   structure.patterns.map((pattern: any) => ({
     ...pattern,
@@ -128,6 +121,9 @@ const extractPatterns = (structure: any) =>
     timestamp: new Date().toISOString(),
   }))
 
+/**
+ * Creates a Universal Rule from a detected pattern
+ */
 const createRuleFromPattern = (pattern: any): UniversalRule => ({
   id: crypto.randomUUID(),
   metadata: {

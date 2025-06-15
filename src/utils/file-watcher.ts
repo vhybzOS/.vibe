@@ -1,8 +1,8 @@
 import { Effect, pipe } from 'effect'
 import chokidar from 'chokidar'
-import { resolve } from 'node:path'
-import { detectAITools, syncToolConfigs } from '../core/tools/index.js'
-import { loadRules } from '../core/rules/index.js'
+import { resolve } from '@std/path'
+import { detectAITools, syncToolConfigs } from '../core/tools/index.ts'
+import { loadRules } from '../core/rules/index.ts'
 
 export interface FileWatcherConfig {
   projectPath: string

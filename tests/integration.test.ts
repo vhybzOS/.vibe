@@ -1,5 +1,5 @@
-import { assertEquals, assertExists, assert } from 'jsr:@std/assert'
-import { afterAll, beforeAll, describe, it } from 'jsr:@std/testing/bdd'
+import { assertEquals, assertExists, assert } from '@std/assert'
+import { afterAll, beforeAll, describe, it } from '@std/testing/bdd'
 import { z } from 'zod/v4'
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
@@ -9,7 +9,7 @@ import { UniversalRuleSchema, AIToolConfigSchema } from '../src/schemas/index.ts
 import { detectAITools, syncToolConfigs } from '../src/core/tools/index.ts'
 import { loadRules, saveRule, generateRulesFromProject } from '../src/core/rules/index.ts'
 import { searchMemory, storeMemory } from '../src/core/memory/index.ts'
-import { searchDiary, captureDcision } from '../src/core/diary/index.ts'
+import { searchDiary, captureDecision } from '../src/core/diary/index.ts'
 import { discoverDependencies } from '../src/core/docs/index.ts'
 
 // Test environment setup
@@ -277,7 +277,7 @@ describe('🧪 .vibe Integration Tests', () => {
 
       // Capture decision
       const captureResult = await Effect.runPromise(
-        captureDcision(TEST_VIBE_PATH, testDecision)
+        captureDecision(TEST_VIBE_PATH, testDecision)
       )
       
       assert(captureResult.success, 'Decision capture should succeed')

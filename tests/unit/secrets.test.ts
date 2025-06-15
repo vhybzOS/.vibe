@@ -1,5 +1,5 @@
-import { assertEquals, assertExists, assert } from 'jsr:@std/assert'
-import { describe, it, beforeEach, afterEach } from 'jsr:@std/testing/bdd'
+import { assertEquals, assertExists, assert } from '@std/assert'
+import { describe, it, beforeEach, afterEach } from '@std/testing/bdd'
 import { Effect } from 'effect'
 import {
   setSecret,

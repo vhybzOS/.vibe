@@ -1,5 +1,5 @@
-import { assertEquals, assertExists, assert } from 'jsr:@std/assert'
-import { afterAll, beforeAll, describe, it } from 'jsr:@std/testing/bdd'
+import { assertEquals, assertExists, assert } from '@std/assert'
+import { afterAll, beforeAll, describe, it } from '@std/testing/bdd'
 
 describe('🖥️ CLI End-to-End Tests', () => {
   let testProjectPath: string

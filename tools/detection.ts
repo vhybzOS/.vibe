@@ -15,6 +15,14 @@ import {
   ToolDetectionPattern 
 } from '../schemas/ai-tool-config.ts'
 
+type ConfigFileInfo = {
+  path: string
+  exists: boolean
+  lastModified?: string | undefined
+  size?: number | undefined
+  hash?: string | undefined
+}
+
 /**
  * Configuration for detecting different AI tools
  */
@@ -29,7 +37,7 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
     },
     configFiles: [{
       path: '.cursorrules',
-      format: { type: 'markdown' },
+      format: { type: 'markdown', encoding: 'utf-8' },
       required: true,
     }],
     capabilities: {
@@ -55,7 +63,7 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
     },
     configFiles: [{
       path: '.windsurfrules',
-      format: { type: 'yaml' },
+      format: { type: 'yaml', encoding: 'utf-8' },
       required: true,
     }],
     capabilities: {
@@ -81,7 +89,7 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
     },
     configFiles: [{
       path: '.claude/commands.md',
-      format: { type: 'markdown' },
+      format: { type: 'markdown', encoding: 'utf-8' },
       required: false,
     }],
     capabilities: {
@@ -107,7 +115,7 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
     },
     configFiles: [{
       path: '.github/copilot-instructions.md',
-      format: { type: 'markdown' },
+      format: { type: 'markdown', encoding: 'utf-8' },
       required: false,
     }],
     capabilities: {
@@ -133,7 +141,7 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
     },
     configFiles: [{
       path: '.codeium/instructions.md',
-      format: { type: 'markdown' },
+      format: { type: 'markdown', encoding: 'utf-8' },
       required: false,
     }],
     capabilities: {
@@ -159,7 +167,7 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
     },
     configFiles: [{
       path: '.cody/instructions.md',
-      format: { type: 'markdown' },
+      format: { type: 'markdown', encoding: 'utf-8' },
       required: false,
     }],
     capabilities: {
@@ -185,7 +193,7 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
     },
     configFiles: [{
       path: '.tabnine.json',
-      format: { type: 'json' },
+      format: { type: 'json', encoding: 'utf-8' },
       required: false,
     }],
     capabilities: {
@@ -215,7 +223,7 @@ export const detectAITools = (projectPath: string) =>
     Effect.map(results => 
       results
         .filter((result): result is DetectedTool => result !== null)
-        .sort((a, b) => TOOL_CONFIGS[a.tool].detection.priority - TOOL_CONFIGS[b.tool].detection.priority)
+        .sort((a, b) => b.confidence - a.confidence)
     ),
     Effect.tap(tools => 
       logWithContext('Detection', `Found ${tools.length} AI tools: ${tools.map(t => t.tool).join(', ')}`)
@@ -261,19 +269,39 @@ const detectSingleTool = (
 /**
  * Checks for configuration files
  */
-const checkConfigFiles = (projectPath: string, config: AIToolConfig) =>
+const checkConfigFiles = (projectPath: string, config: AIToolConfig): Effect.Effect<ConfigFileInfo[], VibeError> =>
   pipe(
     Effect.all(
       config.detection.files.map(file => {
         const fullPath = resolve(projectPath, file)
         return pipe(
           fileExists(fullPath),
-          Effect.map(exists => exists ? file : null),
+          Effect.flatMap(exists => {
+            if (!exists) {
+              return Effect.succeed(null)
+            }
+            return pipe(
+              Effect.tryPromise(async () => {
+                const stat = await Deno.stat(fullPath)
+                const result: ConfigFileInfo = {
+                  path: file,
+                  exists: true,
+                  lastModified: stat.mtime?.toISOString(),
+                  size: stat.size,
+                }
+                return result
+              }),
+              Effect.catchAll(() => Effect.succeed({
+                path: file,
+                exists: true,
+              } as ConfigFileInfo))
+            )
+          }),
           Effect.catchAll(() => Effect.succeed(null))
         )
       })
     ),
-    Effect.map(results => results.filter((file): file is string => file !== null))
+    Effect.map(results => results.filter((file): file is NonNullable<typeof file> => file !== null))
   )
 
 /**
@@ -299,12 +327,12 @@ const checkConfigDirectories = (projectPath: string, config: AIToolConfig) =>
  */
 const calculateConfidence = (
   config: AIToolConfig,
-  fileMatches: string[],
+  fileMatches: ConfigFileInfo[],
   dirMatches: string[]
 ): number => {
   const requiredFiles = config.configFiles.filter(cf => cf.required).length
   const foundRequiredFiles = fileMatches.filter(file =>
-    config.configFiles.some(cf => cf.path === file && cf.required)
+    config.configFiles.some(cf => cf.path === file.path && cf.required)
   ).length
   
   if (requiredFiles > 0 && foundRequiredFiles === 0) {
@@ -322,7 +350,7 @@ const calculateConfidence = (
  * Determines the tool status based on detected files
  */
 const determineToolStatus = (
-  fileMatches: string[],
+  fileMatches: ConfigFileInfo[],
   dirMatches: string[]
 ): 'active' | 'configured' | 'partial' => {
   if (fileMatches.length > 0 && dirMatches.length > 0) {
@@ -337,7 +365,7 @@ const determineToolStatus = (
 /**
  * Extracts version information from config files (simplified)
  */
-const extractVersion = (configFiles: string[]): string | undefined => {
+const extractVersion = (configFiles: ConfigFileInfo[]): string | undefined => {
   // This is a simplified version - in practice, we'd read and parse the files
   return configFiles.length > 0 ? 'detected' : undefined
 }

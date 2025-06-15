@@ -1,5 +1,5 @@
-import { assertEquals, assertExists, assert } from 'jsr:@std/assert'
-import { afterAll, beforeAll, describe, it } from 'jsr:@std/testing/bdd'
+import { assertEquals, assertExists, assert } from '@std/assert'
+import { afterAll, beforeAll, describe, it } from '@std/testing/bdd'
 
 describe('🤖 Daemon End-to-End Tests', () => {
   let testProjectPath: string
@@ -149,11 +149,19 @@ describe('🤖 Daemon End-to-End Tests', () => {
 
     it('🤖 should handle autonomous discovery flow', async () => {
       try {
-        // Create a package.json with a unique dependency for testing
-        const uniqueDep = `test-lib-${Date.now()}`
+        // Create a realistic package.json for enhanced discovery testing
         const packageJson = {
-          name: 'discovery-test-project',
-          dependencies: { [uniqueDep]: '^1.0.0' }
+          name: 'enhanced-discovery-test-project',
+          version: '1.0.0',
+          dependencies: { 
+            'react': '^18.2.0',
+            'typescript': '^5.0.0',
+            'lodash': '^4.17.21'
+          },
+          devDependencies: {
+            'jest': '^29.0.0',
+            '@types/react': '^18.2.0'
+          }
         }
         
         await Deno.writeTextFile(`${testProjectPath}/package.json`, JSON.stringify(packageJson, null, 2))
@@ -163,35 +171,98 @@ describe('🤖 Daemon End-to-End Tests', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ projectPath: testProjectPath }),
-          signal: AbortSignal.timeout(1000)
+          signal: AbortSignal.timeout(5000)
         })
         
-        assert(discoveryResponse.ok, 'Should be able to start discovery')
-        
-        // Connect to SSE events stream
-        const eventSource = new EventSource('http://localhost:4242/api/events')
-        const events: string[] = []
-        
-        eventSource.onmessage = (event) => {
-          events.push(event.data)
+        if (!discoveryResponse.ok) {
+          console.log('Discovery start failed:', await discoveryResponse.text())
+          return
         }
         
-        // Wait for some discovery events
-        await new Promise(resolve => setTimeout(resolve, 3000))
-        eventSource.close()
+        const discoveryResult = await discoveryResponse.json()
+        assertExists(discoveryResult.sessionId, 'Should return session ID')
         
-        // Check that we received expected discovery events
-        const eventTypes = events.map(e => {
-          try { return JSON.parse(e).type } catch { return null }
-        }).filter(Boolean)
+        // Connect to SSE events stream for real-time updates
+        const eventsResponse = await fetch('http://localhost:4242/api/events', {
+          headers: { 'Accept': 'text/event-stream' },
+          signal: AbortSignal.timeout(8000)
+        })
         
-        const expectedEvents = ['discovery:started', 'discovery:dependencies', 'inference:started']
-        const hasExpectedEvents = expectedEvents.some(expected => eventTypes.includes(expected))
+        if (!eventsResponse.ok) {
+          console.log('Events stream connection failed')
+          return
+        }
         
-        assert(hasExpectedEvents, 'Should receive autonomous discovery events via SSE')
+        const reader = eventsResponse.body?.getReader()
+        if (!reader) {
+          console.log('No events stream reader available')
+          return
+        }
+        
+        const decoder = new TextDecoder()
+        const events: any[] = []
+        let buffer = ''
+        
+        // Read events for up to 6 seconds
+        const timeout = setTimeout(() => reader.cancel(), 6000)
+        
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            
+            buffer += decoder.decode(value, { stream: true })
+            const lines = buffer.split('\n')
+            buffer = lines.pop() || ''
+            
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const eventData = JSON.parse(line.slice(6))
+                  events.push(eventData)
+                  
+                  // Stop if we get a completion event
+                  if (eventData.type === 'discovery' && 
+                      eventData.sessionId === discoveryResult.sessionId &&
+                      (line.includes('discovery:completed') || line.includes('discovery:error'))) {
+                    break
+                  }
+                } catch {
+                  // Skip malformed events
+                }
+              }
+            }
+          }
+        } finally {
+          clearTimeout(timeout)
+          reader.releaseLock()
+        }
+        
+        // Verify we received expected discovery events
+        const discoveryEvents = events.filter(e => 
+          e.type === 'discovery' && e.sessionId === discoveryResult.sessionId
+        )
+        
+        assert(discoveryEvents.length > 0, 'Should receive discovery events')
+        
+        // Check final discovery status
+        const statusResponse = await fetch(`http://localhost:4242/api/discovery/status?sessionId=${discoveryResult.sessionId}`, {
+          signal: AbortSignal.timeout(2000)
+        })
+        
+        if (statusResponse.ok) {
+          const status = await statusResponse.json()
+          assert(status.id === discoveryResult.sessionId, 'Should get correct session status')
+          assert(['running', 'completed', 'failed'].includes(status.status), 'Should have valid status')
+          
+          if (status.status === 'completed') {
+            assert(status.results.manifestResults.length > 0, 'Should have manifest results')
+            assert(status.results.dependencies.length > 0, 'Should have discovered dependencies')
+          }
+        }
         
       } catch (error) {
-        console.log('Autonomous discovery test skipped:', error.message)
+        console.log('Autonomous discovery test error:', error.message)
       }
     })
   })

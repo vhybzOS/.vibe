@@ -1,4 +1,4 @@
 #!/usr/bin/env -S deno run --allow-all
 
 // Main CLI entry point for vibe
-import './src/cli/index.ts'
+import './cli.ts'

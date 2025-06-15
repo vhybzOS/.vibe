@@ -1,6 +1,6 @@
 import { Effect, pipe } from 'effect'
-import { detectAITools, syncToolConfigs } from '../../core/tools/index.js'
-import { loadRules } from '../../core/rules/index.js'
+import { detectAITools, syncToolConfigs } from '../../tools/index.ts'
+import { loadRules } from '../../rules/index.ts'
 import { resolve } from '@std/path'
 
 export const syncCommand = (

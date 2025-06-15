@@ -41,7 +41,9 @@
     "neverthrow": "npm:neverthrow@^8.1.0",
     "chokidar": "npm:chokidar@^4.0.1",
     "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk@^1.0.1",
-    "commander": "npm:commander@^12.1.0"
+    "commander": "npm:commander@^12.1.0",
+    "ai": "npm:ai@^4.0.2",
+    "@ai-sdk/openai": "npm:@ai-sdk/openai@^1.2.0"
   },
   "compilerOptions": {
     "lib": ["deno.ns", "dom", "es2022"],

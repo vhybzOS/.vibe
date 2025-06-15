@@ -155,16 +155,21 @@ File watchers + debouncing + conflict resolution = **magic that just works**:
 
 The crown jewel of .vibe's intelligence: **fully autonomous dependency analysis and rule inference**! 🎭
 
-### The New Superior Flow:
+### The Enhanced Discovery Flow:
 
 1. **🔍 Change Detection**: Daemon's file watcher detects a change in `package.json`
-2. **📦 Registry Fetch**: Discovery job fetches package metadata from npm/PyPI/etc to find the source repo URL  
-3. **🕵️ Direct Discovery**: Inspects the repository for existing `.vibe/` configs or known AI tool files (`.cursorrules`)
-4. **🧠 Autonomous Inference**: If nothing is found, triggers LLM-powered inference:
-   - Feeds the library's `README.md` and key source files to a configured LLM
-   - Generates comprehensive `UniversalRule`s tailored to the library
+2. **📦 Registry Fetch**: Discovery job fetches package metadata from npm/PyPI/etc to find the source repo URL and homepage
+3. **🌐 llms.txt Discovery**: Attempts to fetch `llms.txt` from the package's homepage apex domain (e.g., `https://react.dev/llms.txt`)
+4. **🕵️ Direct Repository Discovery**: Inspects the GitHub repository for:
+   - Existing `.vibe/` configurations or rules
+   - Known AI tool files (`.cursorrules`, `.windsurfrules`)
+   - Repository-specific documentation
+5. **🧠 Autonomous AI Inference**: If direct discovery yields no results, triggers LLM-powered rule generation:
+   - Fetches the library's `README.md` from GitHub API
+   - Uses Vercel AI SDK with OpenAI to generate comprehensive `UniversalRule`s
    - Creates best practices, usage patterns, and integration guidelines
-5. **💾 Smart Caching**: Results are cached locally and version-aware in `.vibe/dependencies/`
+   - Validates output with Zod schemas for type safety
+6. **💾 Version-Aware Caching**: Results are cached locally in `.vibe/dependencies/<package>/<version>/` with metadata
 
 ### The Intelligence Layer:
 
@@ -180,7 +185,7 @@ This isn't just documentation discovery - it's **AI-powered project understandin
 
 ## ✨ The Fresh Dashboard & Real-Time API
 
-The daemon now serves a full web application built with **Fresh** on port **4242**, creating an interactive, responsive experience for managing your AI development workflow.
+The daemon now serves a full web application on port **4242** (`http://localhost:4242`), creating an interactive, responsive experience for managing your AI development workflow.
 
 ### The Architecture:
 

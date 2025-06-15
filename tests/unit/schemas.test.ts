@@ -1,5 +1,5 @@
-import { assertEquals, assert } from 'jsr:@std/assert'
-import { describe, it } from 'jsr:@std/testing/bdd'
+import { assertEquals, assert } from '@std/assert'
+import { describe, it } from '@std/testing/bdd'
 import { z } from 'zod/v4'
 
 import {
@@ -9,7 +9,7 @@ import {
   DependencyDocSchema,
   MemorySchema,
   AgentFileSchema,
-} from '../../src/schemas/index.ts'
+} from '../../schemas/index.ts'
 
 describe('📋 Schema Unit Tests', () => {
   

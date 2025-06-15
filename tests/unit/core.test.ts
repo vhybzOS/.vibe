@@ -1,10 +1,10 @@
-import { assertEquals, assertExists, assert } from 'jsr:@std/assert'
-import { beforeEach, describe, it } from 'jsr:@std/testing/bdd'
+import { assertEquals, assertExists, assert } from '@std/assert'
+import { beforeEach, describe, it } from '@std/testing/bdd'
 import { Effect } from 'effect'
 
 // Import core functions
-import { detectAITools, TOOL_CONFIGS } from '../../src/core/tools/detection.ts'
-import { createDefaultWatcherConfig } from '../../src/utils/file-watcher.ts'
+import { detectAITools, TOOL_CONFIGS } from '../../tools/detection.ts'
+import { createDefaultWatcherConfig } from '../../daemon/services/file_watcher_service.ts'
 
 describe('🔧 Core Module Unit Tests', () => {
   
@@ -41,7 +41,7 @@ describe('🔧 Core Module Unit Tests', () => {
       
       assertExists(cursorTool, 'Should detect Cursor tool')
       assert(cursorTool.confidence > 0, 'Should have positive confidence')
-      assertEquals(cursorTool.status, 'active')
+      assertEquals(cursorTool.status, 'configured')
     })
 
     it('🌊 should detect Windsurf when .windsurfrules exists', async () => {
@@ -67,7 +67,8 @@ describe('🔧 Core Module Unit Tests', () => {
     })
 
     it('👨‍✈️ should detect Copilot when instructions file exists', async () => {
-      await Deno.writeTextFile(`${tempDir}/copilot-instructions.md`, '# Copilot instructions')
+      await Deno.mkdir(`${tempDir}/.github`, { recursive: true })
+      await Deno.writeTextFile(`${tempDir}/.github/copilot-instructions.md`, '# Copilot instructions')
       
       const result = await Effect.runPromise(detectAITools(tempDir))
       const copilotTool = result.find(tool => tool.tool === 'copilot')
@@ -88,7 +89,9 @@ describe('🔧 Core Module Unit Tests', () => {
       
       // Check that results are sorted by confidence (descending)
       for (let i = 1; i < result.length; i++) {
-        assert(result[i-1].confidence >= result[i].confidence, 
+        const prevConf = result[i-1]?.confidence ?? 0
+        const currConf = result[i]?.confidence ?? 0
+        assert(prevConf >= currConf, 
           'Results should be sorted by confidence (descending)')
       }
     })

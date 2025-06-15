@@ -143,23 +143,36 @@ const saveMemoryToFile = (vibePath: string, memory: Memory) =>
   )
 
 /**
- * Indexes memory entry in search database
+ * Indexes memory entry in search database with rich, searchable content
  */
 const indexMemoryEntry = (vibePath: string, memory: Memory) =>
   pipe(
     initializeSearch(resolve(vibePath, '..')),
     Effect.flatMap(() => {
+      // Create rich, searchable content combining title, summary, and content
+      const searchableContent = [
+        `Title: ${memory.id}`, // Could be enhanced with actual title if available
+        `Summary: ${memory.searchable.summary}`,
+        `Content: ${memory.content}`,
+        `Keywords: ${memory.searchable.keywords.join(', ')}`,
+        `Concepts: ${memory.searchable.concepts.join(', ')}`,
+        `Type: ${memory.type}`,
+        `Source: ${memory.source.tool || 'unknown'}`,
+        `Tags: ${memory.metadata.tags.join(', ')}`,
+      ].join('\n\n')
+      
       const document: SearchDocument = {
         id: memory.id,
         doc_type: 'memory',
         timestamp: new Date(memory.metadata.created).getTime(),
-        content: `${memory.content}\n\nKeywords: ${memory.searchable.keywords.join(', ')}\nSummary: ${memory.searchable.summary}`,
+        content: searchableContent,
         tags: memory.metadata.tags,
         metadata: {
           project_path: resolve(vibePath, '..'),
           source: memory.source.tool || 'unknown',
           priority: memory.metadata.importance,
           category: memory.type,
+          title: `Memory ${memory.id.slice(0, 8)}`, // Short identifier as title
         },
       }
       

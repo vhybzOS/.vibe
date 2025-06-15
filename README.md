@@ -45,9 +45,9 @@ vibe mcp-server
 - **🌐 Cross-Platform Magic**: Seamless context sync across WSL2, Windows, macOS, cloud environments
 - **👀 Real-Time File Watching**: Auto-sync configs, debounced updates, conflict resolution
 - **🎯 Auto-Tool Detection**: Discovers Cursor, Windsurf, Claude, Copilot configs automatically
-- **🧠 Autonomous Rule Inference**: Automatically generates coding rules for new dependencies using LLMs
-- **🌐 Real-time Dashboard**: A web-based UI served on localhost:4242 to monitor projects and manage AI context
-- **📦 Autonomous Dependency Analysis**: Discovers AI configurations from dependency source code or infers them on the fly
+- **🧠 Autonomous Rule Inference**: Automatically generates coding rules for new dependencies using LLMs with direct repository discovery and llms.txt fetching
+- **🌐 Real-time Dashboard**: A web-based UI served on http://localhost:4242 to monitor projects and manage AI context
+- **📦 Enhanced Dependency Discovery**: Discovers AI configurations from dependency source code, fetches llms.txt from project homepages, or generates rules via AI inference
 - **📊 Semantic Memory Search**: Local embeddings for conversation history and decision lookup
 - **🔧 Self-Healing**: Health monitoring, auto-restart, graceful degradation when components fail
 - **⚙️ System Service Ready**: Install as systemd service (Linux/macOS) or Task Scheduler (Windows)

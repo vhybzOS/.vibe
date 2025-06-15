@@ -5,7 +5,8 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve, dirname } from '@std/path'
-import { readTextFile, writeTextFile, ensureDir, readDir, parseJSON, FileSystemError } from './effects.ts'
+import { readTextFile, writeTextFile, ensureDir, readDir, parseJSON } from './effects.ts'
+import { createFileSystemError, type FileSystemError } from './errors.ts'
 
 /**
  * Checks if a file exists
@@ -24,7 +25,7 @@ export const fileExists = (filePath: string) =>
           throw error
         }
       },
-      catch: (error) => new FileSystemError('Failed to check file existence', filePath, error),
+      catch: (error) => createFileSystemError(error, filePath, 'Failed to check file existence'),
     })
   )
 
@@ -140,11 +141,11 @@ export const remove = (path: string, recursive: boolean = false) =>
   pipe(
     Effect.tryPromise({
       try: () => Deno.remove(path, { recursive }),
-      catch: (error) => new FileSystemError('Failed to remove', path, error),
+      catch: (error) => createFileSystemError(error, path, 'Failed to remove'),
     }),
-    Effect.catchTag('FileSystemError', error => {
+    Effect.catchTag('FileSystemError', (error: FileSystemError) => {
       // Ignore "not found" errors
-      if (error.cause instanceof Deno.errors.NotFound) {
+      if (error.error instanceof Deno.errors.NotFound) {
         return Effect.succeed(void 0)
       }
       return Effect.fail(error)

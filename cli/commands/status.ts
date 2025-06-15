@@ -1,6 +1,6 @@
 import { Effect, pipe } from 'effect'
-import { detectAITools } from '../../core/tools/index.js'
-import { loadRules } from '../../core/rules/index.js'
+import { detectAITools } from '../../tools/index.ts'
+import { loadRules } from '../../rules/index.ts'
 import { resolve } from '@std/path'
 
 export const statusCommand = (projectPath: string) =>

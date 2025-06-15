@@ -1,10 +1,10 @@
-import { assertEquals, assert } from 'jsr:@std/assert'
-import { beforeAll, describe, it } from 'jsr:@std/testing/bdd'
+import { assertEquals, assert } from '@std/assert'
+import { beforeAll, describe, it } from '@std/testing/bdd'
 import { Effect } from 'effect'
 
 // Import performance-critical functions
-import { detectAITools } from '../../src/core/tools/detection.ts'
-import { UniversalRuleSchema } from '../../src/schemas/index.ts'
+import { detectAITools } from '../../tools/detection.ts'
+import { UniversalRuleSchema } from '../../schemas/index.ts'
 
 describe('⚡ Performance Benchmarks', () => {
   let testProjectPath: string

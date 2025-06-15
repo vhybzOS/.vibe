@@ -48,7 +48,7 @@
 ```
 .vibe/
 ├── daemon/            # Daemon service and background processes
-│   └── services/      # Service implementations
+│   └── services/      # Service implementations (discovery, secrets)
 ├── discovery/         # Autonomous discovery engine
 │   ├── manifests/     # Package manifest parsers
 │   └── registries/    # Registry fetchers (npm, PyPI, etc.)
@@ -57,9 +57,15 @@
 ├── mcp-server/        # MCP server for AI tool integration
 ├── lib/               # Shared libraries and utilities
 ├── schemas/           # Zod v4 schemas
+├── memory/            # Memory management system
+├── diary/             # Decision diary system
+├── search/            # Semantic search functionality
+├── rules/             # Universal rule management
+├── tools/             # AI tool integration
 ├── tests/             # Test suites
 │   ├── unit/          # Unit tests
-│   └── e2e/           # End-to-end tests
+│   ├── e2e/           # End-to-end tests
+│   └── performance/   # Performance benchmarks
 └── docs/              # Documentation files
 ```
 

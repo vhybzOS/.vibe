@@ -16,6 +16,7 @@ import {
   type DiscoveredRule,
 } from '../../discovery/index.ts'
 import { UniversalRule } from '../../schemas/index.ts'
+import { enhancedDiscoverRules, cacheEnhancedResults } from './enhanced_discovery_service.ts'
 
 /**
  * Discovery session tracking
@@ -212,20 +213,19 @@ export class DiscoveryService {
         )
       ),
       
-      // Phase 3: Discover rules from registries
+      // Phase 3: Enhanced discovery (direct + inference)
       Effect.flatMap(dependencies => 
         pipe(
-          this.updateProgress(session, 'Discovering rules from registries...'),
-          Effect.flatMap(() => discoverMultipleDependencies(dependencies)),
-          Effect.tap(discoveryResults => 
+          this.updateProgress(session, 'Enhanced discovery: checking repositories and inference...'),
+          Effect.flatMap(() => this.runEnhancedDiscovery(session, dependencies)),
+          Effect.tap(enhancedRules => 
             Effect.sync(() => {
-              const allRules = discoveryResults.successful.flatMap(r => r.rules)
-              session.results.discoveredRules = allRules
-              session.progress.rules = allRules.length
+              session.results.discoveredRules = enhancedRules
+              session.progress.rules = enhancedRules.length
               this.eventEmitter.emit('discovery:rules', {
                 sessionId: session.id,
-                rules: allRules.length,
-                stats: discoveryResults.stats,
+                rules: enhancedRules.length,
+                enhanced: true,
               })
             })
           )
@@ -286,6 +286,56 @@ export class DiscoveryService {
         progress: session.progress,
       })
     })
+
+  /**
+   * Run enhanced discovery for dependencies
+   */
+  private runEnhancedDiscovery = (session: DiscoverySession, dependencies: DetectedDependency[]) =>
+    pipe(
+      Effect.log(`🚀 Starting enhanced discovery for ${dependencies.length} dependencies`),
+      
+      // Process dependencies with enhanced discovery
+      Effect.all(
+        dependencies.slice(0, this.config.maxConcurrency * 2).map(dependency => 
+          pipe(
+            this.updateProgress(session, `Discovering rules for ${dependency.name}...`),
+            Effect.flatMap(() => 
+              // First get metadata from the original registry discovery
+              discoverMultipleDependencies([dependency])
+            ),
+            Effect.flatMap(discoveryResults => {
+              const successful = discoveryResults.successful[0]
+              if (!successful) {
+                return Effect.succeed([])
+              }
+              
+              // Use enhanced discovery on the metadata
+              return pipe(
+                enhancedDiscoverRules(successful.metadata),
+                Effect.map(enhancedResult => enhancedResult.rules),
+                Effect.tap(rules => 
+                  cacheEnhancedResults(successful.metadata, [], session.projectPath)
+                ),
+                Effect.catchAll(error => {
+                  console.warn(`Enhanced discovery failed for ${dependency.name}:`, error.message)
+                  // Fall back to original rules
+                  return Effect.succeed(successful.rules)
+                })
+              )
+            }),
+            Effect.catchAll(error => {
+              console.warn(`Discovery failed for ${dependency.name}:`, error.message)
+              return Effect.succeed([])
+            })
+          )
+        ),
+        { concurrency: this.config.maxConcurrency }
+      ),
+      Effect.map(rulesArrays => rulesArrays.flat()),
+      Effect.tap(allRules => 
+        Effect.log(`✅ Enhanced discovery completed: ${allRules.length} total rules`)
+      )
+    )
 
   /**
    * Convert discovered rules to Universal Rules format

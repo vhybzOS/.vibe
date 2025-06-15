@@ -1,6 +1,6 @@
 import { Effect, pipe } from 'effect'
 
-const DAEMON_CONTROL_PORT = 3002
+const DAEMON_CONTROL_PORT = 4242
 
 /**
  * Interface for daemon status response
@@ -82,12 +82,26 @@ const startDaemon = () =>
           // Daemon is not running, proceed to start it
         }
         
-        const command = new Deno.Command(Deno.execPath(), {
-          args: ['run', '--allow-all', 'vibe-daemon'],
-          stdout: 'null',
-          stderr: 'null',
-          stdin: 'null',
-        })
+        // Try to use the built executable first, fall back to deno run
+        let command: Deno.Command
+        
+        try {
+          // Check if built executable exists
+          await Deno.stat('./vibe-daemon')
+          command = new Deno.Command('./vibe-daemon', {
+            stdout: 'null',
+            stderr: 'null',
+            stdin: 'null',
+          })
+        } catch {
+          // Fall back to deno run if built executable doesn't exist
+          command = new Deno.Command(Deno.execPath(), {
+            args: ['run', '--allow-all', './daemon.ts'],
+            stdout: 'null',
+            stderr: 'null',
+            stdin: 'null',
+          })
+        }
         
         const child = command.spawn()
         

@@ -459,7 +459,6 @@ Now, generate the JSON array of UniversalRule objects for the '${metadata.name}'
             model,
             prompt,
             schema: z.array(UniversalRuleSchema),
-            output: 'object',
           })
           
           return {
@@ -524,7 +523,7 @@ export const enhancedDiscoverRules = (metadata: PackageMetadata, projectPath: st
         discoverFromRepository(metadata, projectPath),
         discoverFromHomepage(metadata)
     ])),
-    Effect.flatMap(([repoResult, homepageResult]) => {
+    Effect.flatMap(([repoResult, homepageResult]: [any, any]) => {
       const directRules = [...repoResult.rules, ...homepageResult.rules]
       const anyDirectSuccess = repoResult.success || homepageResult.success
 
@@ -547,7 +546,7 @@ export const enhancedDiscoverRules = (metadata: PackageMetadata, projectPath: st
         }))
       )
     }),
-    Effect.tap(result =>
+    Effect.tap((result: any) =>
       Effect.log(
         `📋 Enhanced discovery for ${metadata.name}: ${result.rules.length} rules found via ${result.method}`
       )
@@ -564,13 +563,17 @@ export const cacheEnhancedResults = (
 ) =>
   pipe(
     Effect.sync(() => resolve(projectPath, '.vibe', 'dependencies', metadata.name, metadata.version)),
-    Effect.flatMap(cacheDir => ensureDir(cacheDir)),
-    Effect.flatMap(cacheDir =>
-      Effect.all([
-        writeTextFile(resolve(cacheDir, 'discovery-results.json'), JSON.stringify(results, null, 2)),
-        writeTextFile(resolve(cacheDir, 'metadata.json'), JSON.stringify(metadata, null, 2)),
-        writeTextFile(resolve(cacheDir, 'cached-at.txt'), new Date().toISOString()),
-      ])
+    Effect.flatMap(cacheDir => 
+      pipe(
+        ensureDir(cacheDir),
+        Effect.flatMap(() =>
+          Effect.all([
+            writeTextFile(resolve(cacheDir, 'discovery-results.json'), JSON.stringify(results, null, 2)),
+            writeTextFile(resolve(cacheDir, 'metadata.json'), JSON.stringify(metadata, null, 2)),
+            writeTextFile(resolve(cacheDir, 'cached-at.txt'), new Date().toISOString()),
+          ])
+        )
+      )
     ),
     Effect.tap(() =>
       Effect.log(`💾 Cached enhanced discovery results for ${metadata.name}@${metadata.version}`)

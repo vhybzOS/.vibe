@@ -18,8 +18,10 @@ export const initCommand = (
     Effect.flatMap(() => createInitialDirectories(projectPath)),
     Effect.flatMap(() => bootstrapProjectSecrets(projectPath)),
     Effect.tap(() => Effect.log('✅ .vibe initialized successfully!')),
-    Effect.tap(() => Effect.log('📚 Run `dotvibe status` to see detected AI tools')),
-    Effect.tap(() => Effect.log('🚀 Run `dotvibe mcp-server` to start the MCP server'))
+    Effect.tap(() => Effect.log('🔍 Starting automatic background discovery of dependencies...')),
+    Effect.flatMap(() => startBackgroundDiscovery(projectPath)),
+    Effect.tap(() => Effect.log('📚 Run `vibe status` to see progress.')),
+    Effect.tap(() => Effect.log('🚀 Run `vibe daemon` to start the daemon if not running'))
   )
 
 const checkExistingVibe = (projectPath: string, force: boolean) =>
@@ -130,6 +132,27 @@ const bootstrapProjectSecrets = (projectPath: string) => {
     Effect.catchAll(() => Effect.succeed(void 0)) // Gracefully ignore if .env doesn't exist or fails to parse
   );
 };
+
+const startBackgroundDiscovery = (projectPath: string) =>
+  Effect.tryPromise({
+    try: async () => {
+      // Fire-and-forget this request. We don't wait for the response.
+      fetch('http://localhost:4242/api/discovery/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectPath }),
+        signal: AbortSignal.timeout(2000), // Short timeout, daemon will continue regardless
+      }).catch(err => {
+        // Silently ignore errors (e.g., daemon not running).
+        // The user can always run `vibe discover` manually.
+        if (Deno.env.get('VIBE_DEBUG')) {
+            console.warn(`Could not start background discovery: ${err.message}`);
+        }
+      });
+      return;
+    },
+    catch: () => new Error('Failed to dispatch background discovery request.'),
+  });
 
 const generateDefaultConfig = (projectPath: string): VibeConfig => ({
   project: {

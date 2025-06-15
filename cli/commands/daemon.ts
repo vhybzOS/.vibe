@@ -1,6 +1,6 @@
 import { Effect, pipe } from 'effect'
 
-const DAEMON_CONTROL_PORT = 4242
+let DAEMON_CONTROL_PORT = 4242
 
 /**
  * Interface for daemon status response
@@ -139,46 +139,42 @@ export const daemonCommand = (
       return pipe(
         callDaemonApi('/status'),
         Effect.flatMap((status: DaemonStatusResponse) =>
-          pipe(
-            Effect.log('📊 Daemon Status Report'),
-            Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━'),
-            Effect.log(''),
-            Effect.log(`🤖 Daemon: ${status.daemon.name} v${status.daemon.version}`),
-            Effect.log(`📊 Status: ${status.daemon.isRunning ? '🟢 Running' : '🔴 Stopped'}`),
-            Effect.log(`🔢 PID: ${status.daemon.pid}`),
-            Effect.log(`📅 Started: ${new Date(status.daemon.startedAt).toLocaleString()}`),
-            Effect.log(''),
-            Effect.log(`🔌 MCP Server: ${status.mcpServer.running ? `🟢 Running on port ${status.mcpServer.port}` : '🔴 Stopped'}`),
-            status.mcpServer.startedAt 
-              ? Effect.log(`   Started: ${new Date(status.mcpServer.startedAt).toLocaleString()}`)
-              : Effect.succeed(void 0),
-            Effect.log(''),
-            Effect.log(`📂 Projects: ${status.projects.length} detected`),
-            Effect.all(
-              status.projects.map(project =>
-                pipe(
-                  Effect.log(`   📁 ${project.path}`),
-                  Effect.log(`      👀 Watching: ${project.watching ? '✅' : '❌'}`),
-                  Effect.log(`      🔧 Tools: ${project.detectedTools.join(', ') || 'None'}`),
-                  Effect.log(`      📝 Rules: ${project.ruleCount}`),
-                  Effect.log(`      🔄 Last sync: ${new Date(project.lastSync).toLocaleString()}`)
-                )
-              )
-            ),
-            status.projects.length === 0 
-              ? Effect.log('   No projects found. Initialize with: vibe init')
-              : Effect.succeed(void 0),
-            Effect.log('')
-          )
+          Effect.sync(() => {
+            console.log('📊 Daemon Status Report');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('');
+            console.log(`🤖 Daemon: ${status.daemon.name} v${status.daemon.version}`);
+            console.log(`📊 Status: ${status.daemon.isRunning ? '🟢 Running' : '🔴 Stopped'}`);
+            console.log(`🔢 PID: ${status.daemon.pid}`);
+            console.log(`📅 Started: ${new Date(status.daemon.startedAt).toLocaleString()}`);
+            console.log('');
+            console.log(`🔌 MCP Server: ${status.mcpServer.running ? `🟢 Running on port ${status.mcpServer.port}` : '🔴 Stopped'}`);
+            if (status.mcpServer.startedAt) {
+              console.log(`   Started: ${new Date(status.mcpServer.startedAt).toLocaleString()}`);
+            }
+            console.log('');
+            console.log(`📂 Projects: ${status.projects.length} detected`);
+            for (const project of status.projects) {
+              console.log(`   📁 ${project.path}`);
+              console.log(`      👀 Watching: ${project.watching ? '✅' : '❌'}`);
+              console.log(`      🔧 Tools: ${project.detectedTools.join(', ') || 'None'}`);
+              console.log(`      📝 Rules: ${project.ruleCount}`);
+              console.log(`      🔄 Last sync: ${new Date(project.lastSync).toLocaleString()}`);
+            }
+            if (status.projects.length === 0) {
+              console.log('   No projects found. Initialize with: vibe init');
+            }
+            console.log('');
+          })
         ),
-        Effect.catchAll((error) =>
-          pipe(
-            Effect.log('❌ Cannot connect to daemon'),
-            Effect.log(`   ${error.message}`),
-            Effect.log(''),
-            Effect.log('💡 To start the daemon: vibe daemon start'),
-            Effect.log('💡 Or run directly: vibe-daemon')
-          )
+        Effect.catchAll((error: unknown) =>
+          Effect.sync(() => {
+            console.log('❌ Cannot connect to daemon');
+            console.log(`   ${error instanceof Error ? error.message : String(error)}`);
+            console.log('');
+            console.log('💡 To start the daemon: vibe daemon start');
+            console.log('💡 Or run directly: vibe-daemon');
+          })
         )
       )
       
@@ -187,20 +183,19 @@ export const daemonCommand = (
         callDaemonApi('/shutdown', 'POST'),
         Effect.flatMap(() =>
           pipe(
-            Effect.log('🛑 Shutdown request sent to daemon'),
-            Effect.log('⏳ Waiting for graceful shutdown...'),
-            // Wait a moment for shutdown
-            Effect.sleep(2000),
-            Effect.log('✅ Daemon stopped')
+            Effect.sync(() => console.log('🛑 Shutdown request sent to daemon')),
+            Effect.flatMap(() => Effect.sync(() => console.log('⏳ Waiting for graceful shutdown...'))),
+            Effect.flatMap(() => Effect.sleep(2000)),
+            Effect.flatMap(() => Effect.sync(() => console.log('✅ Daemon stopped')))
           )
         ),
-        Effect.catchAll((error) =>
-          pipe(
-            Effect.log('❌ Failed to stop daemon'),
-            Effect.log(`   ${error.message}`),
-            Effect.log(''),
-            Effect.log('💡 Try: pkill vibe-daemon')
-          )
+        Effect.catchAll((error: unknown) =>
+          Effect.sync(() => {
+            console.log('❌ Failed to stop daemon');
+            console.log(`   ${error instanceof Error ? error.message : String(error)}`);
+            console.log('');
+            console.log('💡 Try: pkill vibe-daemon');
+          })
         )
       )
       
@@ -217,14 +212,14 @@ export const daemonCommand = (
             Effect.log('🛑 Stop daemon: vibe daemon stop')
           )
         ),
-        Effect.catchAll((error) =>
-          pipe(
-            Effect.log('❌ Failed to start daemon'),
-            Effect.log(`   ${error.message}`),
-            Effect.log(''),
-            Effect.log('💡 Try running directly: vibe-daemon'),
-            Effect.log('💡 Check logs: tail -f /tmp/vibe-daemon.log')
-          )
+        Effect.catchAll((error: unknown) =>
+          Effect.sync(() => {
+            console.log('❌ Failed to start daemon');
+            console.log(`   ${error instanceof Error ? error.message : String(error)}`);
+            console.log('');
+            console.log('💡 Try running directly: vibe-daemon');
+            console.log('💡 Check logs: tail -f /tmp/vibe-daemon.log');
+          })
         )
       )
       
@@ -270,3 +265,8 @@ export const daemonCommand = (
       )
   }
 }
+
+// For testing purposes only
+export const __setDaemonControlPort = (port: number) => {
+  DAEMON_CONTROL_PORT = port;
+};

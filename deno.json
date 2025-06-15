@@ -43,7 +43,10 @@
     "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk@^1.0.1",
     "commander": "npm:commander@^12.1.0",
     "ai": "npm:ai@^4.0.2",
-    "@ai-sdk/openai": "npm:@ai-sdk/openai@^1.2.0"
+    "@ai-sdk/openai": "npm:@ai-sdk/openai@^1.2.0",
+    "@ai-sdk/anthropic": "npm:@ai-sdk/anthropic@^0.0.25",
+    "@ai-sdk/google": "npm:@ai-sdk/google@^0.0.19",
+    "@ai-sdk/cohere": "npm:@ai-sdk/cohere@^0.0.11"
   },
   "compilerOptions": {
     "lib": ["deno.ns", "dom", "es2022"],

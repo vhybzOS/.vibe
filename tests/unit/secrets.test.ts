@@ -8,7 +8,6 @@ import {
   getSecretsStatus,
   loadSecrets,
   saveSecrets,
-  validateSecretFormat,
   type SecretProvider,
   type Secrets
 } from '../../daemon/services/secrets_service.ts'
@@ -40,40 +39,6 @@ describe('🔐 Secrets Service Unit Tests', () => {
     }
   })
 
-  describe('🔍 Secret Format Validation', () => {
-    it('should validate OpenAI API key format', () => {
-      assertEquals(validateSecretFormat('openai', 'sk-1234567890abcdef1234567890abcdef'), true)
-      assertEquals(validateSecretFormat('openai', 'sk-short'), false)
-      assertEquals(validateSecretFormat('openai', 'not-sk-format'), false)
-      assertEquals(validateSecretFormat('openai', ''), false)
-    })
-
-    it('should validate Anthropic API key format', () => {
-      assertEquals(validateSecretFormat('anthropic', 'sk-ant-1234567890abcdef1234567890abcdef'), true)
-      assertEquals(validateSecretFormat('anthropic', 'sk-ant-short'), false)
-      assertEquals(validateSecretFormat('anthropic', 'sk-1234567890abcdef'), false)
-      assertEquals(validateSecretFormat('anthropic', ''), false)
-    })
-
-    it('should validate GitHub token format', () => {
-      assertEquals(validateSecretFormat('github', 'ghp_1234567890abcdef1234567890abcdef'), true)
-      assertEquals(validateSecretFormat('github', 'github_pat_1234567890abcdef1234567890abcdef'), true)
-      assertEquals(validateSecretFormat('github', 'ghp_short'), false)
-      assertEquals(validateSecretFormat('github', 'invalid_format'), false)
-      assertEquals(validateSecretFormat('github', ''), false)
-    })
-
-    it('should validate other provider formats', () => {
-      assertEquals(validateSecretFormat('gitlab', 'gitlab-token-12345678901234567890'), true)
-      assertEquals(validateSecretFormat('gitlab', 'short'), false)
-      
-      assertEquals(validateSecretFormat('google', 'google-api-key-12345678901234567890'), true)
-      assertEquals(validateSecretFormat('google', 'short'), false)
-      
-      assertEquals(validateSecretFormat('azure', 'azure-key-12345678901234567890'), true)
-      assertEquals(validateSecretFormat('azure', 'short'), false)
-    })
-  })
 
   describe('💾 Secret Storage and Retrieval', () => {
     it('should handle empty secrets initially', async () => {
@@ -248,8 +213,7 @@ describe('🔐 Secrets Service Unit Tests', () => {
 
   describe('🔧 Edge Cases and Error Handling', () => {
     it('should handle empty secret values', async () => {
-      // Setting an empty secret should work but validation should fail
-      assertEquals(validateSecretFormat('openai', ''), false)
+      // Setting an empty secret should work
       
       // But we can still set it if needed
       await Effect.runPromise(setSecret('openai', ''))
@@ -261,14 +225,15 @@ describe('🔐 Secrets Service Unit Tests', () => {
     })
 
     it('should handle all supported providers', async () => {
-      const providers: SecretProvider[] = ['openai', 'anthropic', 'github', 'gitlab', 'google', 'azure']
+      const providers: SecretProvider[] = ['openai', 'anthropic', 'github', 'gitlab', 'google', 'azure', 'cohere']
       const testValues: Record<SecretProvider, string> = {
         openai: 'sk-1234567890abcdef1234567890abcdef',
         anthropic: 'sk-ant-1234567890abcdef1234567890abcdef',
         github: 'ghp_1234567890abcdef1234567890abcdef',
         gitlab: 'gitlab-token-12345678901234567890',
         google: 'google-api-key-12345678901234567890',
-        azure: 'azure-key-12345678901234567890'
+        azure: 'azure-key-12345678901234567890',
+        cohere: 'cohere-key-1234567890abcdef1234567890abcdef'
       }
       
       // Set all secrets

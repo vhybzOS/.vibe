@@ -10,7 +10,7 @@ import { ensureVibeDirectory } from '../src/daemon/setup.ts'
 import { 
   getSecretsStatus, 
   setSecret, 
-  validateSecretFormat, 
+  setSecretAndInferProvider,
   type SecretProvider 
 } from './services/secrets_service.ts'
 import { globalDiscoveryService } from './services/discovery_service.ts'
@@ -295,65 +295,25 @@ export class VibeDaemon {
 
   /**
    * Handles POST /api/secrets
-   * Sets a secret for a specific provider
+   * Sets a secret by inferring provider from API key format
    */
   private handleSetSecret = async (req: Request): Promise<Response> => {
     try {
-      const body = await req.json()
-      const { provider, apiKey } = body
-      
-      if (!provider || !apiKey) {
-        return new Response(JSON.stringify({
-          error: 'Missing required fields',
-          message: 'Both provider and apiKey are required'
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        })
+      const body = await req.json();
+      const { apiKey, projectPath } = body; // projectPath is optional
+
+      if (!apiKey || typeof apiKey !== 'string') {
+        return new Response(JSON.stringify({ error: 'Missing or invalid apiKey field' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
       }
-      
-      // Validate provider
-      const validProviders: SecretProvider[] = ['openai', 'anthropic', 'github', 'gitlab', 'google', 'azure']
-      if (!validProviders.includes(provider)) {
-        return new Response(JSON.stringify({
-          error: 'Invalid provider',
-          message: `Provider must be one of: ${validProviders.join(', ')}`
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      }
-      
-      // Validate secret format
-      if (!validateSecretFormat(provider, apiKey)) {
-        return new Response(JSON.stringify({
-          error: 'Invalid secret format',
-          message: `The provided ${provider} API key format is invalid`
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      }
-      
-      // Save the secret
-      await Effect.runPromise(setSecret(provider, apiKey))
-      
-      return new Response(JSON.stringify({
-        success: true,
-        message: `${provider} API key saved successfully`
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+
+      // If projectPath is provided, it sets a project secret. Otherwise, it sets a global secret.
+      await Effect.runPromise(setSecretAndInferProvider(apiKey, projectPath));
+
+      return new Response(JSON.stringify({ success: true, message: `API key saved successfully for ${projectPath ? 'project' : 'global'} scope.` }), { headers: { 'Content-Type': 'application/json' } });
     } catch (error) {
-      return new Response(JSON.stringify({
-        error: 'Failed to save secret',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return new Response(JSON.stringify({ error: 'Failed to save secret', message: error instanceof Error ? error.message : 'Unknown error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
-  }
+  };
 
   /**
    * Handles GET /api/project/status

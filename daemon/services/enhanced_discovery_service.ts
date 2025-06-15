@@ -6,6 +6,9 @@
 import { Effect, pipe } from 'effect'
 import { generateObject } from 'ai'
 import { openai } from '@ai-sdk/openai'
+import { anthropic } from '@ai-sdk/anthropic'
+import { google } from '@ai-sdk/google'
+import { cohere } from '@ai-sdk/cohere'
 import { z } from 'zod/v4'
 import { resolve } from '@std/path'
 import { VibeError, ensureDir, writeTextFile } from '../../lib/effects.ts'
@@ -17,7 +20,7 @@ import {
   extractGitHubRepo,
 } from '../../discovery/registries/base.ts'
 import { UniversalRule, UniversalRuleSchema } from '../../schemas/universal-rule.ts'
-import { getSecret } from './secrets_service.ts'
+import { getSecret, type SecretProvider } from './secrets_service.ts'
 import { parseToolConfig } from '../../tools/parsers.ts'
 
 /**
@@ -42,7 +45,7 @@ export interface DirectDiscoveryResult {
  */
 export interface InferenceResult {
   method: 'inference'
-  provider: 'openai' | 'anthropic'
+  provider: SecretProvider
   model: string
   rules: DiscoveredRule[]
   success: boolean
@@ -78,7 +81,7 @@ const extractApexDomain = (url: string): string | null => {
 /**
  * Attempts direct discovery from package repository
  */
-const discoverFromRepository = (metadata: PackageMetadata) =>
+const discoverFromRepository = (metadata: PackageMetadata, projectPath: string) =>
   pipe(
     Effect.sync(() => extractGitHubRepo(metadata.repository)),
     Effect.flatMap(githubRepo => {
@@ -94,7 +97,7 @@ const discoverFromRepository = (metadata: PackageMetadata) =>
       }
 
       return pipe(
-        getSecret('github'),
+        getSecret('github', projectPath),
         Effect.flatMap(githubToken => {
           if (!githubToken) {
             return Effect.succeed({
@@ -116,7 +119,7 @@ const discoverFromRepository = (metadata: PackageMetadata) =>
               rules,
               success: rules.length > 0,
             })),
-            Effect.catchAll(error =>
+            Effect.catchAll((error: unknown) =>
               Effect.succeed({
                 method: 'direct' as const,
                 source: 'repository' as const,
@@ -181,7 +184,7 @@ const discoverFromHomepage = (metadata: PackageMetadata) =>
           rules: llmsContent ? [createLlmsTxtRule(metadata, llmsContent, initial.url)] : [],
           success: !!llmsContent,
         })),
-        Effect.catchAll(error =>
+        Effect.catchAll((error: unknown) =>
           Effect.succeed({
             ...initial,
             error: error instanceof Error ? error.message : 'Unknown error',
@@ -320,38 +323,52 @@ const createLlmsTxtRule = (metadata: PackageMetadata, content: string, url: stri
 
 
 /**
- * Performs AI inference to generate rules
+ * Performs AI inference to generate rules, trying available providers in sequence.
  */
-const performInference = (metadata: PackageMetadata) =>
-  pipe(
-    getSecret('openai'),
-    Effect.flatMap(openaiKey => {
-      if (!openaiKey) {
-        return Effect.succeed({
-          method: 'inference' as const,
-          provider: 'openai' as const,
-          model: 'gpt-4o-mini',
-          rules: [],
-          success: false,
-          error: 'No OpenAI API key configured. Please set it in the dashboard.',
-        })
-      }
-      return pipe(
-        fetchReadmeContent(metadata),
-        Effect.flatMap(readmeContent => generateRulesWithAI(metadata, readmeContent, openaiKey)),
-        Effect.catchAll(error =>
-          Effect.succeed({
-            method: 'inference' as const,
-            provider: 'openai' as const,
-            model: 'gpt-4o-mini',
-            rules: [],
-            success: false,
-            error: error instanceof Error ? error.message : String(error),
-          })
-        )
-      )
-    })
-  )
+const performInference = (metadata: PackageMetadata, projectPath: string) => {
+  const tryProvider = (provider: SecretProvider, modelGenerator: (key: string) => any, modelName: string) =>
+    pipe(
+      getSecret(provider, projectPath),
+      Effect.flatMap(apiKey => {
+        if (!apiKey) {
+          return Effect.fail(new Error(`No ${provider} key`));
+        }
+        return pipe(
+          fetchReadmeContent(metadata),
+          Effect.flatMap(readmeContent => generateRulesWithAI(metadata, readmeContent, apiKey, modelGenerator(apiKey), modelName, provider))
+        );
+      })
+    );
+
+  return pipe(
+    tryProvider('openai', (apiKey) => {
+      Deno.env.set('OPENAI_API_KEY', apiKey);
+      return openai('gpt-4o-mini');
+    }, 'gpt-4o-mini'),
+    Effect.orElse(() => tryProvider('anthropic', (apiKey) => {
+      Deno.env.set('ANTHROPIC_API_KEY', apiKey);
+      return anthropic('claude-3-haiku-20240307');
+    }, 'claude-3-haiku')),
+    Effect.orElse(() => tryProvider('google', (apiKey) => {
+      Deno.env.set('GOOGLE_GENERATIVE_AI_API_KEY', apiKey);
+      return google('models/gemini-1.5-flash-latest');
+    }, 'gemini-1.5-flash')),
+    Effect.orElse(() => tryProvider('cohere', (apiKey) => {
+      Deno.env.set('COHERE_API_KEY', apiKey);
+      return cohere('command-r');
+    }, 'command-r')),
+    Effect.catchAll(() =>
+      Effect.succeed({
+        method: 'inference' as const,
+        provider: 'none' as any,
+        model: 'none',
+        rules: [],
+        success: false,
+        error: 'No suitable AI provider API key is configured. Please set one in the dashboard.',
+      })
+    )
+  );
+};
 
 /**
  * Fetches README content from GitHub
@@ -372,7 +389,14 @@ const fetchReadmeContent = (metadata: PackageMetadata) =>
 /**
  * Generates rules using AI with Vercel AI SDK
  */
-const generateRulesWithAI = (metadata: PackageMetadata, readmeContent: string, apiKey: string) =>
+const generateRulesWithAI = (
+  metadata: PackageMetadata,
+  readmeContent: string,
+  apiKey: string,
+  model: any,
+  modelName: string,
+  provider: SecretProvider
+) =>
   pipe(
     Effect.tryPromise({
       try: async () => {
@@ -431,17 +455,17 @@ const value = useExampleHook();
 
 Now, generate the JSON array of UniversalRule objects for the '${metadata.name}' library.`
 
-          const model = openai('gpt-4o-mini', { apiKey })
           const { object, usage } = await generateObject({
             model,
             prompt,
             schema: z.array(UniversalRuleSchema),
+            output: 'object',
           })
           
           return {
             method: 'inference' as const,
-            provider: 'openai' as const,
-            model: 'gpt-4o-mini',
+            provider: provider,
+            model: modelName,
             rules: (object as UniversalRule[]).map(rule => convertUniversalRuleToDiscovered(rule, metadata, 'inference')),
             success: true,
             usage: {
@@ -475,7 +499,7 @@ const convertUniversalRuleToDiscovered = (
   content: {
     markdown: rule.content.markdown,
     examples: (rule.content.examples || []).map(ex => ({
-      title: ex.description || ex.title || 'Code Example',
+      title: ex.description || 'Code Example',
       code: ex.code,
       language: ex.language,
     })),
@@ -493,10 +517,13 @@ const convertUniversalRuleToDiscovered = (
 /**
  * Enhanced discovery function that tries direct discovery first, then inference
  */
-export const enhancedDiscoverRules = (metadata: PackageMetadata) =>
+export const enhancedDiscoverRules = (metadata: PackageMetadata, projectPath: string) =>
   pipe(
-    Effect.log(`🔍 Starting enhanced discovery for ${metadata.name}`),
-    Effect.flatMap(() => Effect.all([discoverFromRepository(metadata), discoverFromHomepage(metadata)])),
+    Effect.log(`🔍 Starting enhanced discovery for ${metadata.name} in project ${projectPath}`),
+    Effect.flatMap(() => Effect.all([
+        discoverFromRepository(metadata, projectPath),
+        discoverFromHomepage(metadata)
+    ])),
     Effect.flatMap(([repoResult, homepageResult]) => {
       const directRules = [...repoResult.rules, ...homepageResult.rules]
       const anyDirectSuccess = repoResult.success || homepageResult.success
@@ -511,7 +538,7 @@ export const enhancedDiscoverRules = (metadata: PackageMetadata) =>
       }
 
       return pipe(
-        performInference(metadata),
+        performInference(metadata, projectPath),
         Effect.map(inferenceResult => ({
           method: 'inference' as const,
           results: [repoResult, homepageResult, inferenceResult],

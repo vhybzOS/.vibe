@@ -74,7 +74,7 @@ describe('✨ Enhanced Discovery Service Unit Tests', () => {
       globalThis.fetch = (() => Promise.reject(new Error('No network'))) as typeof fetch
 
       const result = await Effect.runPromise(
-        enhancedDiscoverRules(metadata).pipe(
+        enhancedDiscoverRules(metadata, testHomeDir).pipe(
           Effect.catchAll(() => Effect.succeed({ method: 'direct' as const, rules: [], success: false }))
         )
       )
@@ -118,7 +118,7 @@ describe('✨ Enhanced Discovery Service Unit Tests', () => {
 
       // Note: Without access to secrets, this will fall back to no GitHub token
       const result = await Effect.runPromise(
-        enhancedDiscoverRules(metadata).pipe(
+        enhancedDiscoverRules(metadata, testHomeDir).pipe(
           Effect.catchAll(() => Effect.succeed({ method: 'direct' as const, rules: [], success: false }))
         )
       )
@@ -145,7 +145,7 @@ describe('✨ Enhanced Discovery Service Unit Tests', () => {
       } as Response)) as typeof fetch
 
       const result = await Effect.runPromise(
-        enhancedDiscoverRules(metadata).pipe(
+        enhancedDiscoverRules(metadata, testHomeDir).pipe(
           Effect.catchAll(() => Effect.succeed({ method: 'direct' as const, rules: [], success: false }))
         )
       )
@@ -179,7 +179,7 @@ describe('✨ Enhanced Discovery Service Unit Tests', () => {
 
       // Without API key configured, should fall back gracefully
       const result = await Effect.runPromise(
-        enhancedDiscoverRules(metadata).pipe(
+        enhancedDiscoverRules(metadata, testHomeDir).pipe(
           Effect.catchAll(() => Effect.succeed({ method: 'inference' as const, rules: [], success: false }))
         )
       )
@@ -211,7 +211,7 @@ describe('✨ Enhanced Discovery Service Unit Tests', () => {
       }) as typeof fetch
 
       const result = await Effect.runPromise(
-        enhancedDiscoverRules(metadata).pipe(
+        enhancedDiscoverRules(metadata, testHomeDir).pipe(
           Effect.catchAll(() => Effect.succeed({ method: 'inference' as const, rules: [], success: false }))
         )
       )
@@ -277,7 +277,7 @@ describe('✨ Enhanced Discovery Service Unit Tests', () => {
       }) as typeof fetch
 
       const result = await Effect.runPromise(
-        enhancedDiscoverRules(metadata).pipe(
+        enhancedDiscoverRules(metadata, testHomeDir).pipe(
           Effect.catchAll(() => Effect.succeed({ method: 'direct' as const, rules: [], success: false }))
         )
       )
@@ -301,7 +301,7 @@ describe('✨ Enhanced Discovery Service Unit Tests', () => {
       } as Response)) as typeof fetch
 
       const result = await Effect.runPromise(
-        enhancedDiscoverRules(metadata).pipe(
+        enhancedDiscoverRules(metadata, testHomeDir).pipe(
           Effect.catchAll(() => Effect.succeed({ method: 'inference' as const, rules: [], success: false }))
         )
       )
@@ -337,7 +337,7 @@ describe('✨ Enhanced Discovery Service Unit Tests', () => {
       }) as typeof fetch
 
       const result = await Effect.runPromise(
-        enhancedDiscoverRules(metadata).pipe(
+        enhancedDiscoverRules(metadata, testHomeDir).pipe(
           Effect.catchAll(() => Effect.succeed({ method: 'direct' as const, rules: [], success: false }))
         )
       )
@@ -384,7 +384,7 @@ describe('✨ Enhanced Discovery Service Unit Tests', () => {
       })) as typeof fetch
 
       const result = await Effect.runPromise(
-        enhancedDiscoverRules(metadata).pipe(
+        enhancedDiscoverRules(metadata, testHomeDir).pipe(
           Effect.catchAll(() => Effect.succeed({ method: 'direct' as const, rules: [], success: false }))
         )
       )
@@ -411,7 +411,7 @@ describe('✨ Enhanced Discovery Service Unit Tests', () => {
       } as Response)) as typeof fetch
 
       const result = await Effect.runPromise(
-        enhancedDiscoverRules(metadata).pipe(
+        enhancedDiscoverRules(metadata, testHomeDir).pipe(
           Effect.catchAll(() => Effect.succeed({ method: 'direct' as const, rules: [], success: false }))
         )
       )

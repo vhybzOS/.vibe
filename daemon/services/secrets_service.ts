@@ -6,12 +6,12 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { readTextFile, writeTextFile, ensureDir, fileExists } from '../../lib/effects.ts'
+import { readTextFile, writeTextFile, ensureDir, fileExists, logWithContext } from '../../lib/effects.ts'
 
 /**
  * Supported secret providers
  */
-export type SecretProvider = 'openai' | 'anthropic' | 'github' | 'gitlab' | 'google' | 'azure'
+export type SecretProvider = 'openai' | 'anthropic' | 'github' | 'gitlab' | 'google' | 'azure' | 'cohere'
 
 /**
  * Structure for storing encrypted secrets
@@ -60,9 +60,12 @@ const getSecretsDirectory = (): string => {
 /**
  * Gets the full path to the secrets file
  */
-const getSecretsFilePath = (): string => {
-  return resolve(getSecretsDirectory(), 'secrets.json')
-}
+const getSecretsFilePath = (projectPath?: string): string => {
+  if (projectPath) {
+    return resolve(projectPath, '.vibe', 'secrets.json');
+  }
+  return resolve(getSecretsDirectory(), 'secrets.json');
+};
 
 /**
  * Derives an encryption key from a machine-specific identifier
@@ -198,16 +201,16 @@ const decryptSecrets = (encryptedFile: EncryptedSecretsFile) =>
  * Loads secrets from the encrypted file
  * Returns empty object if file doesn't exist or cannot be decrypted
  */
-export const loadSecrets = () =>
+export const loadSecrets = (projectPath?: string) =>
   pipe(
-    fileExists(getSecretsFilePath()),
+    fileExists(getSecretsFilePath(projectPath)),
     Effect.flatMap(exists => {
       if (!exists) {
         return Effect.succeed({} as Secrets)
       }
       
       return pipe(
-        readTextFile(getSecretsFilePath()),
+        readTextFile(getSecretsFilePath(projectPath)),
         Effect.flatMap(content => 
           Effect.try({
             try: () => JSON.parse(content) as EncryptedSecretsFile,
@@ -226,15 +229,15 @@ export const loadSecrets = () =>
 /**
  * Saves secrets to the encrypted file
  */
-export const saveSecrets = (secrets: Secrets) =>
+export const saveSecrets = (secrets: Secrets, projectPath?: string) =>
   pipe(
-    ensureDir(getSecretsDirectory()),
+    ensureDir(projectPath ? resolve(projectPath, '.vibe') : getSecretsDirectory()),
     Effect.flatMap(() => encryptSecrets(secrets)),
     Effect.flatMap(encryptedFile => 
-      writeTextFile(getSecretsFilePath(), JSON.stringify(encryptedFile, null, 2))
+      writeTextFile(getSecretsFilePath(projectPath), JSON.stringify(encryptedFile, null, 2))
     ),
-    Effect.tap(() => Effect.log(`🔐 Secrets saved to ${getSecretsFilePath()}`))
-  )
+    Effect.tap(() => Effect.log(`🔐 Secrets saved to ${getSecretsFilePath(projectPath)}`))
+  );
 
 /**
  * Gets the status of all secrets (which ones are set)
@@ -251,6 +254,7 @@ export const getSecretsStatus = () =>
         gitlab: !!secrets.gitlab,
         google: !!secrets.google,
         azure: !!secrets.azure,
+        cohere: !!secrets.cohere,
       }
       return status
     })
@@ -259,26 +263,42 @@ export const getSecretsStatus = () =>
 /**
  * Sets a secret for a specific provider
  */
-export const setSecret = (provider: SecretProvider, value: string) =>
+export const setSecret = (provider: SecretProvider, value: string, projectPath?: string) =>
   pipe(
-    loadSecrets(),
+    loadSecrets(projectPath),
     Effect.map(secrets => ({
       ...secrets,
       [provider]: value,
     })),
-    Effect.flatMap(updatedSecrets => saveSecrets(updatedSecrets)),
-    Effect.tap(() => Effect.log(`🔑 Secret set for provider: ${provider}`))
-  )
+    Effect.flatMap(updatedSecrets => saveSecrets(updatedSecrets, projectPath)),
+    Effect.tap(() => Effect.log(`🔑 Secret set for provider: ${provider} at ${projectPath ? 'project' : 'global'} level`))
+  );
 
 /**
- * Gets a secret for a specific provider
- * Returns undefined if not set
+ * Gets a secret for a specific provider, checking project-level first, then global fallback.
  */
-export const getSecret = (provider: SecretProvider) =>
+export const getSecret = (provider: SecretProvider, projectPath?: string) =>
   pipe(
-    loadSecrets(),
-    Effect.map(secrets => secrets[provider])
-  )
+    // 1. Try to load from the project-specific path
+    projectPath ? loadSecrets(projectPath) : Effect.succeed({} as Secrets),
+    Effect.flatMap(projectSecrets => {
+      if (projectSecrets[provider]) {
+        logWithContext('Secrets', `🔐 Using project secret for ${provider}`).pipe(Effect.runSync);
+        return Effect.succeed(projectSecrets[provider]);
+      }
+
+      // 2. If not found, try the global path
+      return pipe(
+        loadSecrets(), // No projectPath means global
+        Effect.map(globalSecrets => {
+          if (globalSecrets[provider]) {
+            logWithContext('Secrets', `🌐 Using global fallback secret for ${provider}`).pipe(Effect.runSync);
+          }
+          return globalSecrets[provider];
+        })
+      );
+    })
+  );
 
 /**
  * Removes a secret for a specific provider
@@ -296,23 +316,35 @@ export const removeSecret = (provider: SecretProvider) =>
   )
 
 /**
- * Validates that a secret value is properly formatted for its provider
+ * Infers the provider from API key format
  */
-export const validateSecretFormat = (provider: SecretProvider, value: string): boolean => {
-  switch (provider) {
-    case 'openai':
-      return value.startsWith('sk-') && value.length > 20
-    case 'anthropic':
-      return value.startsWith('sk-ant-') && value.length > 20
-    case 'github':
-      return (value.startsWith('ghp_') || value.startsWith('github_pat_')) && value.length > 20
-    case 'gitlab':
-      return value.length > 10 // GitLab tokens are more variable
-    case 'google':
-      return value.length > 20 // Google API keys are variable
-    case 'azure':
-      return value.length > 20 // Azure keys are variable
-    default:
-      return value.length > 0
+const inferProviderFromKey = (apiKey: string): SecretProvider | null => {
+  if (apiKey.startsWith('sk-ant-')) {
+    return 'anthropic';
   }
-}
+  if (apiKey.startsWith('sk-')) {
+    return 'openai';
+  }
+  if (apiKey.startsWith('AIzaSy')) {
+    return 'google';
+  }
+  // Cohere keys are alphanumeric and variable length, making them a good fallback.
+  if (apiKey.length > 20 && /^[a-zA-Z0-9]+$/.test(apiKey)) {
+    return 'cohere';
+  }
+  return null;
+};
+
+/**
+ * Infers the provider from the API key format and saves the secret.
+ */
+export const setSecretAndInferProvider = (apiKey: string, projectPath?: string) =>
+  pipe(
+    Effect.sync(() => inferProviderFromKey(apiKey)),
+    Effect.flatMap(provider => {
+      if (!provider) {
+        return Effect.fail(new Error('Could not infer provider from API key format. Key is invalid or provider is not supported.'));
+      }
+      return setSecret(provider, apiKey, projectPath);
+    })
+  );

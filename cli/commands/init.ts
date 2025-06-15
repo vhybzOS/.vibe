@@ -3,6 +3,8 @@ import { resolve } from '@std/path'
 import { detectAITools, importToolConfig } from '../../tools/index.ts'
 import { saveRule } from '../../rules/index.ts'
 import { VibeConfig, VibeConfigSchema } from '../../schemas/project.ts'
+import { setSecret, setSecretAndInferProvider } from '../../daemon/services/secrets_service.ts'
+import { readTextFile } from '../../lib/effects.ts'
 
 export const initCommand = (
   projectPath: string,
@@ -14,6 +16,7 @@ export const initCommand = (
     Effect.flatMap(() => detectAndImportExistingConfigs(projectPath)),
     Effect.flatMap(() => createDefaultConfig(projectPath)),
     Effect.flatMap(() => createInitialDirectories(projectPath)),
+    Effect.flatMap(() => bootstrapProjectSecrets(projectPath)),
     Effect.tap(() => Effect.log('✅ .vibe initialized successfully!')),
     Effect.tap(() => Effect.log('📚 Run `dotvibe status` to see detected AI tools')),
     Effect.tap(() => Effect.log('🚀 Run `dotvibe mcp-server` to start the MCP server'))
@@ -99,6 +102,34 @@ const createDirectory = (projectPath: string, dirPath: string) =>
     try: () => Deno.mkdir(resolve(projectPath, dirPath), { recursive: true }),
     catch: () => new Error(`Failed to create directory: ${dirPath}`),
   })
+
+const bootstrapProjectSecrets = (projectPath: string) => {
+  const ENV_MAPPING: Record<string, 'llm' | 'github'> = {
+    'OPENAI_API_KEY': 'llm', 'ANTHROPIC_API_KEY': 'llm', 'GOOGLE_API_KEY': 'llm', 'COHERE_API_KEY': 'llm',
+    'GITHUB_TOKEN': 'github'
+  };
+
+  return pipe(
+    readTextFile(resolve(projectPath, '.env')),
+    Effect.map(content => {
+      const secretsToSet: Effect.Effect<void, Error | any>[] = [];
+      for (const line of content.split('\n')) {
+        if (!line.trim() || line.startsWith('#') || !line.includes('=')) continue;
+        const [key, ...valueParts] = line.split('=');
+        const value = valueParts.join('=').trim().replace(/^['"]|['"]$/g, '');
+        if (ENV_MAPPING[key] === 'llm' && value) {
+          secretsToSet.push(setSecretAndInferProvider(value, projectPath));
+        } else if (ENV_MAPPING[key] === 'github' && value) {
+          secretsToSet.push(setSecret('github', value, projectPath));
+        }
+      }
+      return secretsToSet;
+    }),
+    Effect.flatMap(effects => Effect.all(effects, { discard: true, concurrency: 'unbounded' })),
+    Effect.tap(() => Effect.log('✨ Bootstrapped secrets from project .env file into ./.vibe/secrets.json')),
+    Effect.catchAll(() => Effect.succeed(void 0)) // Gracefully ignore if .env doesn't exist or fails to parse
+  );
+};
 
 const generateDefaultConfig = (projectPath: string): VibeConfig => ({
   project: {

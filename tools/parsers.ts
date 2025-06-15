@@ -265,7 +265,7 @@ const createCommandRule = (section: {
     metadata: {
       name: section.name,
       description: section.description,
-      source: 'claude',
+      source: 'tool-sync',
       confidence: 0.9,
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
@@ -275,7 +275,7 @@ const createCommandRule = (section: {
       languages: extractLanguages(section.content),
       frameworks: extractFrameworks(section.content),
       files: extractFilePatterns(section.content),
-      contexts: isCommand ? ['command-usage'] : [],
+      contexts: isCommand ? ['development'] : [],
     },
     content: {
       markdown: section.content,
@@ -292,7 +292,7 @@ const createCommandRule = (section: {
       formats: { claude: section.content },
     },
     application: {
-      mode: isCommand ? 'conditional' : 'always',
+      mode: isCommand ? 'manual' : 'always',
       conditions: isCommand ? ['user-command'] : [],
       excludeFiles: [],
       includeFiles: [],
@@ -308,7 +308,7 @@ const createUniversalRule = (title: string, content: string, source: AIToolType)
   metadata: {
     name: title,
     description: extractDescription(content),
-    source,
+    source: 'tool-sync',
     confidence: 0.8,
     created: new Date().toISOString(),
     updated: new Date().toISOString(),
@@ -318,7 +318,9 @@ const createUniversalRule = (title: string, content: string, source: AIToolType)
     languages: extractLanguages(content),
     frameworks: extractFrameworks(content),
     files: extractFilePatterns(content),
-    contexts: extractContexts(content),
+    contexts: extractContexts(content).filter((ctx): ctx is 'development' | 'testing' | 'debugging' | 'refactoring' => 
+      ['development', 'testing', 'debugging', 'refactoring'].includes(ctx)
+    ),
   },
   content: {
     markdown: content,
@@ -327,7 +329,9 @@ const createUniversalRule = (title: string, content: string, source: AIToolType)
     priority: inferPriority(content),
   },
   compatibility: {
-    tools: [source],
+    tools: [source].filter((tool): tool is 'cursor' | 'windsurf' | 'claude' | 'copilot' | 'codeium' => 
+      ['cursor', 'windsurf', 'claude', 'copilot', 'codeium'].includes(tool)
+    ),
     formats: { [source]: content },
   },
   application: {
@@ -346,7 +350,7 @@ const createBaseRule = (name: string, source: AIToolType): Partial<UniversalRule
   metadata: {
     name,
     description: '',
-    source,
+    source: 'tool-sync',
     confidence: 0.8,
     created: new Date().toISOString(),
     updated: new Date().toISOString(),
@@ -359,7 +363,9 @@ const createBaseRule = (name: string, source: AIToolType): Partial<UniversalRule
     contexts: [],
   },
   compatibility: {
-    tools: [source],
+    tools: [source].filter((tool): tool is 'cursor' | 'windsurf' | 'claude' | 'copilot' | 'codeium' => 
+      ['cursor', 'windsurf', 'claude', 'copilot', 'codeium'].includes(tool)
+    ),
     formats: {},
   },
   application: {
@@ -388,10 +394,14 @@ const finalizeRule = (
   targeting: {
     ...partialRule.targeting!,
     frameworks: extractFrameworks(content),
-    contexts: extractContexts(content),
+    contexts: extractContexts(content).filter((ctx): ctx is 'development' | 'testing' | 'debugging' | 'refactoring' => 
+      ['development', 'testing', 'debugging', 'refactoring'].includes(ctx)
+    ),
   },
   compatibility: {
-    tools: [source],
+    tools: [source].filter((tool): tool is 'cursor' | 'windsurf' | 'claude' | 'copilot' | 'codeium' => 
+      ['cursor', 'windsurf', 'claude', 'copilot', 'codeium'].includes(tool)
+    ),
     formats: { [source]: content.trim() },
   },
 } as UniversalRule)

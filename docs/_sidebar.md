@@ -1,0 +1,23 @@
+- **Introduction**
+  - [What is .vibe?](./01-getting-started/01-what-is-vibe.md)
+- **Getting Started**
+  - [Installation](./01-getting-started/02-installation.md)
+  - [Quick Start](./01-getting-started/03-quick-start.md)
+- **Core Concepts**
+  - [The .vibe Philosophy](./02-core-concepts/01-the-vibe-philosophy.md)
+  - [The Daemon](./02-core-concepts/02-the-daemon.md)
+  - [Universal Rules](./02-core-concepts/03-universal-rules.md)
+  - [Autonomous Discovery](./02-core-concepts/04-autonomous-discovery.md)
+- **Guides**
+  - [Managing Secrets](./03-guides/01-managing-secrets.md)
+  - [Using the Dashboard](./03-guides/02-using-the-dashboard.md)
+  - [Exporting with AgentFile](./03-guides/03-exporting-with-agentfile.md)
+- **CLI Reference**
+  - [vibe init](./04-cli-reference/01-init.md)
+  - [vibe daemon](./04-cli-reference/02-daemon.md)
+  - [vibe discover](./04-cli-reference/03-discover.md)
+  - [vibe status](./04-cli-reference/04-status.md)
+  - [vibe sync](./04-cli-reference/05-sync.md)
+- **Advanced**
+  - [MCP Integration](./05-advanced/01-mcp-integration.md)
+  - [Contributing](./05-advanced/02-contributing.md)

@@ -157,7 +157,15 @@ export const VibeConfigSchema = z.object({
     configPath: z.string().optional(),
     lastSync: z.string().datetime().optional(),
     syncStrategy: z.enum(['overwrite', 'merge', 'manual']).default('merge'),
-  })).default({}),
+  })).default(() => ({
+    cursor: { enabled: false, syncStrategy: 'merge' as const },
+    windsurf: { enabled: false, syncStrategy: 'merge' as const },
+    claude: { enabled: false, syncStrategy: 'merge' as const },
+    copilot: { enabled: false, syncStrategy: 'merge' as const },
+    codeium: { enabled: false, syncStrategy: 'merge' as const },
+    cody: { enabled: false, syncStrategy: 'merge' as const },
+    tabnine: { enabled: false, syncStrategy: 'merge' as const },
+  })),
 })
 
 export type ProjectConfig = z.output<typeof ProjectConfigSchema>

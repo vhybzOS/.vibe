@@ -30,7 +30,10 @@ export const statusCommand = (
           Effect.flatMap(() => Effect.fail(new Error('.vibe not initialized')))
         )
       }
-      return showProjectStatus(projectPath, options.verbose || false)
+      return pipe(
+        showProjectStatus(projectPath, options.verbose || false),
+        Effect.catchAll(() => Effect.fail(new Error('Status check failed')))
+      )
     })
   )
 

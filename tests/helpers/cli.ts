@@ -92,7 +92,7 @@ export const setupTestCli = async () => {
     cleanup,
     run: {
       init: (options: { force?: boolean } = {}) => Effect.runPromise(initCommand(testDir, options)),
-      status: () => Effect.runPromise(statusCommand(testDir)),
+      status: () => Effect.runPromise(statusCommand(testDir, {})),
       discover: (options: { forceRefresh?: boolean } = {}) => Effect.runPromise(discoverCommand(testDir, options)),
     },
   };

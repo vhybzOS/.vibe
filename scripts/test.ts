@@ -55,7 +55,7 @@ class TestRunner {
       this.printSummary()
       this.exitWithCode()
     } catch (error) {
-      console.error('❌ Test runner failed:', error.message)
+      console.error('❌ Test runner failed:', error instanceof Error ? error.message : String(error))
       Deno.exit(1)
     }
   }
@@ -144,7 +144,7 @@ class TestRunner {
   
   private async runSingleTest(testFile: string): Promise<TestResult> {
     const [file, ...filterArgs] = testFile.split(' ')
-    const testName = file.split('/').pop()?.replace('.test.ts', '') || file
+    const testName = file?.split('/').pop()?.replace('.test.ts', '') || file || 'unknown'
     
     const startTime = performance.now()
     
@@ -154,7 +154,7 @@ class TestRunner {
           'test',
           '--allow-all',
           '--quiet',
-          file,
+          file || 'unknown',
           ...filterArgs
         ],
         stdout: 'piped',
@@ -173,19 +173,19 @@ class TestRunner {
       const error = new TextDecoder().decode(stderr)
       
       return {
-        name: testName,
+        name: testName || 'unknown',
         passed: code === 0,
         duration,
-        output: output || undefined,
-        error: error || undefined
+        ...(output && { output }),
+        ...(error && { error })
       }
     } catch (err) {
       const duration = performance.now() - startTime
       return {
-        name: testName,
+        name: testName || 'unknown',
         passed: false,
         duration,
-        error: err.message
+        error: err instanceof Error ? err.message : String(err)
       }
     }
   }

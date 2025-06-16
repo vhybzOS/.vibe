@@ -98,8 +98,8 @@ export const searchByTypeCommand = (
     Effect.log(`🔍 Searching ${type} for: "${query}"`),
     Effect.flatMap(() => globalSearchCommand(projectPath, query, {
       type: [type],
-      tags: options.tags,
-      limit: options.limit,
+      ...(options.tags && { tags: options.tags }),
+      ...(options.limit && { limit: options.limit }),
       format: options.detailed ? 'detailed' : 'summary'
     }))
   )
@@ -121,7 +121,7 @@ export const recentSearchCommand = (
       const daysAgo = new Date(Date.now() - (options.days || 7) * 24 * 60 * 60 * 1000)
       
       return globalSearchCommand(projectPath, '*', {
-        type: options.type,
+        ...(options.type && { type: options.type }),
         since: daysAgo.toISOString(),
         limit: options.limit || 20,
         format: 'summary'

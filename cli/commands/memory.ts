@@ -227,7 +227,7 @@ export const deleteMemoryCommand = (
       if (!options.force) {
         return pipe(
           Effect.log('⚠️  Are you sure? This cannot be undone.'),
-          Effect.log('   Use --force flag to confirm deletion.'),
+          Effect.flatMap(() => Effect.log('   Use --force flag to confirm deletion.')),
           Effect.flatMap(() => Effect.fail(new Error('Deletion cancelled - use --force flag')))
         )
       }

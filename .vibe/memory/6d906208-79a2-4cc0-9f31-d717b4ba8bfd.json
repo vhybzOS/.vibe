@@ -1,0 +1,48 @@
+{
+  "metadata": {
+    "id": "6d906208-79a2-4cc0-9f31-d717b4ba8bfd",
+    "type": "knowledge",
+    "source": {
+      "sessionId": "87d1c4e6-d42b-4eb8-a193-de0ed686f4c3",
+      "timestamp": "2025-06-16T14:08:54.205Z",
+      "location": "/home/keyvan/.vibe"
+    },
+    "tags": [
+      "test"
+    ],
+    "importance": "medium",
+    "accessibility": "project",
+    "lastAccessed": "2025-06-16T14:08:54.205Z",
+    "accessCount": 0
+  },
+  "content": {
+    "title": "Test memory entry",
+    "summary": "Test memory entry",
+    "content": "Test memory entry",
+    "keywords": [
+      "test",
+      "memory",
+      "entry"
+    ],
+    "entities": []
+  },
+  "relationships": {
+    "relatedMemories": [],
+    "similarity": {},
+    "clusters": [],
+    "topics": [],
+    "conversationThread": "87d1c4e6-d42b-4eb8-a193-de0ed686f4c3"
+  },
+  "quality": {
+    "completeness": 0.4,
+    "accuracy": 0.8,
+    "relevance": 0.8,
+    "freshness": 1
+  },
+  "lifecycle": {
+    "created": "2025-06-16T14:08:54.205Z",
+    "updated": "2025-06-16T14:08:54.205Z",
+    "archived": false,
+    "version": 1
+  }
+}

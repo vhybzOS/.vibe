@@ -66,7 +66,7 @@ describe('⚡ Performance Benchmarks', () => {
       // Performance shouldn't degrade exponentially
       const firstTime = results[0]
       const lastTime = results[results.length - 1]
-      const ratio = lastTime / firstTime
+      const ratio = (lastTime || 0) / (firstTime || 1)
       
       assert(ratio < 10, `Performance ratio ${ratio.toFixed(2)}x should be < 10x`)
     })
@@ -249,8 +249,8 @@ describe('⚡ Performance Benchmarks', () => {
       await Promise.all(operations)
       
       // Force garbage collection if available
-      if (typeof globalThis.gc === 'function') {
-        globalThis.gc()
+      if (typeof (globalThis as any).gc === 'function') {
+        (globalThis as any).gc()
       }
       
       const finalMemory = getMemoryUsage()
@@ -271,8 +271,8 @@ describe('⚡ Performance Benchmarks', () => {
         await Effect.runPromise(detectAITools(testProjectPath))
         
         // Force GC if available
-        if (typeof globalThis.gc === 'function') {
-          globalThis.gc()
+        if (typeof (globalThis as any).gc === 'function') {
+          (globalThis as any).gc()
         }
         
         measurements.push(getMemoryUsage())
@@ -283,7 +283,7 @@ describe('⚡ Performance Benchmarks', () => {
       
       const firstMeasurement = measurements[0]
       const lastMeasurement = measurements[measurements.length - 1]
-      const memoryTrend = lastMeasurement - firstMeasurement
+      const memoryTrend = (lastMeasurement || 0) - (firstMeasurement || 0)
       
       console.log(`📈 Memory trend: ${memoryTrend.toFixed(2)}MB over ${measurements.length} iterations`)
       

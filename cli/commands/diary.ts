@@ -97,13 +97,15 @@ export const searchDiaryCommand = (
     Effect.log(`🔍 Searching diary for: "${query}"`),
     Effect.flatMap(() => {
       const searchQuery: DiarySearchQuery = {
-        query: query || undefined,
-        category: options.category,
-        tags: options.tags,
-        dateRange: (options.since || options.until) ? {
-          from: options.since || new Date(0).toISOString(),
-          to: options.until || new Date().toISOString()
-        } : undefined,
+        ...(query && { query }),
+        ...(options.category && { category: options.category as DiaryCategory }),
+        ...(options.tags && { tags: options.tags }),
+        ...((options.since || options.until) && {
+          dateRange: {
+            from: options.since || new Date(0).toISOString(),
+            to: options.until || new Date().toISOString()
+          }
+        }),
         limit: options.limit || 10
       }
       

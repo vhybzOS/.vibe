@@ -99,7 +99,7 @@ export const searchDiaryCommand = (
       const searchQuery: DiarySearchQuery = {
         query,
         category: options.category as DiaryCategory,
-        tags: options.tags,
+        tags: options.tags || undefined,
         dateRange: (options.since || options.until) ? {
           from: options.since || new Date(0).toISOString(),
           to: options.until || new Date().toISOString()
@@ -205,41 +205,47 @@ export const getDiaryCommand = (
       if (!entry) {
         return pipe(
           Effect.log(`❌ Diary entry not found: ${entryId}`),
-          Effect.fail(new Error('Diary entry not found'))
+          Effect.flatMap(() => Effect.fail(new Error('Diary entry not found')))
         )
       }
       
       return pipe(
-        Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'),
-        Effect.flatMap(() => Effect.log(`📋 Title: ${entry.title}`)),
-        Effect.flatMap(() => Effect.log(`🏷️ Category: ${entry.category}`)),
-        Effect.flatMap(() => Effect.log(`🏷️ Tags: ${entry.tags.join(', ')}`)),
-        Effect.flatMap(() => Effect.log(`📅 Created: ${new Date(entry.timestamp).toLocaleString()}`)),
-        Effect.flatMap(() => Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')),
-        Effect.flatMap(() => Effect.log('🔴 Problem:')),
-        Effect.flatMap(() => Effect.log(`Description: ${entry.problem.description}`)),
-        Effect.flatMap(() => Effect.log(`Context: ${entry.problem.context}`)),
+        Effect.all([
+          Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'),
+          Effect.log(`📋 Title: ${entry.title}`),
+          Effect.log(`🏷️ Category: ${entry.category}`),
+          Effect.log(`🏷️ Tags: ${entry.tags.join(', ')}`),
+          Effect.log(`📅 Created: ${new Date(entry.timestamp).toLocaleString()}`),
+          Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'),
+          Effect.log('🔴 Problem:'),
+          Effect.log(`Description: ${entry.problem.description}`),
+          Effect.log(`Context: ${entry.problem.context}`)
+        ], { discard: true }),
         Effect.flatMap(() => {
           if (entry.problem.constraints.length > 0) {
             return pipe(
               Effect.log('Constraints:'),
               Effect.flatMap(() => Effect.all(
-                entry.problem.constraints.map(constraint => Effect.log(`- ${constraint}`))
+                entry.problem.constraints.map(constraint => Effect.log(`- ${constraint}`)),
+                { discard: true }
               ))
             )
           }
           return Effect.void
         }),
-        Effect.flatMap(() => Effect.log('')),
-        Effect.flatMap(() => Effect.log('✅ Decision:')),
-        Effect.flatMap(() => Effect.log(`Chosen: ${entry.decision.chosen}`)),
-        Effect.flatMap(() => Effect.log(`Rationale: ${entry.decision.rationale}`)),
+        Effect.flatMap(() => Effect.all([
+          Effect.log(''),
+          Effect.log('✅ Decision:'),
+          Effect.log(`Chosen: ${entry.decision.chosen}`),
+          Effect.log(`Rationale: ${entry.decision.rationale}`)
+        ], { discard: true })),
         Effect.flatMap(() => {
           if (entry.decision.alternatives.length > 0) {
             return pipe(
               Effect.log('Alternatives:'),
               Effect.flatMap(() => Effect.all(
-                entry.decision.alternatives.map(alt => Effect.log(`- ${alt.option}: ${alt.reason}`))
+                entry.decision.alternatives.map(alt => Effect.log(`- ${alt.option}: ${alt.reason}`)),
+                { discard: true }
               ))
             )
           }
@@ -252,7 +258,8 @@ export const getDiaryCommand = (
             return pipe(
               Effect.log('Benefits:'),
               Effect.flatMap(() => Effect.all(
-                entry.impact.benefits.map(benefit => Effect.log(`+ ${benefit}`))
+                entry.impact.benefits.map(benefit => Effect.log(`+ ${benefit}`)),
+                { discard: true }
               ))
             )
           }
@@ -263,7 +270,8 @@ export const getDiaryCommand = (
             return pipe(
               Effect.log('Risks:'),
               Effect.flatMap(() => Effect.all(
-                entry.impact.risks.map(risk => Effect.log(`- ${risk}`))
+                entry.impact.risks.map(risk => Effect.log(`- ${risk}`)),
+                { discard: true }
               ))
             )
           }
@@ -353,8 +361,8 @@ export const deleteDiaryCommand = (
       if (!options.force) {
         return pipe(
           Effect.log('⚠️ Are you sure? This cannot be undone.'),
-          Effect.log('   Use --force flag to confirm deletion.'),
-          Effect.fail(new Error('Deletion cancelled - use --force flag'))
+          Effect.flatMap(() => Effect.log('   Use --force flag to confirm deletion.')),
+          Effect.flatMap(() => Effect.fail(new Error('Deletion cancelled - use --force flag')))
         )
       }
       
@@ -366,7 +374,7 @@ export const deleteDiaryCommand = (
       } else {
         return pipe(
           Effect.log('❌ Diary entry not found or could not be deleted'),
-          Effect.fail(new Error('Diary entry deletion failed'))
+          Effect.flatMap(() => Effect.fail(new Error('Diary entry deletion failed')))
         )
       }
     })

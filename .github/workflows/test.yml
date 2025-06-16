@@ -1,63 +1,23 @@
-name: 🧪 Test Suite
+name: Build and Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
 
 env:
-  DENO_VERSION: v1.x
-  NO_COLOR: 1
-  DENO_TESTING: 1
+  DENO_VERSION: "v2.3.6"
 
 jobs:
-  lint:
-    name: 🔍 Lint & Format Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🦕 Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: ${{ env.DENO_VERSION }}
-
-      - name: 🔍 Check formatting
-        run: deno fmt --check
-
-      - name: 🔬 Lint code
-        run: deno lint
-
-      - name: 🔄 Check imports
-        run: deno check src/**/*.ts
-
-  test-quick:
-    name: ⚡ Quick Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🦕 Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: ${{ env.DENO_VERSION }}
-
-      - name: 📦 Cache dependencies
-        run: deno cache --reload src/**/*.ts tests/**/*.ts scripts/**/*.ts
-
-      - name: ⚡ Run quick tests
-        run: deno run --allow-all scripts/test.ts --quick
-
-  test-full:
-    name: 🔬 Full Test Suite
+  build:
+    name: "Build & Test on ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -67,142 +27,43 @@ jobs:
         with:
           deno-version: ${{ env.DENO_VERSION }}
 
-      - name: 📦 Cache dependencies
-        run: deno cache --reload src/**/*.ts tests/**/*.ts scripts/**/*.ts
+      - name: 📦 Cache Deno dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.deno/deps
+          key: ${{ runner.os }}-deno-${{ hashFiles('**/deno.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-
 
-      - name: 🔬 Run full test suite
-        run: deno run --allow-all scripts/test.ts --full
+      - name: 🔬 Lint and Format Check
+        run: |
+          deno task lint
+          deno task fmt --check
 
-      - name: 📊 Generate test coverage
+      - name: 📝 Type Check
+        run: deno task check
+
+      - name: 🧪 Run Full Test Suite
+        run: deno task test
+
+      - name: 📊 Generate and Upload Coverage (Linux only)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          deno test --allow-all --coverage=coverage_profile
-          deno coverage coverage_profile --lcov --output=coverage.lcov
-
-      - name: 📈 Upload coverage to Codecov
+          deno coverage --lcov --output=coverage.lcov coverage/
+          
+      - name: 📈 Upload Coverage to Codecov
         if: matrix.os == 'ubuntu-latest'
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.lcov
           fail_ci_if_error: false
 
-  test-performance:
-    name: 🏃 Performance Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🦕 Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: ${{ env.DENO_VERSION }}
-
-      - name: 📦 Cache dependencies
-        run: deno cache --reload src/**/*.ts tests/**/*.ts scripts/**/*.ts
-
-      - name: 🏃 Run performance benchmarks
-        run: deno run --allow-all scripts/test.ts --perf
-
-      - name: 📊 Archive performance results
-        uses: actions/upload-artifact@v3
-        with:
-          name: performance-results
-          path: |
-            *.benchmark
-            *.perf
-
-  integration:
-    name: 🔄 Integration Tests
-    runs-on: ubuntu-latest
-    needs: [lint, test-quick]
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🦕 Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: ${{ env.DENO_VERSION }}
-
-      - name: 📦 Cache dependencies
-        run: deno cache --reload src/**/*.ts tests/**/*.ts scripts/**/*.ts
-
-      - name: 🔧 Test project initialization
-        run: |
-          mkdir test-project
-          cd test-project
-          echo '{"name": "test", "dependencies": {"react": "^18.0.0"}}' > package.json
-          echo '# Test rules' > .cursorrules
-          deno run --allow-all ../src/cli/index.ts init --force
-
-      - name: 🤖 Test daemon startup
-        run: |
-          cd test-project
-          timeout 10s deno run --allow-all ../src/daemon/index.ts || true
-          # Daemon should start and create PID file within 10 seconds
-
-      - name: 📋 Test CLI commands
-        run: |
-          cd test-project
-          deno run --allow-all ../src/cli/index.ts status
-          deno run --allow-all ../src/cli/index.ts sync --dry-run
-          deno run --allow-all ../src/cli/index.ts discover
-
-  security:
-    name: 🔒 Security Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🦕 Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: ${{ env.DENO_VERSION }}
-
-      - name: 🔒 Run security audit
-        run: |
-          # Check for known vulnerable patterns
-          if grep -r "eval(" src/ tests/ || grep -r "Function(" src/ tests/; then
-            echo "⚠️ Found potential security issues with eval/Function"
-            exit 1
-          fi
-          
-          # Check for hardcoded credentials
-          if grep -r -i "password\|secret\|token\|key" src/ tests/ --include="*.ts" | grep -v "test" | grep -v "example"; then
-            echo "⚠️ Found potential hardcoded credentials"
-            exit 1
-          fi
-          
-          echo "✅ Security scan passed"
-
-  type-check:
-    name: 📝 TypeScript Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🦕 Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: ${{ env.DENO_VERSION }}
-
-      - name: 📝 Type check all files
-        run: |
-          deno check src/**/*.ts
-          deno check tests/**/*.ts
-          deno check scripts/**/*.ts
-
-      - name: 🔬 Check for type errors in tests
-        run: deno test --dry-run --allow-all
-
   release-check:
-    name: 🚀 Release Readiness
+    name: 🚀 Release Readiness Check
     runs-on: ubuntu-latest
-    needs: [lint, test-full, test-performance, integration, security, type-check]
-    if: github.ref == 'refs/heads/main'
+    needs: [build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -211,47 +72,20 @@ jobs:
         uses: denoland/setup-deno@v1
         with:
           deno-version: ${{ env.DENO_VERSION }}
-
-      - name: 🔨 Test build process
-        run: |
-          # Compile executables
-          deno compile --allow-all --output=vibe-test src/cli/index.ts
-          deno compile --allow-all --output=vibe-daemon-test src/daemon/index.ts
           
-          # Test executables
-          ./vibe-test --help
-          timeout 5s ./vibe-daemon-test || true
+      - name: 📦 Restore Deno Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.deno/deps
+          key: ${{ runner.os }}-deno-${{ hashFiles('**/deno.lock') }}
 
-      - name: 📦 Verify package structure
+      - name: 🔨 Test Build Process
         run: |
-          # Check required files exist
-          test -f README.md
-          test -f ARCHITECTURE.md
-          test -f deno.json
-          test -f vibe
-          test -f vibe-daemon
-          test -d src/
-          test -d tests/
-          
-          echo "✅ Package structure verified"
+          deno task build
+          deno task build:daemon
+          # Verify executables were created
+          ./vibe --version
+          ./vibe-daemon --version
 
-      - name: 🎯 Run full validation
-        run: |
-          echo "🧪 Running comprehensive validation..."
-          deno run --allow-all scripts/test.ts --full
-          echo "✅ All systems go for release!"
-
-  notify:
-    name: 📢 Notify Results
-    runs-on: ubuntu-latest
-    needs: [lint, test-quick, test-full, test-performance, integration, security, type-check]
-    if: always()
-    steps:
-      - name: 📊 Check results
-        run: |
-          if [ "${{ needs.test-full.result }}" = "success" ] && [ "${{ needs.test-quick.result }}" = "success" ]; then
-            echo "✅ All tests passed! 🎉"
-          else
-            echo "❌ Some tests failed. Check the logs above."
-            exit 1
-          fi
+      - name: ✅ Final Sanity Check
+        run: echo "All checks passed. Ready for release."

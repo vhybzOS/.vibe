@@ -2,28 +2,16 @@ name: Build and Test
 
 on:
   push:
-    branches: ['main']
-    paths:
-      - '**/*.ts'
-      - '**/*.tsx'
-      - 'deno.json'
-      - 'deno.lock'
-      - '.github/workflows/test.yml'
+    branches: [ "main" ]
   pull_request:
-    branches: ['main']
-    paths:
-      - '**/*.ts'
-      - '**/*.tsx'
-      - 'deno.json'
-      - 'deno.lock'
-      - '.github/workflows/test.yml'
+    branches: [ "main" ]
 
 env:
-  DENO_VERSION: 'v2.3.6'
+  DENO_VERSION: "v2.3.6"
 
 jobs:
   build:
-    name: 'Build & Test on ${{ matrix.os }}'
+    name: "Build & Test on ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -47,6 +35,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-deno-
 
+      - name: 📥 Ensure all dependencies are cached
+        run: deno cache cli.ts daemon.ts
+
       - name: 🔬 Lint and Format Check
         run: |
           deno task lint
@@ -56,12 +47,13 @@ jobs:
         run: deno task check
 
       - name: 🧪 Run Full Test Suite
-        run: deno task test
+        # --no-check is used because we have a dedicated type-checking step
+        run: deno task test --no-check
 
       - name: 📊 Generate and Upload Coverage (Linux only)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          deno coverage --lcov --output=coverage.lcov coverage/
+          deno coverage coverage/ --lcov > coverage.lcov
 
       - name: 📈 Upload Coverage to Codecov
         if: matrix.os == 'ubuntu-latest'

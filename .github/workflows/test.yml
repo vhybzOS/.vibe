@@ -35,8 +35,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-deno-
 
-      - name: 📥 Ensure all dependencies are cached
-        run: deno cache cli.ts daemon.ts
+      - name: 📥 Verify lock file and cache dependencies
+        run: deno cache --locked cli.ts daemon.ts
 
       - name: 🔬 Lint and Format Check
         run: |

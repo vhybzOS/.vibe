@@ -1,54 +1,59 @@
+/**
+ * Modern .vibe MCP Server - Clean implementation for AI tool integration
+ */
+
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { z } from 'zod'
-import { detectAITools, syncToolConfigs } from '../core/tools/index.js'
-import { loadRules, saveRule, generateRulesFromProject } from '../core/rules/index.js'
-import { searchMemory, storeMemory } from '../core/memory/index.js'
-import { searchDiary, captureDcision } from '../core/diary/index.js'
-import { discoverDependencies } from '../core/docs/index.js'
-import { UniversalRule } from '../schemas/universal-rule.js'
-import { DiaryEntry } from '../schemas/diary-entry.js'
-import { Memory } from '../schemas/memory.js'
+import { z } from 'zod/v4'
+import { detectAITools } from '../tools/index.ts'
+import { loadRules } from '../rules/index.ts'
+import { UniversalRule } from '../schemas/universal-rule.ts'
 
 export class VibeServer {
-  private projectPath: string = process.cwd()
-  private vibePath: string = resolve(this.projectPath, '.vibe')
+  private projectPath: string
+  private vibePath: string
+
+  constructor(projectPath?: string) {
+    this.projectPath = projectPath || Deno.cwd()
+    this.vibePath = resolve(this.projectPath, '.vibe')
+  }
 
   async initialize() {
-    // Initialize server state
-    console.error('🔧 Initializing .vibe server...')
+    console.log('🔧 Initializing .vibe MCP server...')
+    // Ensure .vibe directory exists
+    try {
+      await Deno.stat(this.vibePath)
+    } catch {
+      console.warn('⚠️ .vibe directory not found, some features may be limited')
+    }
   }
 
   async handleToolCall(name: string, args: Record<string, unknown>) {
-    return pipe(
-      Effect.sync(() => ({ name, args })),
-      Effect.flatMap(({ name, args }) => {
-        switch (name) {
-          case 'get-project-context':
-            return this.getProjectContext(args)
-          case 'search-memory':
-            return this.searchMemory(args)
-          case 'capture-decision':
-            return this.captureDecision(args)
-          case 'sync-tool-configs':
-            return this.syncToolConfigs(args)
-          case 'discover-dependencies':
-            return this.discoverDependencies(args)
-          case 'generate-rules':
-            return this.generateRules(args)
-          default:
-            return Effect.fail(new Error(`Unknown tool: ${name}`))
-        }
-      }),
-      Effect.runPromise
-    )
+    try {
+      switch (name) {
+        case 'get-project-context':
+          return await this.getProjectContext(args)
+        case 'get-rules':
+          return await this.getRules(args)
+        case 'get-tools':
+          return await this.getDetectedTools(args)
+        default:
+          throw new Error(`Unknown tool: ${name}`)
+      }
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        tool: name,
+        timestamp: new Date().toISOString(),
+      }
+    }
   }
 
   async handleResourceRead(uri: string) {
     const [scheme, path] = uri.split('://', 2)
     
-    if (scheme === 'vibe') {
-      return this.readVibeResource(path)
+    if (scheme === 'vibe' && path) {
+      return await this.readVibeResource(path)
     }
     
     throw new Error(`Unsupported resource scheme: ${scheme}`)
@@ -59,31 +64,19 @@ export class VibeServer {
       {
         uri: 'vibe://rules',
         name: 'Active Rules',
-        description: 'Currently active universal rules',
+        description: 'Currently active universal rules for this project',
         mimeType: 'application/json',
-      },
-      {
-        uri: 'vibe://diary',
-        name: 'Decision Diary',
-        description: 'Captured architectural decisions',
-        mimeType: 'application/json',
-      },
-      {
-        uri: 'vibe://memory',
-        name: 'Conversation Memory',
-        description: 'Stored conversation history and context',
-        mimeType: 'application/json',
-      },
-      {
-        uri: 'vibe://docs',
-        name: 'Project Documentation',
-        description: 'Auto-generated llms.txt and documentation',
-        mimeType: 'text/markdown',
       },
       {
         uri: 'vibe://tools',
         name: 'Detected AI Tools',
-        description: 'Detected AI coding tools and their configurations',
+        description: 'AI coding tools detected in this project',
+        mimeType: 'application/json',
+      },
+      {
+        uri: 'vibe://status',
+        name: 'Project Status',
+        description: 'Overall .vibe project status and configuration',
         mimeType: 'application/json',
       },
     ]
@@ -93,182 +86,179 @@ export class VibeServer {
     return [
       {
         name: 'get-project-context',
-        description: 'Get current project context including rules, tools, and recent activity',
+        description: 'Get comprehensive project context including rules and detected tools',
         inputSchema: {
           type: 'object',
           properties: {
             includeRules: { type: 'boolean', default: true },
-            includeMemory: { type: 'boolean', default: false },
-            includeDecisions: { type: 'boolean', default: false },
+            includeTools: { type: 'boolean', default: true },
           },
         },
       },
       {
-        name: 'search-memory',
-        description: 'Search conversation memory and context',
+        name: 'get-rules',
+        description: 'Get all universal rules for this project',
         inputSchema: {
           type: 'object',
           properties: {
-            query: { type: 'string' },
-            limit: { type: 'integer', default: 10 },
-            threshold: { type: 'number', default: 0.7 },
-          },
-          required: ['query'],
-        },
-      },
-      {
-        name: 'capture-decision',
-        description: 'Capture an architectural decision from conversation',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            problem: { type: 'string' },
-            options: { type: 'array', items: { type: 'string' } },
-            chosen: { type: 'string' },
-            rationale: { type: 'string' },
-            context: { type: 'object' },
-          },
-          required: ['problem', 'chosen', 'rationale'],
-        },
-      },
-      {
-        name: 'sync-tool-configs',
-        description: 'Synchronize AI tool configurations with .vibe rules',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            force: { type: 'boolean', default: false },
-            dryRun: { type: 'boolean', default: false },
+            activeOnly: { type: 'boolean', default: false },
           },
         },
       },
       {
-        name: 'discover-dependencies',
-        description: 'Discover and fetch documentation from project dependencies',
+        name: 'get-tools',
+        description: 'Get detected AI tools and their configurations',
         inputSchema: {
           type: 'object',
-          properties: {
-            forceRefresh: { type: 'boolean', default: false },
-          },
-        },
-      },
-      {
-        name: 'generate-rules',
-        description: 'Generate rules from project analysis',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            threshold: { type: 'number', default: 0.8 },
-            includePatterns: { type: 'array', items: { type: 'string' } },
-          },
+          properties: {},
         },
       },
     ]
   }
 
-  private getProjectContext = (args: Record<string, unknown>) =>
-    pipe(
-      Effect.all([
-        detectAITools(this.projectPath),
-        loadRules(this.vibePath),
-      ]),
-      Effect.map(([detectedTools, rules]) => ({
-        project: {
-          path: this.projectPath,
-          vibePath: this.vibePath,
-        },
-        tools: {
-          detected: detectedTools,
-          active: detectedTools.filter(t => t.status === 'active'),
-        },
-        rules: {
-          total: rules.length,
-          active: rules.filter(r => r.application.mode === 'always'),
-          byTool: detectedTools.reduce((acc, tool) => {
-            acc[tool.tool] = rules.filter(r => 
-              r.compatibility.tools.includes(tool.tool)
-            )
-            return acc
-          }, {} as Record<string, UniversalRule[]>),
-        },
+  private async getProjectContext(args: Record<string, unknown>) {
+    const schema = z.object({
+      includeRules: z.boolean().default(true),
+      includeTools: z.boolean().default(true),
+    })
+    
+    const params = schema.parse(args)
+    
+    const result: any = {
+      project: {
+        path: this.projectPath,
+        vibePath: this.vibePath,
         timestamp: new Date().toISOString(),
-      }))
-    )
+      },
+    }
 
-  private searchMemory = (args: Record<string, unknown>) => {
-    const schema = z.object({
-      query: z.string(),
-      limit: z.number().default(10),
-      threshold: z.number().default(0.7),
-    })
-    
-    return pipe(
-      Effect.try(() => schema.parse(args)),
-      Effect.flatMap(params => searchMemory(this.vibePath, params))
-    )
+    if (params.includeRules) {
+      try {
+        const rules = await Effect.runPromise(loadRules(this.vibePath))
+        result.rules = {
+          total: rules.length,
+          active: rules.filter((r: UniversalRule) => r.application.mode === 'always'),
+          byPriority: {
+            high: rules.filter((r: UniversalRule) => r.content.priority === 'high'),
+            medium: rules.filter((r: UniversalRule) => r.content.priority === 'medium'),
+            low: rules.filter((r: UniversalRule) => r.content.priority === 'low'),
+          },
+        }
+      } catch (error) {
+        result.rules = { error: 'Failed to load rules', details: error }
+      }
+    }
+
+    if (params.includeTools) {
+      try {
+        const tools = await Effect.runPromise(detectAITools(this.projectPath))
+        result.tools = {
+          detected: tools,
+          count: tools.length,
+        }
+      } catch (error) {
+        result.tools = { error: 'Failed to detect tools', details: error }
+      }
+    }
+
+    return result
   }
 
-  private captureDecision = (args: Record<string, unknown>) => {
+  private async getRules(args: Record<string, unknown>) {
     const schema = z.object({
-      problem: z.string(),
-      options: z.array(z.string()).default([]),
-      chosen: z.string(),
-      rationale: z.string(),
-      context: z.record(z.unknown()).default({}),
+      activeOnly: z.boolean().default(false),
     })
     
-    return pipe(
-      Effect.try(() => schema.parse(args)),
-      Effect.flatMap(params => captureDcision(this.vibePath, params))
-    )
+    const params = schema.parse(args)
+    
+    try {
+      const rules = await Effect.runPromise(loadRules(this.vibePath))
+      
+      if (params.activeOnly) {
+        return rules.filter((r: UniversalRule) => r.application.mode === 'always')
+      }
+      
+      return rules
+    } catch (error) {
+      return {
+        error: 'Failed to load rules',
+        details: error instanceof Error ? error.message : error,
+      }
+    }
   }
 
-  private syncToolConfigs = (args: Record<string, unknown>) =>
-    pipe(
-      Effect.all([
-        detectAITools(this.projectPath),
-        loadRules(this.vibePath),
-      ]),
-      Effect.flatMap(([detectedTools, rules]) => 
-        syncToolConfigs(this.projectPath, detectedTools, rules)
-      )
-    )
-
-  private discoverDependencies = (args: Record<string, unknown>) => {
-    const schema = z.object({
-      forceRefresh: z.boolean().default(false),
-    })
-    
-    return pipe(
-      Effect.try(() => schema.parse(args)),
-      Effect.flatMap(params => discoverDependencies(this.projectPath, params))
-    )
-  }
-
-  private generateRules = (args: Record<string, unknown>) => {
-    const schema = z.object({
-      threshold: z.number().default(0.8),
-      includePatterns: z.array(z.string()).default([]),
-    })
-    
-    return pipe(
-      Effect.try(() => schema.parse(args)),
-      Effect.flatMap(params => generateRulesFromProject(this.projectPath, params))
-    )
+  private async getDetectedTools(args: Record<string, unknown>) {
+    try {
+      const tools = await Effect.runPromise(detectAITools(this.projectPath))
+      return {
+        tools,
+        count: tools.length,
+        timestamp: new Date().toISOString(),
+      }
+    } catch (error) {
+      return {
+        error: 'Failed to detect AI tools',
+        details: error instanceof Error ? error.message : error,
+      }
+    }
   }
 
   private async readVibeResource(path: string) {
     switch (path) {
       case 'rules':
-        return {
-          content: JSON.stringify(await Effect.runPromise(loadRules(this.vibePath)), null, 2),
-          mimeType: 'application/json',
+        try {
+          const rules = await Effect.runPromise(loadRules(this.vibePath))
+          return {
+            content: JSON.stringify(rules, null, 2),
+            mimeType: 'application/json',
+          }
+        } catch (error) {
+          return {
+            content: JSON.stringify({ error: 'Failed to load rules', details: error }, null, 2),
+            mimeType: 'application/json',
+          }
         }
+        
       case 'tools':
-        return {
-          content: JSON.stringify(await Effect.runPromise(detectAITools(this.projectPath)), null, 2),
-          mimeType: 'application/json',
+        try {
+          const tools = await Effect.runPromise(detectAITools(this.projectPath))
+          return {
+            content: JSON.stringify(tools, null, 2),
+            mimeType: 'application/json',
+          }
+        } catch (error) {
+          return {
+            content: JSON.stringify({ error: 'Failed to detect tools', details: error }, null, 2),
+            mimeType: 'application/json',
+          }
         }
+        
+      case 'status':
+        try {
+          const [rules, tools] = await Promise.all([
+            Effect.runPromise(loadRules(this.vibePath)).catch(() => []),
+            Effect.runPromise(detectAITools(this.projectPath)).catch(() => []),
+          ])
+          
+          const status = {
+            project: this.projectPath,
+            vibePath: this.vibePath,
+            rules: { count: rules.length },
+            tools: { count: tools.length },
+            timestamp: new Date().toISOString(),
+          }
+          
+          return {
+            content: JSON.stringify(status, null, 2),
+            mimeType: 'application/json',
+          }
+        } catch (error) {
+          return {
+            content: JSON.stringify({ error: 'Failed to get status', details: error }, null, 2),
+            mimeType: 'application/json',
+          }
+        }
+        
       default:
         throw new Error(`Unknown vibe resource: ${path}`)
     }

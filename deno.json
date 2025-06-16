@@ -14,7 +14,7 @@
   "tasks": {
     "dev": "deno run --watch --allow-all cli.ts",
     "daemon": "deno run --allow-all daemon.ts",
-    "mcp-server": "deno run --allow-all src/mcp-server/index.ts",
+    "mcp-server": "deno run --allow-all mcp-server/index.ts",
     "build": "deno compile --allow-all --output vibe cli.ts",
     "build:daemon": "deno compile --allow-all --output vibe-daemon daemon.ts",
     "test": "deno test --allow-all",

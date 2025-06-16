@@ -7,7 +7,8 @@ import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
 import { match } from 'ts-pattern'
 import { fileExists, findFiles } from '../lib/fs.ts'
-import { logWithContext, VibeError } from '../lib/effects.ts'
+import { logWithContext } from '../lib/effects.ts'
+import { createFileSystemError, type VibeError } from '../lib/errors.ts'
 import { 
   AIToolConfig, 
   AIToolType, 
@@ -276,7 +277,7 @@ const checkConfigFiles = (projectPath: string, config: AIToolConfig): Effect.Eff
       fileExists(fullPath),
       Effect.flatMap(exists => {
         if (!exists) {
-          return Effect.fail({ _tag: 'FileNotFound', file } as const)
+          return Effect.fail(createFileSystemError(`File not found: ${file}`, fullPath, `Configuration file ${file} does not exist`))
         }
         return pipe(
           Effect.tryPromise(async () => {

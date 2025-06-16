@@ -8,7 +8,7 @@ import { resolve } from '@std/path'
 import { UniversalRule, UniversalRuleSchema } from '../schemas/universal-rule.ts'
 import { readJSONFile, writeJSONFile, listFiles } from '../lib/fs.ts'
 import { parseJSON, logWithContext } from '../lib/effects.ts'
-import type { VibeError } from '../lib/errors.ts'
+import { createParseError, type VibeError } from '../lib/errors.ts'
 
 /**
  * Loads all rules from the .vibe/rules directory
@@ -33,7 +33,7 @@ const loadSingleRule = (filePath: string) =>
     Effect.flatMap(data => 
       Effect.try({
         try: () => UniversalRuleSchema.parse(data),
-        catch: (error) => new VibeError(`Invalid rule schema in ${filePath}: ${error}`, 'SCHEMA_ERROR'),
+        catch: (error) => createParseError(error, filePath, `Invalid rule schema in ${filePath}: ${error}`),
       })
     ),
     Effect.catchAll(error => {
@@ -67,7 +67,7 @@ export const generateRulesFromProject = (
     analyzeProjectPatterns(projectPath),
     Effect.map(patterns => 
       patterns
-        .filter(pattern => pattern.confidence >= options.threshold)
+        .filter((pattern: any) => pattern.confidence >= options.threshold)
         .map(createRuleFromPattern)
     ),
     Effect.tap(rules => 
@@ -82,7 +82,7 @@ const analyzeProjectPatterns = (projectPath: string) =>
   pipe(
     Effect.tryPromise({
       try: () => analyzeCodebaseStructure(projectPath),
-      catch: () => new VibeError('Failed to analyze project structure', 'ANALYSIS_ERROR'),
+      catch: () => createParseError('Failed to analyze project structure', '', 'Failed to analyze project structure'),
     }),
     Effect.map(structure => extractPatterns(structure))
   )

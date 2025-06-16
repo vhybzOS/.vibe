@@ -34,7 +34,7 @@ export const RuleContentSchema = z.object({
 })
 
 export const RuleCompatibilitySchema = z.object({
-  tools: z.array(z.enum(['cursor', 'windsurf', 'claude', 'copilot', 'codeium'])).default([]),
+  tools: z.array(z.enum(['cursor', 'windsurf', 'claude', 'copilot', 'codeium', 'cody', 'tabnine'])).default([]),
   formats: z.record(z.string(), z.string()).default({}), // tool -> compiled format
 })
 

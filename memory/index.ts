@@ -8,7 +8,8 @@ import { resolve } from '@std/path'
 import { Memory, MemorySchema, MemorySearchQuery } from '../schemas/memory.ts'
 import { initializeSearch, insertDocument, searchDocuments, SearchDocument } from '../search/index.ts'
 import { readJSONFile, writeJSONFile, listFiles } from '../lib/fs.ts'
-import { logWithContext, VibeError } from '../lib/effects.ts'
+import { logWithContext } from '../lib/effects.ts'
+import { createParseError, type VibeError } from '../lib/errors.ts'
 
 /**
  * Stores a memory entry with automatic indexing
@@ -189,7 +190,7 @@ const loadSingleMemory = (filePath: string) =>
     Effect.flatMap(data => 
       Effect.try({
         try: () => MemorySchema.parse(data),
-        catch: (error) => new VibeError(`Invalid memory schema in ${filePath}: ${error}`, 'SCHEMA_ERROR'),
+        catch: (error) => createParseError(error, filePath, `Invalid memory schema in ${filePath}: ${error}`),
       })
     ),
     Effect.catchAll(error => {

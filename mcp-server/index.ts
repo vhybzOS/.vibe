@@ -1,4 +1,9 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S deno run --allow-all
+
+/**
+ * .vibe MCP Server - Clean, modern implementation
+ * Provides AI tool integration via Model Context Protocol
+ */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
@@ -8,10 +13,7 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
-import { z } from 'zod'
-import { setupTools } from './tools.js'
-import { setupResources } from './resources.js'
-import { VibeServer } from './vibe-server.js'
+import { VibeServer } from './vibe-server.ts'
 
 const SERVER_INFO = {
   name: 'dotvibe',
@@ -30,18 +32,12 @@ async function main() {
   const vibeServer = new VibeServer()
   await vibeServer.initialize()
 
-  // Setup tools
-  setupTools(server, vibeServer)
-  
-  // Setup resources
-  setupResources(server, vibeServer)
-
   // Handle tool calls
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params
     
     try {
-      const result = await vibeServer.handleToolCall(name, args)
+      const result = await vibeServer.handleToolCall(name, args || {})
       return {
         content: [
           {
@@ -103,17 +99,17 @@ async function main() {
 }
 
 // Handle graceful shutdown
-process.on('SIGINT', () => {
+Deno.addSignalListener('SIGINT', () => {
   console.error('📡 .vibe MCP server shutting down...')
-  process.exit(0)
+  Deno.exit(0)
 })
 
-process.on('SIGTERM', () => {
+Deno.addSignalListener('SIGTERM', () => {
   console.error('📡 .vibe MCP server shutting down...')
-  process.exit(0)
+  Deno.exit(0)
 })
 
 main().catch((error) => {
   console.error('❌ Failed to start .vibe MCP server:', error)
-  process.exit(1)
+  Deno.exit(1)
 })

@@ -69,7 +69,7 @@ const syncSingleTool = (
         ),
         Effect.map(fileResults => ({
           tool,
-          action: fileResults.some(r => r.action === 'error') ? 'error' as const : 'updated' as const,
+          action: fileResults.some(r => 'error' in r) ? 'error' as const : 'updated' as const,
           files: fileResults,
           timestamp: new Date().toISOString(),
           conflicts: [],

@@ -6,13 +6,7 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import {
-  ensureDir,
-  fileExists,
-  logWithContext,
-  readTextFile,
-  writeTextFile,
-} from '../../lib/effects.ts'
+import { ensureDir, fileExists, logWithContext, readTextFile, writeTextFile } from '../../lib/effects.ts'
 
 /**
  * Supported secret providers
@@ -159,9 +153,7 @@ const encryptSecrets = (secrets: Secrets) =>
           algorithm: ENCRYPTION_CONFIG.algorithm,
           iv: Array.from(iv).map((b) => b.toString(16).padStart(2, '0')).join(''),
           salt: Array.from(salt).map((b) => b.toString(16).padStart(2, '0')).join(''),
-          data: Array.from(new Uint8Array(encryptedData)).map((b) =>
-            b.toString(16).padStart(2, '0')
-          ).join(''),
+          data: Array.from(new Uint8Array(encryptedData)).map((b) => b.toString(16).padStart(2, '0')).join(''),
         }
 
         return encryptedFile

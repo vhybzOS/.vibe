@@ -105,16 +105,14 @@ describe('🚀 .vibe CLI E2E Tests', () => {
   it('vibe init: should handle force flag to overwrite existing directories', async () => {
     // First init
     await testEnv.run.init()
-    const firstConfigTime =
-      (await Deno.stat(resolve(testEnv.testDir, '.vibe', 'config.json'))).mtime
+    const firstConfigTime = (await Deno.stat(resolve(testEnv.testDir, '.vibe', 'config.json'))).mtime
 
     // Wait a moment to ensure different timestamps
     await new Promise((resolve) => setTimeout(resolve, 10))
 
     // Second init with force
     await testEnv.run.init({ force: true })
-    const secondConfigTime =
-      (await Deno.stat(resolve(testEnv.testDir, '.vibe', 'config.json'))).mtime
+    const secondConfigTime = (await Deno.stat(resolve(testEnv.testDir, '.vibe', 'config.json'))).mtime
 
     assert(
       secondConfigTime && firstConfigTime && secondConfigTime > firstConfigTime,

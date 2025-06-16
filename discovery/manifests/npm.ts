@@ -56,9 +56,7 @@ const fileExists = (path: string) =>
 const canParseNpm = (manifestPath: string) =>
   pipe(
     Effect.sync(() => manifestPath.endsWith('package.json')),
-    Effect.flatMap((isPackageJson) =>
-      isPackageJson ? fileExists(manifestPath) : Effect.succeed(false)
-    ),
+    Effect.flatMap((isPackageJson) => isPackageJson ? fileExists(manifestPath) : Effect.succeed(false)),
   )
 
 const extractDependencies = (packageJson: PackageJson, manifestPath: string) =>
@@ -133,9 +131,7 @@ const checkLockFileExists = (manifestPath: string) => {
       fileExists(resolve(manifestDir, 'yarn.lock')),
       fileExists(resolve(manifestDir, 'pnpm-lock.yaml')),
     ]),
-    Effect.map(([npmLock, shrinkwrap, yarnLock, pnpmLock]) =>
-      npmLock || shrinkwrap || yarnLock || pnpmLock
-    ),
+    Effect.map(([npmLock, shrinkwrap, yarnLock, pnpmLock]) => npmLock || shrinkwrap || yarnLock || pnpmLock),
     Effect.catchAll(() => Effect.succeed(false)),
   )
 }

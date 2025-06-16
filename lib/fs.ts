@@ -246,8 +246,7 @@ export const saveJSONWithBackup = <T>(
  * Lists all JSON files in a directory
  * Consolidates: memory/index.ts (loadMemories), diary/index.ts (loadEntries)
  */
-export const listJSONFiles = (dirPath: string) =>
-  listFiles(dirPath, (entry) => entry.name.endsWith('.json'))
+export const listJSONFiles = (dirPath: string) => listFiles(dirPath, (entry) => entry.name.endsWith('.json'))
 
 /**
  * Loads all JSON files from directory with schema validation

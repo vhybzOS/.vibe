@@ -348,9 +348,7 @@ class VibeDaemon {
     pipe(
       Effect.log('👀 Starting file watchers...'),
       Effect.all(
-        Array.from(this.state.projects.values()).map((project) =>
-          this.startProjectWatcher(project)
-        ),
+        Array.from(this.state.projects.values()).map((project) => this.startProjectWatcher(project)),
       ),
       Effect.tap(() => Effect.log('✅ All file watchers started')),
     )
@@ -407,9 +405,7 @@ class VibeDaemon {
       Effect.log(`🚀 Status: ${this.state.isRunning ? 'Running' : 'Stopped'}`),
       Effect.log(`📅 Started: ${new Date(this.state.startedAt).toLocaleString()}`),
       Effect.log(
-        `🔌 MCP Server: ${
-          this.state.mcpServer.running ? `Running on port ${this.state.mcpServer.port}` : 'Stopped'
-        }`,
+        `🔌 MCP Server: ${this.state.mcpServer.running ? `Running on port ${this.state.mcpServer.port}` : 'Stopped'}`,
       ),
       Effect.log(`📂 Projects: ${this.state.projects.size}`),
       Effect.log(''),

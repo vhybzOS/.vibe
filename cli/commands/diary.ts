@@ -70,9 +70,7 @@ export const addDiaryCommand = (
     Effect.flatMap((entry) =>
       pipe(
         Effect.log(`✅ Diary entry created with ID: ${entry.id}`),
-        Effect.flatMap(() =>
-          Effect.log(`📅 Created: ${new Date(entry.timestamp).toLocaleString()}`)
-        ),
+        Effect.flatMap(() => Effect.log(`📅 Created: ${new Date(entry.timestamp).toLocaleString()}`)),
         Effect.flatMap(() => Effect.log(`🏷️ Category: ${entry.category}`)),
         Effect.flatMap(() => Effect.log(`🏷️ Tags: ${entry.tags.join(', ')}`)),
         Effect.map(() => entry),
@@ -121,18 +119,10 @@ export const searchDiaryCommand = (
             results.map((entry, index) =>
               pipe(
                 Effect.log(`${index + 1}. ${entry.title}`),
-                Effect.flatMap(() =>
-                  Effect.log(`   Category: ${entry.category} | Tags: ${entry.tags.join(', ')}`)
-                ),
-                Effect.flatMap(() =>
-                  Effect.log(`   Created: ${new Date(entry.timestamp).toLocaleDateString()}`)
-                ),
-                Effect.flatMap(() =>
-                  Effect.log(`   Problem: ${entry.problem.description.slice(0, 80)}...`)
-                ),
-                Effect.flatMap(() =>
-                  Effect.log(`   Decision: ${entry.decision.chosen.slice(0, 80)}...`)
-                ),
+                Effect.flatMap(() => Effect.log(`   Category: ${entry.category} | Tags: ${entry.tags.join(', ')}`)),
+                Effect.flatMap(() => Effect.log(`   Created: ${new Date(entry.timestamp).toLocaleDateString()}`)),
+                Effect.flatMap(() => Effect.log(`   Problem: ${entry.problem.description.slice(0, 80)}...`)),
+                Effect.flatMap(() => Effect.log(`   Decision: ${entry.decision.chosen.slice(0, 80)}...`)),
                 Effect.flatMap(() => Effect.log('')),
               )
             ),
@@ -187,13 +177,9 @@ export const timelineCommand = (
             filteredEntries.map((entry, index) =>
               pipe(
                 Effect.log(
-                  `${index + 1}. [${
-                    new Date(entry.timestamp).toLocaleDateString()
-                  }] ${entry.title}`,
+                  `${index + 1}. [${new Date(entry.timestamp).toLocaleDateString()}] ${entry.title}`,
                 ),
-                Effect.flatMap(() =>
-                  Effect.log(`   📂 ${entry.category} | 🏷️ ${entry.tags.join(', ')}`)
-                ),
+                Effect.flatMap(() => Effect.log(`   📂 ${entry.category} | 🏷️ ${entry.tags.join(', ')}`)),
                 Effect.flatMap(() => Effect.log(`   💡 ${entry.decision.chosen.slice(0, 100)}...`)),
                 Effect.flatMap(() => Effect.log('')),
               )
@@ -268,9 +254,7 @@ export const getDiaryCommand = (
               Effect.log('Alternatives:'),
               Effect.flatMap(() =>
                 Effect.all(
-                  entry.decision.alternatives.map((alt) =>
-                    Effect.log(`- ${alt.option}: ${alt.reason}`)
-                  ),
+                  entry.decision.alternatives.map((alt) => Effect.log(`- ${alt.option}: ${alt.reason}`)),
                   { discard: true },
                 )
               ),
@@ -372,9 +356,7 @@ export const updateDiaryCommand = (
       pipe(
         Effect.log('✅ Diary entry updated successfully'),
         Effect.flatMap(() => Effect.log(`📋 Title: ${updatedEntry.title}`)),
-        Effect.flatMap(() =>
-          Effect.log(`📅 Updated: ${new Date(updatedEntry.timestamp).toLocaleString()}`)
-        ),
+        Effect.flatMap(() => Effect.log(`📅 Updated: ${new Date(updatedEntry.timestamp).toLocaleString()}`)),
         Effect.map(() => updatedEntry),
       )
     ),
@@ -518,9 +500,7 @@ export const diaryStatsCommand = (projectPath: string) =>
         Effect.flatMap(() => Effect.log('📂 By Category:')),
         Effect.flatMap(() =>
           Effect.all(
-            Object.entries(stats.byCategory).map(([category, count]) =>
-              Effect.log(`   ${category}: ${count}`)
-            ),
+            Object.entries(stats.byCategory).map(([category, count]) => Effect.log(`   ${category}: ${count}`)),
           )
         ),
         Effect.map(() => stats),

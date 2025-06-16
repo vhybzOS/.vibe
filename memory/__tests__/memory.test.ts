@@ -12,14 +12,7 @@ import { Effect } from 'effect'
 import { type MemoryQuery } from '../../schemas/memory.ts'
 
 // Import functions to be implemented/rewritten
-import {
-  deleteMemory,
-  getMemory,
-  loadMemories,
-  searchMemory,
-  storeMemory,
-  updateMemoryAccess,
-} from '../index.ts'
+import { deleteMemory, getMemory, loadMemories, searchMemory, storeMemory, updateMemoryAccess } from '../index.ts'
 
 describe('🧠 Memory System', () => {
   let testDir: string
@@ -81,8 +74,7 @@ describe('🧠 Memory System', () => {
     })
 
     it('should create searchable content with keywords and concepts', async () => {
-      const content =
-        'Learning about Effect-TS error handling and pipe composition for better async workflows'
+      const content = 'Learning about Effect-TS error handling and pipe composition for better async workflows'
       const metadata = {
         type: 'knowledge' as const,
         source: {

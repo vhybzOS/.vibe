@@ -31,8 +31,7 @@ const loadSingleRule = (filePath: string) =>
     Effect.flatMap((data) =>
       Effect.try({
         try: () => UniversalRuleSchema.parse(data),
-        catch: (error) =>
-          createParseError(error, filePath, `Invalid rule schema in ${filePath}: ${error}`),
+        catch: (error) => createParseError(error, filePath, `Invalid rule schema in ${filePath}: ${error}`),
       })
     ),
     Effect.catchAll((error) => {
@@ -69,9 +68,7 @@ export const generateRulesFromProject = (
         .filter((pattern: { confidence: number }) => pattern.confidence >= options.threshold)
         .map(createRuleFromPattern)
     ),
-    Effect.tap((rules) =>
-      logWithContext('Generation', `Generated ${rules.length} rules from project analysis`)
-    ),
+    Effect.tap((rules) => logWithContext('Generation', `Generated ${rules.length} rules from project analysis`)),
   )
 
 /**
@@ -145,9 +142,7 @@ const createRuleFromPattern = (
     contexts: [],
   },
   content: {
-    markdown: `## ${pattern.description}\n\n${
-      pattern.examples.map((ex: string) => `- \`${ex}\``).join('\n')
-    }`,
+    markdown: `## ${pattern.description}\n\n${pattern.examples.map((ex: string) => `- \`${ex}\``).join('\n')}`,
     examples: pattern.examples.map((ex: string) => ({
       code: ex,
       language: 'typescript',

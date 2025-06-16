@@ -134,9 +134,7 @@ const showGenerationResults = (rules: Array<{ id: string; description: string; t
       if (rules.length === 0) {
         return pipe(
           Effect.log('ℹ️  No rules generated'),
-          Effect.flatMap(() =>
-            Effect.log('   Try lowering the confidence threshold with --threshold')
-          ),
+          Effect.flatMap(() => Effect.log('   Try lowering the confidence threshold with --threshold')),
         )
       }
       return showGeneratedRules(rules)
@@ -145,9 +143,7 @@ const showGenerationResults = (rules: Array<{ id: string; description: string; t
       if (rules.length > 0) {
         return pipe(
           Effect.log(''),
-          Effect.flatMap(() =>
-            Effect.log(`✅ Generated ${rules.length} rules from project analysis`)
-          ),
+          Effect.flatMap(() => Effect.log(`✅ Generated ${rules.length} rules from project analysis`)),
           Effect.flatMap(() => Effect.log('💡 Review and customize these rules in .vibe/rules/')),
         )
       }
@@ -164,9 +160,7 @@ const showGeneratedRules = (rules: Array<{ id: string; description: string; type
       pipe(
         Effect.log(`   ${index + 1}. ${rule.name}`),
         Effect.flatMap(() => Effect.log(`      ${rule.description}`)),
-        Effect.flatMap(() =>
-          Effect.log(`      Confidence: ${(rule.confidence * 100).toFixed(0)}%`)
-        ),
+        Effect.flatMap(() => Effect.log(`      Confidence: ${(rule.confidence * 100).toFixed(0)}%`)),
       )
     )),
     Effect.flatMap(() => Effect.void),

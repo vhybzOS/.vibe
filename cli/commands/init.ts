@@ -133,9 +133,7 @@ const bootstrapProjectSecrets = (projectPath: string) => {
       return secretsToSet
     }),
     Effect.flatMap((effects) => Effect.all(effects, { discard: true, concurrency: 'unbounded' })),
-    Effect.tap(() =>
-      Effect.log('✨ Bootstrapped secrets from project .env file into ./.vibe/secrets.json')
-    ),
+    Effect.tap(() => Effect.log('✨ Bootstrapped secrets from project .env file into ./.vibe/secrets.json')),
     Effect.catchAll(() => Effect.succeed(void 0)), // Gracefully ignore if .env doesn't exist or fails to parse
   )
 }

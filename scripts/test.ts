@@ -142,9 +142,7 @@ class TestRunner {
 
     this.results.push(suite)
     console.log(
-      `📊 ${suiteName}: ${suite.passed} passed, ${suite.failed} failed (${
-        suite.totalDuration.toFixed(0)
-      }ms)`,
+      `📊 ${suiteName}: ${suite.passed} passed, ${suite.failed} failed (${suite.totalDuration.toFixed(0)}ms)`,
     )
     console.log('')
   }

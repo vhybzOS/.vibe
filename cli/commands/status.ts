@@ -167,13 +167,11 @@ const checkDirectory = (path: string) =>
  * Display tools information
  */
 const showTools = (tools: DetectedTool[]) =>
-  tools.length === 0
-    ? Effect.log('   No AI tools detected')
-    : Effect.all(tools.map((tool) => {
-      const name = TOOL_CONFIGS[tool.tool]?.name || tool.tool
-      const status = tool.status === 'active' ? '✅' : tool.status === 'inactive' ? '⚠️' : '❌'
-      return Effect.log(`   ${status} ${name} (${tool.tool}) - ${Math.round(tool.confidence * 100)}%`)
-    }))
+  tools.length === 0 ? Effect.log('   No AI tools detected') : Effect.all(tools.map((tool) => {
+    const name = TOOL_CONFIGS[tool.tool]?.name || tool.tool
+    const status = tool.status === 'active' ? '✅' : tool.status === 'inactive' ? '⚠️' : '❌'
+    return Effect.log(`   ${status} ${name} (${tool.tool}) - ${Math.round(tool.confidence * 100)}%`)
+  }))
 
 /**
  * Display rules information
@@ -199,13 +197,9 @@ const showHealth = (health: {
 }) =>
   pipe(
     Effect.log(`   ⚙️  Configuration: ${health.configExists ? '✅ OK' : '❌ Missing'}`),
-    Effect.flatMap(() =>
-      Effect.log(`   🔐 Secrets: ${health.secretsExists ? '✅ OK' : '⚠️  Not configured'}`)
-    ),
+    Effect.flatMap(() => Effect.log(`   🔐 Secrets: ${health.secretsExists ? '✅ OK' : '⚠️  Not configured'}`)),
     Effect.flatMap(() => Effect.log(`   📋 Rules: ${health.rulesExists ? '✅ OK' : '❌ Missing'}`)),
-    Effect.flatMap(() =>
-      Effect.log(`   💾 Memory: ${health.memoryExists ? '✅ OK' : '❌ Missing'}`)
-    ),
+    Effect.flatMap(() => Effect.log(`   💾 Memory: ${health.memoryExists ? '✅ OK' : '❌ Missing'}`)),
     Effect.flatMap(() => Effect.log(`   📔 Diary: ${health.diaryExists ? '✅ OK' : '❌ Missing'}`)),
   )
 

@@ -63,9 +63,7 @@ const scanForManifestFiles = (projectPath: string) =>
       catch: (error) =>
         createDiscoveryError(
           error,
-          `Failed to scan for manifest files: ${
-            error instanceof Error ? error.message : 'Unknown error'
-          }`,
+          `Failed to scan for manifest files: ${error instanceof Error ? error.message : 'Unknown error'}`,
         ),
     }),
   )

@@ -60,9 +60,7 @@ const syncSingleTool = (
 
       return pipe(
         Effect.all(
-          config.configFiles.map((configFile) =>
-            generateToolConfig(projectPath, tool, configFile.path, relevantRules)
-          ),
+          config.configFiles.map((configFile) => generateToolConfig(projectPath, tool, configFile.path, relevantRules)),
         ),
         Effect.map((fileResults) => ({
           tool,
@@ -87,9 +85,7 @@ const generateToolConfig = (
 ) =>
   pipe(
     Effect.sync(() => compileRulesForTool(tool, rules)),
-    Effect.flatMap((compiledContent) =>
-      writeToolConfig(resolve(projectPath, configPath), compiledContent)
-    ),
+    Effect.flatMap((compiledContent) => writeToolConfig(resolve(projectPath, configPath), compiledContent)),
     Effect.map(() => ({
       path: configPath,
       action: 'updated' as const,
@@ -273,7 +269,5 @@ export const importToolConfig = (
       importedRules: rules,
       timestamp: new Date().toISOString(),
     })),
-    Effect.tap((result) =>
-      logWithContext('Import', `Imported ${result.importedRules.length} rules from ${tool}`)
-    ),
+    Effect.tap((result) => logWithContext('Import', `Imported ${result.importedRules.length} rules from ${tool}`)),
   )

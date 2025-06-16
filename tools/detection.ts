@@ -341,9 +341,7 @@ const calculateConfidence = (
 ): number => {
   const requiredFiles = config.configFiles.filter((cf) => cf.required).length
   const foundRequiredFiles =
-    fileMatches.filter((file) =>
-      config.configFiles.some((cf) => cf.path === file.path && cf.required)
-    ).length
+    fileMatches.filter((file) => config.configFiles.some((cf) => cf.path === file.path && cf.required)).length
 
   if (requiredFiles > 0 && foundRequiredFiles === 0) {
     return 0.3 // Low confidence if no required files found

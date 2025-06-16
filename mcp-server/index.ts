@@ -76,9 +76,7 @@ async function main() {
       }
     } catch (error) {
       throw new Error(
-        `Failed to read resource ${uri}: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`,
+        `Failed to read resource ${uri}: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
     }
   })

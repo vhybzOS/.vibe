@@ -32,7 +32,11 @@ const createMockApiServer = (state: MockApiState) => {
       const body = await req.text()
       const { projectPath } = JSON.parse(body)
       const sessionId = `test-session-${crypto.randomUUID()}`
-      state.discoverySessions.set(sessionId, { projectPath, status: 'running', lastActivity: new Date().toISOString() })
+      state.discoverySessions.set(sessionId, {
+        projectPath,
+        status: 'running',
+        lastActivity: new Date().toISOString(),
+      })
       return new Response(JSON.stringify({ success: true, sessionId }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -99,8 +103,7 @@ export const setupTestCli = async () => {
     run: {
       init: (options: { force?: boolean } = {}) => Effect.runPromise(initCommand(testDir, options)),
       status: () => Effect.runPromise(statusCommand(testDir, {})),
-      discover: (options: { forceRefresh?: boolean } = {}) =>
-        Effect.runPromise(discoverCommand(testDir, options)),
+      discover: (options: { forceRefresh?: boolean } = {}) => Effect.runPromise(discoverCommand(testDir, options)),
     },
   }
 }

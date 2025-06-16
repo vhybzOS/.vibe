@@ -92,12 +92,8 @@ export class FileWatcherService {
   start() {
     return pipe(
       Effect.log(`📁 Starting file watcher for ${this.config.projectPath}`),
-      Effect.flatMap(() =>
-        Effect.log(`🔍 Watching patterns: ${this.config.watchPatterns.join(', ')}`)
-      ),
-      Effect.flatMap(() =>
-        Effect.log(`🚫 Ignoring patterns: ${this.config.ignorePatterns.join(', ')}`)
-      ),
+      Effect.flatMap(() => Effect.log(`🔍 Watching patterns: ${this.config.watchPatterns.join(', ')}`)),
+      Effect.flatMap(() => Effect.log(`🚫 Ignoring patterns: ${this.config.ignorePatterns.join(', ')}`)),
       Effect.flatMap(() => Effect.succeed({ started: true })),
     )
   }

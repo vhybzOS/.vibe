@@ -35,11 +35,9 @@ export type DaemonConfig = z.output<typeof DaemonConfigSchema>
 
 const CONFIG_PATH = '~/.config/vibe/daemon.json'
 
-export const loadDaemonConfig = () =>
-  loadConfig(expandPath(CONFIG_PATH), DaemonConfigSchema, getDefaultConfig())
+export const loadDaemonConfig = () => loadConfig(expandPath(CONFIG_PATH), DaemonConfigSchema, getDefaultConfig())
 
-export const saveDaemonConfig = (config: DaemonConfig) =>
-  saveJSONWithBackup(expandPath(CONFIG_PATH), config)
+export const saveDaemonConfig = (config: DaemonConfig) => saveJSONWithBackup(expandPath(CONFIG_PATH), config)
 
 export const getDefaultConfig = (): DaemonConfig => DaemonConfigSchema.parse({})
 

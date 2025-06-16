@@ -191,9 +191,7 @@ const showExportResults = (outputPath: string, options: { format?: string }) =>
     Effect.flatMap(() => getFileSize(outputPath)),
     Effect.flatMap((size) => Effect.log(`   📦 Size: ${formatBytes(size)}`)),
     Effect.flatMap(() => Effect.log('')),
-    Effect.flatMap(() =>
-      Effect.log('💡 Use this file with AI assistants that support AgentFile format')
-    ),
+    Effect.flatMap(() => Effect.log('💡 Use this file with AI assistants that support AgentFile format')),
   )
 
 /**

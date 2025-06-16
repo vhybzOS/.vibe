@@ -6,12 +6,7 @@
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
 import { createFileSystemError } from '../lib/errors.ts'
-import type {
-  SearchDocument,
-  SearchQuery,
-  SearchResponse,
-  SearchResult,
-} from '../schemas/search.ts'
+import type { SearchDocument, SearchQuery, SearchResponse, SearchResult } from '../schemas/search.ts'
 
 // Re-export types for external use
 export type { SearchDocument, SearchQuery, SearchResponse, SearchResult }
@@ -549,7 +544,9 @@ export const createMemorySearchDocument = (memory: {
   metadata: {
     project_path: vibePath,
     source: memory.metadata.source.tool || 'unknown',
-    priority: memory.metadata.importance === 'critical' ? 'high' : (memory.metadata.importance as 'low' | 'medium' | 'high'),
+    priority: memory.metadata.importance === 'critical'
+      ? 'high'
+      : (memory.metadata.importance as 'low' | 'medium' | 'high'),
     category: memory.metadata.type,
     title: memory.content.title,
   },
@@ -616,9 +613,7 @@ export const convertMemoryQueryToSearch = (query: {
         end: query.timeRange.to ? new Date(query.timeRange.to).getTime() : undefined,
       }
       : undefined,
-    priority: query.importance.length > 0
-      ? query.importance[0] as 'low' | 'medium' | 'high'
-      : undefined,
+    priority: query.importance.length > 0 ? query.importance[0] as 'low' | 'medium' | 'high' : undefined,
   },
   mode: 'keyword' as const,
   limit: query.limit || 20,

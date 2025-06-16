@@ -36,12 +36,7 @@ interface DiscoveryResult {
 }
 import { ensureDir, VibeError, writeTextFile } from '../../lib/effects.ts'
 import { createNetworkError } from '../../lib/errors.ts'
-import {
-  DiscoveredRule,
-  extractGitHubRepo,
-  makeHttpRequest,
-  PackageMetadata,
-} from '../../discovery/registries/base.ts'
+import { DiscoveredRule, extractGitHubRepo, makeHttpRequest, PackageMetadata } from '../../discovery/registries/base.ts'
 import { UniversalRule, UniversalRuleSchema } from '../../schemas/universal-rule.ts'
 import { getSecret, type SecretProvider } from './secrets_service.ts'
 import { parseToolConfig } from '../../tools/parsers.ts'
@@ -232,9 +227,7 @@ const checkRepositoryForRules = (githubRepo: string, token: string, metadata: Pa
       }).pipe(Effect.catchAll(() => Effect.succeed(null))),
     ]),
     Effect.flatMap(([vibeDir, cursorrules]) => {
-      const vibeEffect = vibeDir
-        ? parseVibeDirectory(githubRepo, token, vibeDir, metadata)
-        : Effect.succeed([])
+      const vibeEffect = vibeDir ? parseVibeDirectory(githubRepo, token, vibeDir, metadata) : Effect.succeed([])
       const cursorruleEffect = cursorrules
         ? parseCursorrules(githubRepo, token, cursorrules, metadata)
         : Effect.succeed([])
@@ -273,9 +266,7 @@ const parseVibeDirectory = (
                 catch: () => [] as UniversalRule[],
               })
             ),
-            Effect.map((rules) =>
-              rules.map((rule) => convertUniversalRuleToDiscovered(rule, metadata, 'repository'))
-            ),
+            Effect.map((rules) => rules.map((rule) => convertUniversalRuleToDiscovered(rule, metadata, 'repository'))),
             Effect.catchAll(() => Effect.succeed([] as DiscoveredRule[])),
           )
         ),
@@ -307,9 +298,7 @@ const parseCursorrules = (
       if (!contentStr) return Effect.succeed([])
       return pipe(
         parseToolConfig('cursor', contentStr),
-        Effect.map((rules) =>
-          rules.map((rule) => convertUniversalRuleToDiscovered(rule, metadata, 'repository'))
-        ),
+        Effect.map((rules) => rules.map((rule) => convertUniversalRuleToDiscovered(rule, metadata, 'repository'))),
         Effect.catchAll(() => Effect.succeed([] as DiscoveredRule[])),
       )
     }),
@@ -542,8 +531,7 @@ Now, generate the JSON array of UniversalRule objects for the '${metadata.name}'
           },
         }
       },
-      catch: (error) =>
-        new Error(`AI inference failed: ${error instanceof Error ? error.message : String(error)}`),
+      catch: (error) => new Error(`AI inference failed: ${error instanceof Error ? error.message : String(error)}`),
     }),
   )
 
@@ -633,9 +621,7 @@ export const cacheEnhancedResults = (
   projectPath: string,
 ) =>
   pipe(
-    Effect.sync(() =>
-      resolve(projectPath, '.vibe', 'dependencies', metadata.name, metadata.version)
-    ),
+    Effect.sync(() => resolve(projectPath, '.vibe', 'dependencies', metadata.name, metadata.version)),
     Effect.flatMap((cacheDir) =>
       pipe(
         ensureDir(cacheDir),
@@ -651,7 +637,5 @@ export const cacheEnhancedResults = (
         ),
       )
     ),
-    Effect.tap(() =>
-      Effect.log(`💾 Cached enhanced discovery results for ${metadata.name}@${metadata.version}`)
-    ),
+    Effect.tap(() => Effect.log(`💾 Cached enhanced discovery results for ${metadata.name}@${metadata.version}`)),
   )

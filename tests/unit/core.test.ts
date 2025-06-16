@@ -169,9 +169,7 @@ describe('🔧 Core Module Unit Tests', () => {
     it('🎯 should handle optional Effects', async () => {
       const maybeEffect = Effect.succeed('value').pipe(
         Effect.flatMap((value) =>
-          value === 'value'
-            ? Effect.succeed(value.toUpperCase())
-            : Effect.fail(new Error('Invalid value'))
+          value === 'value' ? Effect.succeed(value.toUpperCase()) : Effect.fail(new Error('Invalid value'))
         ),
       )
 

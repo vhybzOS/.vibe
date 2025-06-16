@@ -17,12 +17,7 @@ import {
   searchMemory,
   storeMemory,
 } from '../memory/index.ts'
-import {
-  initializeSearch,
-  insertDocument,
-  searchDocuments,
-  type SearchQuery,
-} from '../search/index.ts'
+import { initializeSearch, insertDocument, searchDocuments, type SearchQuery } from '../search/index.ts'
 import {
   createEntry,
   deleteEntry,
@@ -595,9 +590,7 @@ export class VibeDaemon {
       const searchQuery: SearchQuery = {
         term,
         filters: {
-          doc_type: type?.[0]
-            ? z.enum(['memory', 'diary', 'rule', 'dependency']).parse(type[0])
-            : undefined,
+          doc_type: type?.[0] ? z.enum(['memory', 'diary', 'rule', 'dependency']).parse(type[0]) : undefined,
           tags,
           date_range: undefined,
           priority: undefined,
@@ -910,11 +903,11 @@ export class VibeDaemon {
       Effect.log(`🚀 Status: ${this.state.isRunning ? 'Running' : 'Stopped'}`),
       Effect.log(`📅 Started: ${new Date(this.state.startedAt).toLocaleString()}`),
       Effect.log(`🌐 Port: ${this.state.port}`),
-      Effect.log(`🔌 MCP Server: ${
-        this.state.mcpServer.running
-          ? `Running on port ${this.state.mcpServer.port}`
-          : 'Available (not started)'
-      }`),
+      Effect.log(
+        `🔌 MCP Server: ${
+          this.state.mcpServer.running ? `Running on port ${this.state.mcpServer.port}` : 'Available (not started)'
+        }`,
+      ),
       Effect.log(`🆔 PID: ${Deno.pid}`),
       Effect.log(''),
       Effect.log('📡 Endpoints:'),

@@ -18,11 +18,4 @@ export * from './rules/index.ts'
 export * from './memory/index.ts'
 
 // Re-export commonly used types
-export type {
-  AIToolConfig,
-  DetectedTool,
-  Memory,
-  SearchQuery,
-  SearchResponse,
-  UniversalRule,
-} from './schemas/index.ts'
+export type { AIToolConfig, DetectedTool, Memory, SearchQuery, SearchResponse, UniversalRule } from './schemas/index.ts'

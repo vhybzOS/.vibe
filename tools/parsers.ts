@@ -37,8 +37,7 @@ export const parseToolConfig = (tool: AIToolType, content: string) =>
             )
         }
       },
-      catch: (error) =>
-        createParseError(error, content, `Failed to parse ${tool} config: ${error}`),
+      catch: (error) => createParseError(error, content, `Failed to parse ${tool} config: ${error}`),
     }),
     Effect.tap((rules) => logWithContext('Parser', `Parsed ${rules.length} rules from ${tool}`)),
   )

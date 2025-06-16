@@ -14,12 +14,7 @@ import {
   type Impact,
   type Problem,
 } from '../schemas/diary.ts'
-import {
-  initializeSearch,
-  insertDocument,
-  type SearchDocument,
-  searchDocuments,
-} from '../search/index.ts'
+import { initializeSearch, insertDocument, type SearchDocument, searchDocuments } from '../search/index.ts'
 import { createFileSystemError, createParseError, type VibeError } from '../lib/errors.ts'
 
 /**
@@ -135,14 +130,12 @@ export const searchDiary = (
     Effect.flatMap((response) =>
       pipe(
         // Filter results by relevance score first - lower threshold for filter-only searches
-        Effect.sync(() =>
-          response.results.filter((result) =>
-            query.query ? result.score >= 0.5 : result.score >= 0.1
+        Effect.sync(() => response.results.filter((result) => query.query ? result.score >= 0.5 : result.score >= 0.1)),
+        Effect.flatMap((filteredResults) =>
+          Effect.all(
+            filteredResults.map((result) => loadEntryFromId(vibePath, result.document.id)),
           )
         ),
-        Effect.flatMap((filteredResults) => Effect.all(
-          filteredResults.map((result) => loadEntryFromId(vibePath, result.document.id)),
-        )),
         Effect.map((entries) => entries.filter((entry): entry is DiaryEntry => entry !== null)),
       )
     ),
@@ -172,9 +165,7 @@ export const getTimeline = (
       }
 
       // Sort by timestamp (newest first)
-      return filteredEntries.sort((a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      )
+      return filteredEntries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     }),
   )
 
@@ -658,9 +649,7 @@ const extractRisks = (content: string): string[] => {
  * Exports diary entries to markdown format
  */
 const exportToMarkdown = (entries: DiaryEntry[]): string => {
-  const sortedEntries = entries.sort((a, b) =>
-    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  )
+  const sortedEntries = entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 
   let markdown = '# Decision Diary\n\n'
   markdown += `Generated on ${new Date().toISOString()}\n\n`

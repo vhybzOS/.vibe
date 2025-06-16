@@ -317,9 +317,7 @@ export class DiscoveryService {
               return pipe(
                 enhancedDiscoverRules(successful.metadata),
                 Effect.map((enhancedResult) => enhancedResult.rules),
-                Effect.tap((rules) =>
-                  cacheEnhancedResults(successful.metadata, [], session.projectPath)
-                ),
+                Effect.tap((rules) => cacheEnhancedResults(successful.metadata, [], session.projectPath)),
                 Effect.catchAll((error) => {
                   console.warn(`Enhanced discovery failed for ${dependency.name}:`, error.message)
                   // Fall back to original rules
@@ -336,9 +334,7 @@ export class DiscoveryService {
         { concurrency: this.config.maxConcurrency },
       ),
       Effect.map((rulesArrays) => rulesArrays.flat()),
-      Effect.tap((allRules) =>
-        Effect.log(`✅ Enhanced discovery completed: ${allRules.length} total rules`)
-      ),
+      Effect.tap((allRules) => Effect.log(`✅ Enhanced discovery completed: ${allRules.length} total rules`)),
     )
 
   /**

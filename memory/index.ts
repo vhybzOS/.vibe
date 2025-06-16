@@ -332,9 +332,7 @@ const extractKeywords = (content: string): string[] => {
     .replace(/[^\w\s-]/g, ' ')
     .split(/\s+/)
     .filter((word) => word.length > 3)
-    .filter((word) =>
-      !['this', 'that', 'with', 'from', 'they', 'have', 'will', 'been', 'were'].includes(word)
-    )
+    .filter((word) => !['this', 'that', 'with', 'from', 'they', 'have', 'will', 'been', 'were'].includes(word))
 
   const uniqueWords = Array.from(new Set(words))
   return uniqueWords.slice(0, 10)

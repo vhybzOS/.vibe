@@ -5,12 +5,7 @@
  */
 
 import { Effect, pipe } from 'effect'
-import {
-  createFileSystemError,
-  createParseError,
-  createTimeoutError,
-  type VibeError,
-} from './errors.ts'
+import { createFileSystemError, createParseError, createTimeoutError, type VibeError } from './errors.ts'
 
 /**
  * Safely reads a text file with proper error handling
@@ -94,8 +89,7 @@ export const parseJSON = <T>(content: string, context: string = 'unknown') =>
 /**
  * Creates a standardized log effect with context
  */
-export const logWithContext = (context: string, message: string) =>
-  Effect.log(`[${context}] ${message}`)
+export const logWithContext = (context: string, message: string) => Effect.log(`[${context}] ${message}`)
 
 /**
  * Retries an effect with exponential backoff

@@ -34,7 +34,13 @@ export const addMemoryCommand = (
     Effect.log('💾 Adding memory entry...'),
     Effect.flatMap(() => {
       const metadata: MemoryMetadataInput = {
-        type: (options.type as 'knowledge' | 'conversation' | 'decision' | 'context' | 'preference' | 'pattern') ||
+        type: (options.type as
+          | 'knowledge'
+          | 'conversation'
+          | 'decision'
+          | 'context'
+          | 'preference'
+          | 'pattern') ||
           'knowledge',
         source: {
           tool: (options.source as 'cursor' | 'windsurf' | 'claude' | 'copilot') || undefined,
@@ -54,9 +60,7 @@ export const addMemoryCommand = (
     Effect.flatMap((result) =>
       pipe(
         Effect.log(`✅ Memory stored with ID: ${result.id}`),
-        Effect.flatMap(() =>
-          Effect.log(`📅 Created: ${new Date(result.timestamp).toLocaleString()}`)
-        ),
+        Effect.flatMap(() => Effect.log(`📅 Created: ${new Date(result.timestamp).toLocaleString()}`)),
         Effect.map(() => result),
       )
     ),
@@ -104,24 +108,20 @@ export const searchMemoryCommand = (
             results.map((result, index) =>
               pipe(
                 Effect.log(
-                  `${index + 1}. ${result.memory.content.title} (Score: ${
-                    result.score.toFixed(2)
-                  })`,
+                  `${index + 1}. ${result.memory.content.title} (Score: ${result.score.toFixed(2)})`,
                 ),
-                Effect.flatMap(() => Effect.log(
-                  `   Type: ${result.memory.metadata.type} | Importance: ${result.memory.metadata.importance}`,
-                )),
                 Effect.flatMap(() =>
-                  Effect.log(`   Tags: ${result.memory.metadata.tags.join(', ')}`)
+                  Effect.log(
+                    `   Type: ${result.memory.metadata.type} | Importance: ${result.memory.metadata.importance}`,
+                  )
                 ),
+                Effect.flatMap(() => Effect.log(`   Tags: ${result.memory.metadata.tags.join(', ')}`)),
                 Effect.flatMap(() =>
                   Effect.log(
                     `   Created: ${new Date(result.memory.lifecycle.created).toLocaleDateString()}`,
                   )
                 ),
-                Effect.flatMap(() =>
-                  Effect.log(`   Summary: ${result.memory.content.summary.slice(0, 100)}...`)
-                ),
+                Effect.flatMap(() => Effect.log(`   Summary: ${result.memory.content.summary.slice(0, 100)}...`)),
                 Effect.flatMap(() => Effect.log('')),
               )
             ),
@@ -160,9 +160,7 @@ export const getMemoryCommand = (
         Effect.flatMap(() => Effect.log(`🏷️  Type: ${memory.metadata.type}`)),
         Effect.flatMap(() => Effect.log(`⭐ Importance: ${memory.metadata.importance}`)),
         Effect.flatMap(() => Effect.log(`🏷️  Tags: ${memory.metadata.tags.join(', ')}`)),
-        Effect.flatMap(() =>
-          Effect.log(`📅 Created: ${new Date(memory.lifecycle.created).toLocaleString()}`)
-        ),
+        Effect.flatMap(() => Effect.log(`📅 Created: ${new Date(memory.lifecycle.created).toLocaleString()}`)),
         Effect.flatMap(() => Effect.log(`👁️  Access Count: ${memory.metadata.accessCount}`)),
         Effect.flatMap(() => Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')),
         Effect.flatMap(() => Effect.log('📖 Summary:')),
@@ -202,15 +200,11 @@ export const listMemoriesCommand = (
       }
 
       if (options.importance) {
-        filteredMemories = filteredMemories.filter((m) =>
-          m.metadata.importance === options.importance
-        )
+        filteredMemories = filteredMemories.filter((m) => m.metadata.importance === options.importance)
       }
 
       // Sort by creation date (newest first)
-      filteredMemories.sort((a, b) =>
-        new Date(b.lifecycle.created).getTime() - new Date(a.lifecycle.created).getTime()
-      )
+      filteredMemories.sort((a, b) => new Date(b.lifecycle.created).getTime() - new Date(a.lifecycle.created).getTime())
 
       // Apply limit
       if (options.limit) {
@@ -239,9 +233,7 @@ export const listMemoriesCommand = (
                     } | Access Count: ${memory.metadata.accessCount}`,
                   )
                 ),
-                Effect.flatMap(() =>
-                  Effect.log(`   Summary: ${memory.content.summary.slice(0, 80)}...`)
-                ),
+                Effect.flatMap(() => Effect.log(`   Summary: ${memory.content.summary.slice(0, 80)}...`)),
                 Effect.flatMap(() => Effect.log('')),
               )
             ),
@@ -326,8 +318,7 @@ export const memoryStatsCommand = (projectPath: string) =>
         stats.byType[memory.metadata.type] = (stats.byType[memory.metadata.type] || 0) + 1
 
         // Count by importance
-        stats.byImportance[memory.metadata.importance] =
-          (stats.byImportance[memory.metadata.importance] || 0) + 1
+        stats.byImportance[memory.metadata.importance] = (stats.byImportance[memory.metadata.importance] || 0) + 1
 
         // Total accesses
         stats.totalAccesses += memory.metadata.accessCount
@@ -349,9 +340,7 @@ export const memoryStatsCommand = (projectPath: string) =>
         Effect.log(`📚 Total memories: ${stats.total}`),
         Effect.flatMap(() => Effect.log(`📈 Recent (last 7 days): ${stats.recentCount}`)),
         Effect.flatMap(() => Effect.log(`👁️  Total accesses: ${stats.totalAccesses}`)),
-        Effect.flatMap(() =>
-          Effect.log(`📏 Average content length: ${stats.averageContentLength} chars`)
-        ),
+        Effect.flatMap(() => Effect.log(`📏 Average content length: ${stats.averageContentLength} chars`)),
         Effect.flatMap(() => Effect.log('')),
         Effect.flatMap(() => Effect.log('📊 By Type:')),
         Effect.flatMap(() =>
@@ -363,9 +352,7 @@ export const memoryStatsCommand = (projectPath: string) =>
         Effect.flatMap(() => Effect.log('⭐ By Importance:')),
         Effect.flatMap(() =>
           Effect.all(
-            Object.entries(stats.byImportance).map(([importance, count]) =>
-              Effect.log(`   ${importance}: ${count}`)
-            ),
+            Object.entries(stats.byImportance).map(([importance, count]) => Effect.log(`   ${importance}: ${count}`)),
           )
         ),
         Effect.map(() => stats),

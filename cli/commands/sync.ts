@@ -61,9 +61,7 @@ const performSync = (
           if (tools.length === 0) {
             return pipe(
               Effect.log('ℹ️  No AI tools detected to sync'),
-              Effect.flatMap(() =>
-                Effect.log('   Supported tools: Cursor, Windsurf, Claude Desktop')
-              ),
+              Effect.flatMap(() => Effect.log('   Supported tools: Cursor, Windsurf, Claude Desktop')),
             )
           }
           return performToolSync(tools, rules, options)
@@ -161,19 +159,16 @@ const showSyncResults = (
     Effect.flatMap(() => Effect.log('📊 Sync Results:')),
     Effect.flatMap(() => Effect.log('━━━━━━━━━━━━━━━━━━━━━')),
     Effect.flatMap(() =>
-      Effect.all(results.map((result) =>
-        Effect.log(`   ${getToolIcon(result.tool)} ${result.tool}: ${result.message}`)
-      ))
+      Effect.all(
+        results.map((result) => Effect.log(`   ${getToolIcon(result.tool)} ${result.tool}: ${result.message}`)),
+      )
     ),
     Effect.flatMap(() => {
-      const totalRules = results.reduce((sum, r) =>
-        sum + r.rulesCount, 0)
+      const totalRules = results.reduce((sum, r) => sum + r.rulesCount, 0)
       const action = options.dryRun ? 'would be synced' : 'synced'
       return pipe(
         Effect.log(''),
-        Effect.flatMap(() =>
-          Effect.log(`✅ ${totalRules} rules ${action} across ${results.length} tools`)
-        ),
+        Effect.flatMap(() => Effect.log(`✅ ${totalRules} rules ${action} across ${results.length} tools`)),
       )
     }),
   )

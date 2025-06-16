@@ -12,15 +12,7 @@ import { Effect } from 'effect'
 import { type DiaryCategory } from '../../schemas/diary.ts'
 
 // Import functions to be implemented/rewritten
-import {
-  autoCapture,
-  createEntry,
-  deleteEntry,
-  exportDiary,
-  getTimeline,
-  searchDiary,
-  updateEntry,
-} from '../index.ts'
+import { autoCapture, createEntry, deleteEntry, exportDiary, getTimeline, searchDiary, updateEntry } from '../index.ts'
 
 describe('📔 Diary System', () => {
   let testDir: string

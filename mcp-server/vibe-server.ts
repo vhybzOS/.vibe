@@ -10,12 +10,7 @@ import { loadRules } from '../rules/index.ts'
 import { UniversalRule } from '../schemas/universal-rule.ts'
 import { MemoryTypeSchema } from '../schemas/memory.ts'
 import { DIARY_CATEGORIES } from '../schemas/diary.ts'
-import {
-  loadMemories,
-  type MemoryMetadataInput,
-  searchMemory,
-  storeMemory,
-} from '../memory/index.ts'
+import { loadMemories, type MemoryMetadataInput, searchMemory, storeMemory } from '../memory/index.ts'
 import { initializeSearch, searchDocuments } from '../search/index.ts'
 import { createEntry, type DiaryEntryInput, getTimeline, searchDiary } from '../diary/index.ts'
 
@@ -486,9 +481,7 @@ export class VibeServer {
         try {
           const memories = await Effect.runPromise(loadMemories(this.projectPath))
           const recent = memories
-            .sort((a, b) =>
-              new Date(b.lifecycle.created).getTime() - new Date(a.lifecycle.created).getTime()
-            )
+            .sort((a, b) => new Date(b.lifecycle.created).getTime() - new Date(a.lifecycle.created).getTime())
             .slice(0, 10)
 
           return {
@@ -680,9 +673,7 @@ export class VibeServer {
 
       // Sort by creation date (newest first) and limit
       const result = filtered
-        .sort((a, b) =>
-          new Date(b.lifecycle.created).getTime() - new Date(a.lifecycle.created).getTime()
-        )
+        .sort((a, b) => new Date(b.lifecycle.created).getTime() - new Date(a.lifecycle.created).getTime())
         .slice(0, params.limit)
 
       return {

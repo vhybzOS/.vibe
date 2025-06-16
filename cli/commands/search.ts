@@ -62,9 +62,7 @@ export const globalSearchCommand = (
               if (options.format === 'detailed') {
                 return pipe(
                   Effect.log(
-                    `${index + 1}. ${doc.metadata.title || doc.id.slice(0, 8)}... (Score: ${
-                      result.score.toFixed(2)
-                    })`,
+                    `${index + 1}. ${doc.metadata.title || doc.id.slice(0, 8)}... (Score: ${result.score.toFixed(2)})`,
                   ),
                   Effect.flatMap(() =>
                     Effect.log(
@@ -77,21 +75,17 @@ export const globalSearchCommand = (
                     )
                   ),
                   Effect.flatMap(() => Effect.log(`   🏷️ Tags: ${doc.tags.join(', ')}`)),
-                  Effect.flatMap(() =>
-                    Effect.log(`   📝 Content: ${doc.content.slice(0, 150)}...`)
-                  ),
+                  Effect.flatMap(() => Effect.log(`   📝 Content: ${doc.content.slice(0, 150)}...`)),
                   Effect.flatMap(() => Effect.log('')),
                 )
               } else {
                 return pipe(
                   Effect.log(
-                    `${index + 1}. [${doc.doc_type}] ${
-                      doc.metadata.title || doc.id.slice(0, 8)
-                    }... (${result.score.toFixed(2)})`,
+                    `${index + 1}. [${doc.doc_type}] ${doc.metadata.title || doc.id.slice(0, 8)}... (${
+                      result.score.toFixed(2)
+                    })`,
                   ),
-                  Effect.flatMap(() =>
-                    Effect.log(`   ${formattedDate} | ${doc.content.slice(0, 80)}...`)
-                  ),
+                  Effect.flatMap(() => Effect.log(`   ${formattedDate} | ${doc.content.slice(0, 80)}...`)),
                   Effect.flatMap(() => Effect.log('')),
                 )
               }
@@ -205,9 +199,7 @@ export const searchStatsCommand = (projectPath: string) =>
 
       return pipe(
         Effect.log(`📚 Total indexed documents: ${stats.total}`),
-        Effect.flatMap(() =>
-          Effect.log(`📊 Average relevance score: ${stats.averageScore.toFixed(3)}`)
-        ),
+        Effect.flatMap(() => Effect.log(`📊 Average relevance score: ${stats.averageScore.toFixed(3)}`)),
         Effect.flatMap(() => Effect.log('')),
         Effect.flatMap(() => Effect.log('📂 By Document Type:')),
         Effect.flatMap(() =>
@@ -219,18 +211,14 @@ export const searchStatsCommand = (projectPath: string) =>
         Effect.flatMap(() => Effect.log('🏷️ By Category:')),
         Effect.flatMap(() =>
           Effect.all(
-            Object.entries(stats.byCategory).map(([category, count]) =>
-              Effect.log(`   ${category}: ${count}`)
-            ),
+            Object.entries(stats.byCategory).map(([category, count]) => Effect.log(`   ${category}: ${count}`)),
           )
         ),
         Effect.flatMap(() => Effect.log('')),
         Effect.flatMap(() => Effect.log('⭐ By Priority:')),
         Effect.flatMap(() =>
           Effect.all(
-            Object.entries(stats.byPriority).map(([priority, count]) =>
-              Effect.log(`   ${priority}: ${count}`)
-            ),
+            Object.entries(stats.byPriority).map(([priority, count]) => Effect.log(`   ${priority}: ${count}`)),
           )
         ),
         Effect.map(() => stats),

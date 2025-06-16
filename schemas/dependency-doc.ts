@@ -2,7 +2,7 @@ import { z } from 'zod/v4'
 
 export const PackageRegistrySchema = z.enum([
   'npm',
-  'pypi', 
+  'pypi',
   'crates',
   'go',
   'rubygems',
@@ -42,7 +42,14 @@ export const DocumentationSourceSchema = z.object({
 export const APIPatternSchema = z.object({
   pattern: z.string(),
   description: z.string(),
-  category: z.enum(['initialization', 'configuration', 'method-call', 'event-handling', 'error-handling', 'lifecycle']),
+  category: z.enum([
+    'initialization',
+    'configuration',
+    'method-call',
+    'event-handling',
+    'error-handling',
+    'lifecycle',
+  ]),
   examples: z.array(z.object({
     code: z.string(),
     language: z.string(),
@@ -76,7 +83,19 @@ export const DependencyDocSchema = z.object({
 })
 
 export const DependencyManifestSchema = z.object({
-  type: z.enum(['package.json', 'requirements.txt', 'Cargo.toml', 'go.mod', 'Gemfile', 'composer.json', 'pom.xml', 'build.gradle', 'pubspec.yaml', 'mix.exs', 'Podfile']),
+  type: z.enum([
+    'package.json',
+    'requirements.txt',
+    'Cargo.toml',
+    'go.mod',
+    'Gemfile',
+    'composer.json',
+    'pom.xml',
+    'build.gradle',
+    'pubspec.yaml',
+    'mix.exs',
+    'Podfile',
+  ]),
   path: z.string(),
   dependencies: z.record(z.string(), z.string()), // name -> version
   devDependencies: z.record(z.string(), z.string()).default({}),

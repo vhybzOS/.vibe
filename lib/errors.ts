@@ -112,14 +112,14 @@ export interface CliError {
  * Union of all possible application-level errors
  * This allows for exhaustive, type-safe error handling
  */
-export type VibeError = 
-  | FileSystemError 
-  | ConfigurationError 
-  | ParseError 
-  | NetworkError 
-  | CryptoError 
-  | DiscoveryError 
-  | VersionError 
+export type VibeError =
+  | FileSystemError
+  | ConfigurationError
+  | ParseError
+  | NetworkError
+  | CryptoError
+  | DiscoveryError
+  | VersionError
   | TimeoutError
   | DaemonError
   | McpError
@@ -131,7 +131,7 @@ export type VibeError =
 export const createFileSystemError = (
   error: unknown,
   path: string,
-  message: string
+  message: string,
 ): FileSystemError => ({
   _tag: 'FileSystemError',
   error,
@@ -141,7 +141,7 @@ export const createFileSystemError = (
 
 export const createConfigurationError = (
   error: unknown,
-  message: string
+  message: string,
 ): ConfigurationError => ({
   _tag: 'ConfigurationError',
   error,
@@ -151,7 +151,7 @@ export const createConfigurationError = (
 export const createParseError = (
   error: unknown,
   content: string,
-  message: string
+  message: string,
 ): ParseError => ({
   _tag: 'ParseError',
   error,
@@ -162,7 +162,7 @@ export const createParseError = (
 export const createNetworkError = (
   error: unknown,
   message: string,
-  url?: string
+  url?: string,
 ): NetworkError => ({
   _tag: 'NetworkError',
   error,
@@ -172,7 +172,7 @@ export const createNetworkError = (
 
 export const createCryptoError = (
   error: unknown,
-  message: string
+  message: string,
 ): CryptoError => ({
   _tag: 'CryptoError',
   error,
@@ -181,7 +181,7 @@ export const createCryptoError = (
 
 export const createDiscoveryError = (
   error: unknown,
-  message: string
+  message: string,
 ): DiscoveryError => ({
   _tag: 'DiscoveryError',
   error,
@@ -190,7 +190,7 @@ export const createDiscoveryError = (
 
 export const createVersionError = (
   version: string,
-  message: string
+  message: string,
 ): VersionError => ({
   _tag: 'VersionError',
   version,
@@ -199,7 +199,7 @@ export const createVersionError = (
 
 export const createTimeoutError = (
   timeoutMs: number,
-  message: string
+  message: string,
 ): TimeoutError => ({
   _tag: 'TimeoutError',
   timeoutMs,
@@ -209,7 +209,7 @@ export const createTimeoutError = (
 export const createDaemonError = (
   error: unknown,
   message: string,
-  component: string
+  component: string,
 ): DaemonError => ({
   _tag: 'DaemonError',
   error,
@@ -220,7 +220,7 @@ export const createDaemonError = (
 export const createMcpError = (
   error: unknown,
   message: string,
-  operation: string
+  operation: string,
 ): McpError => ({
   _tag: 'McpError',
   error,
@@ -231,7 +231,7 @@ export const createMcpError = (
 export const createCliError = (
   error: unknown,
   message: string,
-  command: string
+  command: string,
 ): CliError => ({
   _tag: 'CliError',
   error,

@@ -6,12 +6,25 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { readTextFile, writeTextFile, ensureDir, fileExists, logWithContext } from '../../lib/effects.ts'
+import {
+  ensureDir,
+  fileExists,
+  logWithContext,
+  readTextFile,
+  writeTextFile,
+} from '../../lib/effects.ts'
 
 /**
  * Supported secret providers
  */
-export type SecretProvider = 'openai' | 'anthropic' | 'github' | 'gitlab' | 'google' | 'azure' | 'cohere'
+export type SecretProvider =
+  | 'openai'
+  | 'anthropic'
+  | 'github'
+  | 'gitlab'
+  | 'google'
+  | 'azure'
+  | 'cohere'
 
 /**
  * Structure for storing encrypted secrets
@@ -62,10 +75,10 @@ const getSecretsDirectory = (): string => {
  */
 const getSecretsFilePath = (projectPath?: string): string => {
   if (projectPath) {
-    return resolve(projectPath, '.vibe', 'secrets.json');
+    return resolve(projectPath, '.vibe', 'secrets.json')
   }
-  return resolve(getSecretsDirectory(), 'secrets.json');
-};
+  return resolve(getSecretsDirectory(), 'secrets.json')
+}
 
 /**
  * Derives an encryption key from a machine-specific identifier
@@ -79,7 +92,7 @@ const deriveEncryptionKey = (salt: Uint8Array) =>
         const hostname = Deno.hostname()
         const username = Deno.env.get('USER') || Deno.env.get('USERNAME') || 'vibe-user'
         const machineId = `${hostname}-${username}-vibe-secrets`
-        
+
         // Encode the machine ID
         const encoder = new TextEncoder()
         const keyMaterial = await crypto.subtle.importKey(
@@ -87,9 +100,9 @@ const deriveEncryptionKey = (salt: Uint8Array) =>
           encoder.encode(machineId),
           'PBKDF2',
           false,
-          ['deriveKey']
+          ['deriveKey'],
         )
-        
+
         // Derive the actual encryption key
         const key = await crypto.subtle.deriveKey(
           {
@@ -104,13 +117,13 @@ const deriveEncryptionKey = (salt: Uint8Array) =>
             length: ENCRYPTION_CONFIG.keyLength,
           },
           false,
-          ['encrypt', 'decrypt']
+          ['encrypt', 'decrypt'],
         )
-        
+
         return key
       },
       catch: (error) => new Error(`Failed to derive encryption key: ${error}`),
-    })
+    }),
   )
 
 /**
@@ -123,36 +136,38 @@ const encryptSecrets = (secrets: Secrets) =>
         // Generate random IV and salt
         const iv = crypto.getRandomValues(new Uint8Array(ENCRYPTION_CONFIG.ivLength))
         const salt = crypto.getRandomValues(new Uint8Array(ENCRYPTION_CONFIG.saltLength))
-        
+
         // Derive encryption key
         const key = await deriveEncryptionKey(salt).pipe(Effect.runPromise)
-        
+
         // Encrypt the secrets
         const encoder = new TextEncoder()
         const data = encoder.encode(JSON.stringify(secrets))
-        
+
         const encryptedData = await crypto.subtle.encrypt(
           {
             name: ENCRYPTION_CONFIG.algorithm,
             iv,
           },
           key,
-          data
+          data,
         )
-        
+
         // Return the encrypted file structure
         const encryptedFile: EncryptedSecretsFile = {
           version: '1.0',
           algorithm: ENCRYPTION_CONFIG.algorithm,
-          iv: Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join(''),
-          salt: Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join(''),
-          data: Array.from(new Uint8Array(encryptedData)).map(b => b.toString(16).padStart(2, '0')).join(''),
+          iv: Array.from(iv).map((b) => b.toString(16).padStart(2, '0')).join(''),
+          salt: Array.from(salt).map((b) => b.toString(16).padStart(2, '0')).join(''),
+          data: Array.from(new Uint8Array(encryptedData)).map((b) =>
+            b.toString(16).padStart(2, '0')
+          ).join(''),
         }
-        
+
         return encryptedFile
       },
       catch: (error) => new Error(`Failed to encrypt secrets: ${error}`),
-    })
+    }),
   )
 
 /**
@@ -164,18 +179,18 @@ const decryptSecrets = (encryptedFile: EncryptedSecretsFile) =>
       try: async () => {
         // Parse IV and salt from hex strings
         const iv = new Uint8Array(
-          encryptedFile.iv.match(/.{2}/g)?.map(byte => parseInt(byte, 16)) || []
+          encryptedFile.iv.match(/.{2}/g)?.map((byte) => parseInt(byte, 16)) || [],
         )
         const salt = new Uint8Array(
-          encryptedFile.salt.match(/.{2}/g)?.map(byte => parseInt(byte, 16)) || []
+          encryptedFile.salt.match(/.{2}/g)?.map((byte) => parseInt(byte, 16)) || [],
         )
         const encryptedData = new Uint8Array(
-          encryptedFile.data.match(/.{2}/g)?.map(byte => parseInt(byte, 16)) || []
+          encryptedFile.data.match(/.{2}/g)?.map((byte) => parseInt(byte, 16)) || [],
         )
-        
+
         // Derive the same encryption key
         const key = await deriveEncryptionKey(salt).pipe(Effect.runPromise)
-        
+
         // Decrypt the data
         const decryptedData = await crypto.subtle.decrypt(
           {
@@ -183,18 +198,18 @@ const decryptSecrets = (encryptedFile: EncryptedSecretsFile) =>
             iv,
           },
           key,
-          encryptedData
+          encryptedData,
         )
-        
+
         // Parse the decrypted JSON
         const decoder = new TextDecoder()
         const secretsJson = decoder.decode(decryptedData)
         const secrets = JSON.parse(secretsJson) as Secrets
-        
+
         return secrets
       },
       catch: (error) => new Error(`Failed to decrypt secrets: ${error}`),
-    })
+    }),
   )
 
 /**
@@ -204,26 +219,26 @@ const decryptSecrets = (encryptedFile: EncryptedSecretsFile) =>
 export const loadSecrets = (projectPath?: string) =>
   pipe(
     fileExists(getSecretsFilePath(projectPath)),
-    Effect.flatMap(exists => {
+    Effect.flatMap((exists) => {
       if (!exists) {
         return Effect.succeed({} as Secrets)
       }
-      
+
       return pipe(
         readTextFile(getSecretsFilePath(projectPath)),
-        Effect.flatMap(content => 
+        Effect.flatMap((content) =>
           Effect.try({
             try: () => JSON.parse(content) as EncryptedSecretsFile,
             catch: () => new Error('Invalid secrets file format'),
           })
         ),
-        Effect.flatMap(encryptedFile => decryptSecrets(encryptedFile)),
-        Effect.catchAll(error => {
+        Effect.flatMap((encryptedFile) => decryptSecrets(encryptedFile)),
+        Effect.catchAll((error) => {
           console.warn(`Failed to load secrets: ${error.message}`)
           return Effect.succeed({} as Secrets)
-        })
+        }),
       )
-    })
+    }),
   )
 
 /**
@@ -233,11 +248,11 @@ export const saveSecrets = (secrets: Secrets, projectPath?: string) =>
   pipe(
     ensureDir(projectPath ? resolve(projectPath, '.vibe') : getSecretsDirectory()),
     Effect.flatMap(() => encryptSecrets(secrets)),
-    Effect.flatMap(encryptedFile => 
+    Effect.flatMap((encryptedFile) =>
       writeTextFile(getSecretsFilePath(projectPath), JSON.stringify(encryptedFile, null, 2))
     ),
-    Effect.tap(() => Effect.log(`🔐 Secrets saved to ${getSecretsFilePath(projectPath)}`))
-  );
+    Effect.tap(() => Effect.log(`🔐 Secrets saved to ${getSecretsFilePath(projectPath)}`)),
+  )
 
 /**
  * Gets the status of all secrets (which ones are set)
@@ -246,7 +261,7 @@ export const saveSecrets = (secrets: Secrets, projectPath?: string) =>
 export const getSecretsStatus = () =>
   pipe(
     loadSecrets(),
-    Effect.map(secrets => {
+    Effect.map((secrets) => {
       const status: SecretsStatus = {
         openai: !!secrets.openai,
         anthropic: !!secrets.anthropic,
@@ -257,7 +272,7 @@ export const getSecretsStatus = () =>
         cohere: !!secrets.cohere,
       }
       return status
-    })
+    }),
   )
 
 /**
@@ -266,13 +281,17 @@ export const getSecretsStatus = () =>
 export const setSecret = (provider: SecretProvider, value: string, projectPath?: string) =>
   pipe(
     loadSecrets(projectPath),
-    Effect.map(secrets => ({
+    Effect.map((secrets) => ({
       ...secrets,
       [provider]: value,
     })),
-    Effect.flatMap(updatedSecrets => saveSecrets(updatedSecrets, projectPath)),
-    Effect.tap(() => Effect.log(`🔑 Secret set for provider: ${provider} at ${projectPath ? 'project' : 'global'} level`))
-  );
+    Effect.flatMap((updatedSecrets) => saveSecrets(updatedSecrets, projectPath)),
+    Effect.tap(() =>
+      Effect.log(
+        `🔑 Secret set for provider: ${provider} at ${projectPath ? 'project' : 'global'} level`,
+      )
+    ),
+  )
 
 /**
  * Gets a secret for a specific provider, checking project-level first, then global fallback.
@@ -281,24 +300,26 @@ export const getSecret = (provider: SecretProvider, projectPath?: string) =>
   pipe(
     // 1. Try to load from the project-specific path
     projectPath ? loadSecrets(projectPath) : Effect.succeed({} as Secrets),
-    Effect.flatMap(projectSecrets => {
+    Effect.flatMap((projectSecrets) => {
       if (projectSecrets[provider]) {
-        logWithContext('Secrets', `🔐 Using project secret for ${provider}`).pipe(Effect.runSync);
-        return Effect.succeed(projectSecrets[provider]);
+        logWithContext('Secrets', `🔐 Using project secret for ${provider}`).pipe(Effect.runSync)
+        return Effect.succeed(projectSecrets[provider])
       }
 
       // 2. If not found, try the global path
       return pipe(
         loadSecrets(), // No projectPath means global
-        Effect.map(globalSecrets => {
+        Effect.map((globalSecrets) => {
           if (globalSecrets[provider]) {
-            logWithContext('Secrets', `🌐 Using global fallback secret for ${provider}`).pipe(Effect.runSync);
+            logWithContext('Secrets', `🌐 Using global fallback secret for ${provider}`).pipe(
+              Effect.runSync,
+            )
           }
-          return globalSecrets[provider];
-        })
-      );
-    })
-  );
+          return globalSecrets[provider]
+        }),
+      )
+    }),
+  )
 
 /**
  * Removes a secret for a specific provider
@@ -306,13 +327,13 @@ export const getSecret = (provider: SecretProvider, projectPath?: string) =>
 export const removeSecret = (provider: SecretProvider) =>
   pipe(
     loadSecrets(),
-    Effect.map(secrets => {
+    Effect.map((secrets) => {
       const updated = { ...secrets }
       delete updated[provider]
       return updated
     }),
-    Effect.flatMap(updatedSecrets => saveSecrets(updatedSecrets)),
-    Effect.tap(() => Effect.log(`🗑️ Secret removed for provider: ${provider}`))
+    Effect.flatMap((updatedSecrets) => saveSecrets(updatedSecrets)),
+    Effect.tap(() => Effect.log(`🗑️ Secret removed for provider: ${provider}`)),
   )
 
 /**
@@ -320,20 +341,20 @@ export const removeSecret = (provider: SecretProvider) =>
  */
 const inferProviderFromKey = (apiKey: string): SecretProvider | null => {
   if (apiKey.startsWith('sk-ant-')) {
-    return 'anthropic';
+    return 'anthropic'
   }
   if (apiKey.startsWith('sk-')) {
-    return 'openai';
+    return 'openai'
   }
   if (apiKey.startsWith('AIzaSy')) {
-    return 'google';
+    return 'google'
   }
   // Cohere keys are alphanumeric and variable length, making them a good fallback.
   if (apiKey.length > 20 && /^[a-zA-Z0-9]+$/.test(apiKey)) {
-    return 'cohere';
+    return 'cohere'
   }
-  return null;
-};
+  return null
+}
 
 /**
  * Infers the provider from the API key format and saves the secret.
@@ -341,10 +362,14 @@ const inferProviderFromKey = (apiKey: string): SecretProvider | null => {
 export const setSecretAndInferProvider = (apiKey: string, projectPath?: string) =>
   pipe(
     Effect.sync(() => inferProviderFromKey(apiKey)),
-    Effect.flatMap(provider => {
+    Effect.flatMap((provider) => {
       if (!provider) {
-        return Effect.fail(new Error('Could not infer provider from API key format. Key is invalid or provider is not supported.'));
+        return Effect.fail(
+          new Error(
+            'Could not infer provider from API key format. Key is invalid or provider is not supported.',
+          ),
+        )
       }
-      return setSecret(provider, apiKey, projectPath);
-    })
-  );
+      return setSecret(provider, apiKey, projectPath)
+    }),
+  )

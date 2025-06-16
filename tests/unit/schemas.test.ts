@@ -1,18 +1,17 @@
-import { assertEquals, assert } from '@std/assert'
+import { assert, assertEquals } from '@std/assert'
 import { describe, it } from '@std/testing/bdd'
 import { z } from 'zod/v4'
 
 import {
-  UniversalRuleSchema,
-  AIToolConfigSchema,
-  DiaryEntrySchema,
-  DependencyDocSchema,
-  MemorySchema,
   AgentFileSchema,
+  AIToolConfigSchema,
+  DependencyDocSchema,
+  DiaryEntrySchema,
+  MemorySchema,
+  UniversalRuleSchema,
 } from '../../schemas/index.ts'
 
 describe('📋 Schema Unit Tests', () => {
-  
   describe('🎯 UniversalRuleSchema', () => {
     it('✅ should accept valid rule', () => {
       const validRule = {
@@ -64,7 +63,7 @@ describe('📋 Schema Unit Tests', () => {
         metadata: {
           name: '', // empty name should fail
           source: 'invalid-source',
-        }
+        },
       }
 
       const result = UniversalRuleSchema.safeParse(invalidRule)
@@ -91,7 +90,7 @@ describe('📋 Schema Unit Tests', () => {
 
       const result = UniversalRuleSchema.safeParse(minimalRule)
       assert(result.success, 'Should accept minimal rule with defaults')
-      
+
       if (result.success) {
         assertEquals(result.data.metadata.confidence, 1.0)
         assertEquals(result.data.metadata.version, '1.0.0')
@@ -152,7 +151,7 @@ describe('📋 Schema Unit Tests', () => {
             path: '.windsurf/memory.md',
             format: { type: 'markdown' },
             required: false,
-          }
+          },
         ],
         capabilities: {
           rules: true,
@@ -183,20 +182,20 @@ describe('📋 Schema Unit Tests', () => {
         problem: {
           description: 'Need better async error handling',
           context: 'Current Promise-based code is hard to compose',
-          constraints: ['Must maintain backward compatibility']
+          constraints: ['Must maintain backward compatibility'],
         },
         decision: {
           chosen: 'Migrate to Effect-TS for all async operations',
           rationale: 'Effect-TS provides better error handling',
           alternatives: [
-            { option: 'Stay with Promises', reason: 'Simpler but lacks composability' }
-          ]
+            { option: 'Stay with Promises', reason: 'Simpler but lacks composability' },
+          ],
         },
         impact: {
           benefits: ['Better error handling'],
           risks: ['Learning curve for team'],
-          migrationNotes: 'Start with core modules'
-        }
+          migrationNotes: 'Start with core modules',
+        },
       }
 
       const result = DiaryEntrySchema.safeParse(diaryEntry)
@@ -391,12 +390,12 @@ describe('📋 Schema Unit Tests', () => {
     it('🔗 should maintain type consistency across schemas', () => {
       // Test that AIToolType enum is consistent across schemas
       const toolType = 'cursor' as const
-      
+
       // Should be valid in AIToolConfigSchema
       const toolConfig = { tool: toolType }
       const toolResult = AIToolConfigSchema.pick({ tool: true }).safeParse(toolConfig)
       assert(toolResult.success, 'Tool type should be valid in AIToolConfig')
-      
+
       // Should be valid in DiaryEntrySchema context
       const categoryResult = DiaryEntrySchema
         .pick({ category: true })
@@ -407,11 +406,11 @@ describe('📋 Schema Unit Tests', () => {
     it('📊 should handle z.output types correctly', () => {
       type RuleType = z.output<typeof UniversalRuleSchema>
       type ToolType = z.output<typeof AIToolConfigSchema>
-      
+
       // These should compile without errors (TypeScript compile-time test)
       const ruleId: RuleType['id'] = crypto.randomUUID()
       const toolName: ToolType['tool'] = 'cursor'
-      
+
       assertEquals(typeof ruleId, 'string')
       assertEquals(toolName, 'cursor')
     })

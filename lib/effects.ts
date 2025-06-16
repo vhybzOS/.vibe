@@ -5,11 +5,11 @@
  */
 
 import { Effect, pipe } from 'effect'
-import { 
-  createFileSystemError, 
-  createParseError, 
-  createTimeoutError, 
-  type VibeError 
+import {
+  createFileSystemError,
+  createParseError,
+  createTimeoutError,
+  type VibeError,
 } from './errors.ts'
 
 /**
@@ -20,7 +20,7 @@ export const readTextFile = (filePath: string) =>
     Effect.tryPromise({
       try: () => Deno.readTextFile(filePath),
       catch: (error) => createFileSystemError(error, filePath, 'Failed to read file'),
-    })
+    }),
   )
 
 /**
@@ -31,7 +31,7 @@ export const writeTextFile = (filePath: string, content: string) =>
     Effect.tryPromise({
       try: () => Deno.writeTextFile(filePath, content),
       catch: (error) => createFileSystemError(error, filePath, 'Failed to write file'),
-    })
+    }),
   )
 
 /**
@@ -42,7 +42,7 @@ export const ensureDir = (dirPath: string) =>
     Effect.tryPromise({
       try: () => Deno.mkdir(dirPath, { recursive: true }),
       catch: (error) => createFileSystemError(error, dirPath, 'Failed to create directory'),
-    })
+    }),
   )
 
 /**
@@ -59,7 +59,7 @@ export const readDir = (dirPath: string) =>
         return entries
       },
       catch: (error) => createFileSystemError(error, dirPath, 'Failed to read directory'),
-    })
+    }),
   )
 
 /**
@@ -77,7 +77,7 @@ export const fileExists = (filePath: string) =>
         }
       },
       catch: (error) => createFileSystemError(error, filePath, 'Failed to check file existence'),
-    })
+    }),
   )
 
 /**
@@ -88,7 +88,7 @@ export const parseJSON = <T>(content: string, context: string = 'unknown') =>
     Effect.try({
       try: () => JSON.parse(content) as T,
       catch: (error) => createParseError(error, content, `Invalid JSON in ${context}`),
-    })
+    }),
   )
 
 /**
@@ -103,11 +103,11 @@ export const logWithContext = (context: string, message: string) =>
 export const retryWithBackoff = <A, E>(
   effect: Effect.Effect<A, E>,
   maxAttempts: number = 3,
-  _baseDelay: number = 1000
+  _baseDelay: number = 1000,
 ) =>
   pipe(
     effect,
-    Effect.retry({ times: maxAttempts - 1 })
+    Effect.retry({ times: maxAttempts - 1 }),
   )
 
 /**
@@ -115,14 +115,13 @@ export const retryWithBackoff = <A, E>(
  */
 export const withTimeout = <A, E>(
   effect: Effect.Effect<A, E>,
-  timeoutMs: number
+  timeoutMs: number,
 ) =>
   pipe(
     effect,
     Effect.timeout(timeoutMs),
-    Effect.catchTag('TimeoutException', () => 
-      Effect.fail(createTimeoutError(timeoutMs, `Operation timed out after ${timeoutMs}ms`))
-    )
+    Effect.catchTag('TimeoutException', () =>
+      Effect.fail(createTimeoutError(timeoutMs, `Operation timed out after ${timeoutMs}ms`))),
   )
 
 // Re-export the VibeError type for convenience

@@ -5,6 +5,7 @@
 Picture this: You're coding in Claude on your WSL2 setup, having deep architectural discussions about your TypeScript project. You push your changes and switch to your Windows machine to continue in Cursor. **Boom** 💥 - your AI assistant has amnesia. All that context, all those decisions, all that shared understanding? Gone.
 
 Every AI tool speaks its own language:
+
 - Cursor wants `.cursorrules`
 - Windsurf has `.windsurfrules`
 - Claude Code uses `.claude/commands`

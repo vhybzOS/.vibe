@@ -12,24 +12,26 @@ const DAEMON_PORT = 4242
  */
 export const discoverCommand = (
   projectPath: string,
-  options: { forceRefresh?: boolean }
+  options: { forceRefresh?: boolean },
 ) =>
   pipe(
     Effect.log('🔍 Starting autonomous discovery via daemon...'),
     Effect.flatMap(() => startDiscoverySession(projectPath, options)),
-    Effect.flatMap((sessionId) => 
+    Effect.flatMap((sessionId) =>
       pipe(
         Effect.log(`📊 Discovery session started: ${sessionId}`),
-        Effect.flatMap(() => Effect.log('✅ Discovery initiated successfully'))
+        Effect.flatMap(() => Effect.log('✅ Discovery initiated successfully')),
       )
     ),
     Effect.catchAll((error) =>
       pipe(
         Effect.log('❌ Discovery failed:'),
-        Effect.flatMap(() => Effect.log(`   ${error instanceof Error ? error.message : 'Unknown error'}`)),
-        Effect.flatMap(() => Effect.fail(error))
+        Effect.flatMap(() =>
+          Effect.log(`   ${error instanceof Error ? error.message : 'Unknown error'}`)
+        ),
+        Effect.flatMap(() => Effect.fail(error)),
       )
-    )
+    ),
   )
 
 /**
@@ -37,7 +39,7 @@ export const discoverCommand = (
  */
 const startDiscoverySession = (
   projectPath: string,
-  options: { forceRefresh?: boolean }
+  options: { forceRefresh?: boolean },
 ) =>
   Effect.tryPromise({
     try: async () => {
@@ -72,5 +74,5 @@ const startDiscoverySession = (
         return error
       }
       return new Error('Failed to start discovery session')
-    }
+    },
   })

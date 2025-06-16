@@ -2,7 +2,7 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { startFileWatcher, createDefaultWatcherConfig } from '../utils/file-watcher.ts'
+import { createDefaultWatcherConfig, startFileWatcher } from '../utils/file-watcher.ts'
 import { startMcpServer } from '../mcp-server/server.ts'
 import { DaemonConfig, loadDaemonConfig, saveDaemonConfig } from './config.ts'
 // Signal handlers inlined for consolidation
@@ -113,14 +113,14 @@ class VibeDaemon {
       }),
       Effect.tap(() => this.printStatus()),
       Effect.flatMap(() => this.waitForShutdown()),
-      Effect.runPromise
+      Effect.runPromise,
     )
   }
 
   private loadConfiguration = () =>
     pipe(
       loadDaemonConfig(),
-      Effect.map(config => {
+      Effect.map((config) => {
         this.config = { ...this.config, ...config }
         return config
       }),
@@ -130,9 +130,9 @@ class VibeDaemon {
         return pipe(
           Effect.log('ℹ️  Using default configuration'),
           Effect.flatMap(() => saveDaemonConfig(this.config)),
-          Effect.map(() => this.config)
+          Effect.map(() => this.config),
         )
-      })
+      }),
     )
 
   /**
@@ -145,27 +145,30 @@ class VibeDaemon {
         try: async () => {
           const handler = (req: Request): Response => {
             const url = new URL(req.url)
-            
+
             switch (url.pathname) {
               case '/status':
-                return new Response(JSON.stringify({
-                  daemon: {
-                    name: this.config.daemon.name,
-                    version: this.config.daemon.version,
-                    isRunning: this.state.isRunning,
-                    startedAt: this.state.startedAt,
-                    pid: Deno.pid,
+                return new Response(
+                  JSON.stringify({
+                    daemon: {
+                      name: this.config.daemon.name,
+                      version: this.config.daemon.version,
+                      isRunning: this.state.isRunning,
+                      startedAt: this.state.startedAt,
+                      pid: Deno.pid,
+                    },
+                    mcpServer: this.state.mcpServer,
+                    projects: Array.from(this.state.projects.entries()).map(([path, state]) => ({
+                      path,
+                      ...state,
+                    })),
+                    config: this.config,
+                  }),
+                  {
+                    headers: { 'Content-Type': 'application/json' },
                   },
-                  mcpServer: this.state.mcpServer,
-                  projects: Array.from(this.state.projects.entries()).map(([path, state]) => ({
-                    path,
-                    ...state,
-                  })),
-                  config: this.config,
-                }), {
-                  headers: { 'Content-Type': 'application/json' },
-                })
-              
+                )
+
               case '/shutdown':
                 if (req.method === 'POST') {
                   // Initiate graceful shutdown
@@ -177,30 +180,37 @@ class VibeDaemon {
                   })
                 }
                 return new Response('Method not allowed', { status: 405 })
-              
+
               case '/health':
-                return new Response(JSON.stringify({ 
-                  status: 'healthy',
-                  timestamp: new Date().toISOString(),
-                }), {
-                  headers: { 'Content-Type': 'application/json' },
-                })
-              
+                return new Response(
+                  JSON.stringify({
+                    status: 'healthy',
+                    timestamp: new Date().toISOString(),
+                  }),
+                  {
+                    headers: { 'Content-Type': 'application/json' },
+                  },
+                )
+
               default:
                 return new Response('Not found', { status: 404 })
             }
           }
-          
+
           this.httpServer = Deno.serve({
             port: this.config.daemon.controlPort,
             hostname: 'localhost',
           }, handler)
-          
+
           return this.httpServer
         },
         catch: (error) => new Error(`Failed to start HTTP server: ${error}`),
       }),
-      Effect.tap(() => Effect.log(`🌐 Control server running on http://localhost:${this.config.daemon.controlPort}`))
+      Effect.tap(() =>
+        Effect.log(
+          `🌐 Control server running on http://localhost:${this.config.daemon.controlPort}`,
+        )
+      ),
     )
 
   private setupPidFile = () =>
@@ -209,7 +219,7 @@ class VibeDaemon {
         try: () => Deno.writeTextFile(this.config.daemon.pidFile, Deno.pid.toString()),
         catch: () => new Error('Failed to create PID file'),
       }),
-      Effect.tap(() => Effect.log(`📄 PID file created: ${this.config.daemon.pidFile}`))
+      Effect.tap(() => Effect.log(`📄 PID file created: ${this.config.daemon.pidFile}`)),
     )
 
   private startMcpServer = () =>
@@ -219,33 +229,29 @@ class VibeDaemon {
       Effect.tap(() => {
         this.state.mcpServer.running = true
         this.state.mcpServer.startedAt = new Date().toISOString()
-        return Effect.log(`✅ MCP server running on ${this.config.mcpServer.host}:${this.config.mcpServer.port}`)
+        return Effect.log(
+          `✅ MCP server running on ${this.config.mcpServer.host}:${this.config.mcpServer.port}`,
+        )
       }),
-      Effect.catchAll(error => 
-        Effect.log(`❌ Failed to start MCP server: ${error}`)
-      )
+      Effect.catchAll((error) => Effect.log(`❌ Failed to start MCP server: ${error}`)),
     )
 
   private discoverProjects = () =>
     pipe(
       Effect.log('🔍 Discovering .vibe projects...'),
       this.scanForVibeProjects(),
-      Effect.tap(projects => 
-        Effect.log(`📂 Found ${projects.length} .vibe project(s)`)
-      ),
-      Effect.flatMap(projects => 
+      Effect.tap((projects) => Effect.log(`📂 Found ${projects.length} .vibe project(s)`)),
+      Effect.flatMap((projects) =>
         Effect.all(
-          projects.map(projectPath => 
-            this.registerProject(projectPath)
-          )
+          projects.map((projectPath) => this.registerProject(projectPath)),
         )
-      )
+      ),
     )
 
   /**
    * Scans configured root directories for .vibe projects using expandGlob
    * Respects maxDepth and ignorePaths configuration settings
-   * 
+   *
    * @returns Effect that resolves to array of project paths
    */
   private scanForVibeProjects = () =>
@@ -254,27 +260,29 @@ class VibeDaemon {
         try: async () => {
           const projects: string[] = []
           const config = this.config.projects
-          
+
           for (const scanRoot of config.projectScanRoots) {
             const expandedRoot = this.expandPath(scanRoot)
-            
+
             try {
               // Check if scan root exists
               const rootStat = await Deno.stat(expandedRoot)
               if (!rootStat.isDirectory) continue
-              
+
               // Use expandGlob to recursively search for .vibe directories
               const globPattern = `${expandedRoot}/**/.vibe`
-              
-              for await (const entry of Deno.expandGlob(globPattern, {
-                maxDepth: config.maxDepth,
-                followSymlinks: false,
-                exclude: config.ignorePaths.map(path => `**/${path}/**`),
-              })) {
+
+              for await (
+                const entry of Deno.expandGlob(globPattern, {
+                  maxDepth: config.maxDepth,
+                  followSymlinks: false,
+                  exclude: config.ignorePaths.map((path) => `**/${path}/**`),
+                })
+              ) {
                 if (entry.isDirectory) {
                   // Get the parent directory (the actual project directory)
                   const projectPath = resolve(entry.path, '..')
-                  
+
                   // Avoid duplicates and validate it's actually a .vibe project
                   if (!projects.includes(projectPath)) {
                     try {
@@ -292,16 +300,16 @@ class VibeDaemon {
               continue
             }
           }
-          
+
           return projects.slice(0, config.maxProjects) // Respect maxProjects limit
         },
         catch: (error) => new Error(`Failed to scan for projects: ${error}`),
-      })
+      }),
     )
 
   /**
    * Expands path with home directory if it starts with ~
-   * 
+   *
    * @param path - Path to expand
    * @returns Expanded absolute path
    */
@@ -317,42 +325,44 @@ class VibeDaemon {
     pipe(
       ensureVibeDirectory(projectPath),
       Effect.flatMap(() => this.analyzeProject(projectPath)),
-      Effect.tap(projectState => {
+      Effect.tap((projectState) => {
         this.state.projects.set(projectPath, projectState)
         return Effect.log(`📝 Registered project: ${projectPath}`)
-      })
+      }),
     )
 
   private analyzeProject = (projectPath: string) =>
     pipe(
-      Effect.succeed({
-        path: projectPath,
-        watching: false,
-        lastSync: new Date().toISOString(),
-        detectedTools: [], // Would detect actual tools
-        ruleCount: 0, // Would count actual rules
-      } satisfies ProjectState)
+      Effect.succeed(
+        {
+          path: projectPath,
+          watching: false,
+          lastSync: new Date().toISOString(),
+          detectedTools: [], // Would detect actual tools
+          ruleCount: 0, // Would count actual rules
+        } satisfies ProjectState,
+      ),
     )
 
   private startFileWatchers = () =>
     pipe(
       Effect.log('👀 Starting file watchers...'),
       Effect.all(
-        Array.from(this.state.projects.values()).map(project => 
+        Array.from(this.state.projects.values()).map((project) =>
           this.startProjectWatcher(project)
-        )
+        ),
       ),
-      Effect.tap(() => Effect.log('✅ All file watchers started'))
+      Effect.tap(() => Effect.log('✅ All file watchers started')),
     )
 
   private startProjectWatcher = (project: ProjectState) =>
     pipe(
       Effect.sync(() => createDefaultWatcherConfig(project.path)),
-      Effect.flatMap(config => startFileWatcher(config)),
+      Effect.flatMap((config) => startFileWatcher(config)),
       Effect.tap(() => {
         project.watching = true
         return Effect.log(`👀 Watching project: ${project.path}`)
-      })
+      }),
     )
 
   private setupHealthChecks = () =>
@@ -364,7 +374,7 @@ class VibeDaemon {
           this.performHealthCheck()
         }, 30000) // Every 30 seconds
       }),
-      Effect.tap(() => Effect.log('✅ Health checks configured'))
+      Effect.tap(() => Effect.log('✅ Health checks configured')),
     )
 
   private performHealthCheck = () => {
@@ -386,7 +396,7 @@ class VibeDaemon {
   private restartMcpServer = () =>
     pipe(
       Effect.log('🔄 Restarting MCP server...'),
-      this.startMcpServer()
+      this.startMcpServer(),
     )
 
   private printStatus = () =>
@@ -396,7 +406,11 @@ class VibeDaemon {
       Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━'),
       Effect.log(`🚀 Status: ${this.state.isRunning ? 'Running' : 'Stopped'}`),
       Effect.log(`📅 Started: ${new Date(this.state.startedAt).toLocaleString()}`),
-      Effect.log(`🔌 MCP Server: ${this.state.mcpServer.running ? `Running on port ${this.state.mcpServer.port}` : 'Stopped'}`),
+      Effect.log(
+        `🔌 MCP Server: ${
+          this.state.mcpServer.running ? `Running on port ${this.state.mcpServer.port}` : 'Stopped'
+        }`,
+      ),
       Effect.log(`📂 Projects: ${this.state.projects.size}`),
       Effect.log(''),
       Effect.log('🔗 To connect AI tools, add this MCP server configuration:'),
@@ -423,17 +437,17 @@ class VibeDaemon {
       Effect.log(''),
       Effect.log('📄 Logs: tail -f /tmp/vibe-daemon.log'),
       Effect.log('🛑 Stop: pkill vibe-daemon'),
-      Effect.log('')
+      Effect.log(''),
     )
 
   private waitForShutdown = () =>
     pipe(
       setupSignalHandlers(() => this.shutdown()),
-      Effect.flatMap(() => 
+      Effect.flatMap(() =>
         Effect.async<never, never, void>(() => {
           // Keep running until signal received
         })
-      )
+      ),
     )
 
   private shutdown = () =>
@@ -451,23 +465,23 @@ class VibeDaemon {
         catch: () => new Error('Failed during shutdown'),
       }),
       Effect.tap(() => Effect.log('✅ Daemon stopped')),
-      Effect.flatMap(() => Effect.sync(() => Deno.exit(0)))
+      Effect.flatMap(() => Effect.sync(() => Deno.exit(0))),
     )
 }
 
 // Main entry point
 if (import.meta.main) {
   const daemon = new VibeDaemon()
-  
+
   // Handle command line arguments
   const args = Deno.args
-  
+
   if (args.includes('--mcp-only')) {
     // Just start MCP server for AI tool integration
     import('../mcp-server/index.ts')
   } else {
     // Start full daemon
-    daemon.start().catch(error => {
+    daemon.start().catch((error) => {
       console.error('❌ Daemon failed to start:', error)
       Deno.exit(1)
     })

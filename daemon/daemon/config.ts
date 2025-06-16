@@ -41,8 +41,7 @@ export const loadDaemonConfig = () =>
 export const saveDaemonConfig = (config: DaemonConfig) =>
   saveJSONWithBackup(expandPath(CONFIG_PATH), config)
 
-export const getDefaultConfig = (): DaemonConfig => 
-  DaemonConfigSchema.parse({})
+export const getDefaultConfig = (): DaemonConfig => DaemonConfigSchema.parse({})
 
 const expandPath = (path: string): string => {
   if (path.startsWith('~/')) {

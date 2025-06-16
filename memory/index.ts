@@ -5,24 +5,24 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { 
-  Memory, 
-  MemoryQuery, 
-  MemorySearchResult,
-  MemorySchema,
+import {
+  Memory,
   type MemoryContent,
-  type MemoryMetadata 
+  type MemoryMetadata,
+  MemoryQuery,
+  MemorySchema,
+  MemorySearchResult,
 } from '../schemas/memory.ts'
-import { 
-  initializeSearch, 
-  insertDocument, 
-  searchDocuments, 
-  createMemorySearchDocument,
+import {
   convertMemoryQueryToSearch,
-  type SearchDocument 
+  createMemorySearchDocument,
+  initializeSearch,
+  insertDocument,
+  type SearchDocument,
+  searchDocuments,
 } from '../search/index.ts'
 import { createFileSystemError, createParseError } from '../lib/errors.ts'
-import { saveJSONWithBackup, loadSchemaValidatedJSON, loadAllJSONFiles } from '../lib/fs.ts'
+import { loadAllJSONFiles, loadSchemaValidatedJSON, saveJSONWithBackup } from '../lib/fs.ts'
 
 /**
  * Interface for memory storage input metadata
@@ -52,21 +52,21 @@ export interface MemoryId {
 export const storeMemory = (
   vibePath: string,
   content: string,
-  metadata: MemoryMetadataInput
+  metadata: MemoryMetadataInput,
 ) =>
   pipe(
     Effect.sync(() => createMemoryEntry(content, metadata)),
-    Effect.flatMap(memory => 
+    Effect.flatMap((memory) =>
       pipe(
         saveMemoryToFile(vibePath, memory),
         Effect.flatMap(() => indexMemoryEntry(vibePath, memory)),
         Effect.map(() => ({
           id: memory.metadata.id,
           success: true,
-          timestamp: memory.lifecycle.created
-        } as MemoryId))
+          timestamp: memory.lifecycle.created,
+        } as MemoryId)),
       )
-    )
+    ),
   )
 
 /**
@@ -74,7 +74,7 @@ export const storeMemory = (
  */
 export const searchMemory = (
   vibePath: string,
-  query: MemoryQuery
+  query: MemoryQuery,
 ) =>
   pipe(
     initializeSearch(vibePath),
@@ -82,29 +82,33 @@ export const searchMemory = (
       const searchQuery = convertMemoryQueryToSearch(query)
       return searchDocuments(searchQuery)
     }),
-    Effect.flatMap(response => 
+    Effect.flatMap((response) =>
       pipe(
         Effect.all(
-          response.results.map(result => 
+          response.results.map((result) =>
             pipe(
               loadMemoryFromId(vibePath, result.document.id),
-              Effect.map(memory => memory ? ({
-                memory,
-                score: result.score,
-                matchedFields: ['content'], // Simple implementation
-                context: result.document.content.slice(0, 200)
-              } as MemorySearchResult) : null)
+              Effect.map((memory) =>
+                memory
+                  ? ({
+                    memory,
+                    score: result.score,
+                    matchedFields: ['content'], // Simple implementation
+                    context: result.document.content.slice(0, 200),
+                  } as MemorySearchResult)
+                  : null
+              ),
             )
-          )
+          ),
         ),
-        Effect.map(results => results.filter((r): r is MemorySearchResult => r !== null))
+        Effect.map((results) => results.filter((r): r is MemorySearchResult => r !== null)),
       )
     ),
-    Effect.map(results => 
+    Effect.map((results) =>
       results
-        .filter(result => result.score >= query.threshold)
-        .filter(result => passesMemoryFilters(result.memory, query))
-    )
+        .filter((result) => result.score >= query.threshold)
+        .filter((result) => passesMemoryFilters(result.memory, query))
+    ),
   )
 
 /**
@@ -112,11 +116,11 @@ export const searchMemory = (
  */
 export const getMemory = (
   vibePath: string,
-  id: string
+  id: string,
 ) =>
   pipe(
     loadMemoryFromId(vibePath, id),
-    Effect.catchAll(() => Effect.succeed(null))
+    Effect.catchAll(() => Effect.succeed(null)),
   )
 
 /**
@@ -124,7 +128,7 @@ export const getMemory = (
  */
 export const deleteMemory = (
   vibePath: string,
-  id: string
+  id: string,
 ) =>
   pipe(
     Effect.tryPromise({
@@ -133,9 +137,9 @@ export const deleteMemory = (
         await Deno.remove(memoryPath)
         return true
       },
-      catch: () => false
+      catch: () => false,
     }),
-    Effect.catchAll(() => Effect.succeed(false))
+    Effect.catchAll(() => Effect.succeed(false)),
   )
 
 /**
@@ -143,28 +147,28 @@ export const deleteMemory = (
  */
 export const updateMemoryAccess = (
   vibePath: string,
-  id: string
+  id: string,
 ) =>
   pipe(
     loadMemoryFromId(vibePath, id),
-    Effect.flatMap(memory => {
+    Effect.flatMap((memory) => {
       if (!memory) return Effect.succeed(void 0)
-      
+
       const updatedMemory: Memory = {
         ...memory,
         metadata: {
           ...memory.metadata,
           lastAccessed: new Date().toISOString(),
-          accessCount: memory.metadata.accessCount + 1
+          accessCount: memory.metadata.accessCount + 1,
         },
         lifecycle: {
           ...memory.lifecycle,
-          updated: new Date().toISOString()
-        }
+          updated: new Date().toISOString(),
+        },
       }
-      
+
       return saveMemoryToFile(vibePath, updatedMemory)
-    })
+    }),
   )
 
 /**
@@ -173,7 +177,7 @@ export const updateMemoryAccess = (
 export const loadMemories = (vibePath: string) =>
   pipe(
     Effect.sync(() => resolve(vibePath, '.vibe', 'memory')),
-    Effect.flatMap(memoryDir => loadAllJSONFiles(memoryDir, MemorySchema))
+    Effect.flatMap((memoryDir) => loadAllJSONFiles(memoryDir, MemorySchema)),
   )
 
 // ==================== Helper Functions ====================
@@ -183,11 +187,11 @@ export const loadMemories = (vibePath: string) =>
  */
 const createMemoryEntry = (
   content: string,
-  metadata: MemoryMetadataInput
+  metadata: MemoryMetadataInput,
 ): Memory => {
   const now = new Date().toISOString()
   const memoryId = crypto.randomUUID()
-  
+
   const memoryMetadata: MemoryMetadata = {
     id: memoryId,
     type: metadata.type,
@@ -197,7 +201,7 @@ const createMemoryEntry = (
     accessibility: 'project',
     expiresAt: undefined,
     lastAccessed: now,
-    accessCount: 0
+    accessCount: 0,
   }
 
   const memoryContent: MemoryContent = {
@@ -207,7 +211,7 @@ const createMemoryEntry = (
     structured: undefined,
     embedding: undefined,
     keywords: extractKeywords(content),
-    entities: extractEntities(content)
+    entities: extractEntities(content),
   }
 
   return {
@@ -218,21 +222,21 @@ const createMemoryEntry = (
       similarity: {},
       clusters: [],
       topics: extractTopics(content),
-      conversationThread: metadata.source.sessionId
+      conversationThread: metadata.source.sessionId,
     },
     quality: {
       completeness: calculateCompleteness(content, metadata),
       accuracy: 0.8, // Default assumption
-      relevance: 0.8, // Default assumption  
-      freshness: 1.0 // Just created
+      relevance: 0.8, // Default assumption
+      freshness: 1.0, // Just created
     },
     lifecycle: {
       created: now,
       updated: now,
       lastReviewed: undefined,
       archived: false,
-      version: 1
-    }
+      version: 1,
+    },
   }
 }
 
@@ -242,7 +246,7 @@ const createMemoryEntry = (
 const saveMemoryToFile = (vibePath: string, memory: Memory) =>
   pipe(
     Effect.sync(() => resolve(vibePath, '.vibe', 'memory', `${memory.metadata.id}.json`)),
-    Effect.flatMap(filePath => saveJSONWithBackup(filePath, memory))
+    Effect.flatMap((filePath) => saveJSONWithBackup(filePath, memory)),
   )
 
 /**
@@ -254,7 +258,7 @@ const indexMemoryEntry = (vibePath: string, memory: Memory) =>
     Effect.flatMap(() => {
       const document = createMemorySearchDocument(memory, vibePath)
       return insertDocument(document)
-    })
+    }),
   )
 
 /**
@@ -263,7 +267,7 @@ const indexMemoryEntry = (vibePath: string, memory: Memory) =>
 const loadMemoryFromId = (vibePath: string, id: string) =>
   pipe(
     Effect.sync(() => resolve(vibePath, '.vibe', 'memory', `${id}.json`)),
-    Effect.flatMap(filePath => loadSchemaValidatedJSON(filePath, MemorySchema))
+    Effect.flatMap((filePath) => loadSchemaValidatedJSON(filePath, MemorySchema)),
   )
 
 /**
@@ -274,23 +278,25 @@ const passesMemoryFilters = (memory: Memory, query: MemoryQuery): boolean => {
   if (query.type.length > 0 && !query.type.includes(memory.metadata.type)) {
     return false
   }
-  
+
   // Filter by tool
-  if (query.tool.length > 0 && memory.metadata.source.tool && 
-      !query.tool.includes(memory.metadata.source.tool)) {
+  if (
+    query.tool.length > 0 && memory.metadata.source.tool &&
+    !query.tool.includes(memory.metadata.source.tool)
+  ) {
     return false
   }
-  
+
   // Filter by importance
   if (query.importance.length > 0 && !query.importance.includes(memory.metadata.importance)) {
     return false
   }
-  
+
   // Filter archived
   if (!query.includeArchived && memory.lifecycle.archived) {
     return false
   }
-  
+
   return true
 }
 
@@ -311,7 +317,7 @@ const generateTitle = (content: string): string => {
  * Generates a summary from content
  */
 const generateSummary = (content: string): string => {
-  const sentences = content.split(/[.!?]/).filter(s => s.trim().length > 0)
+  const sentences = content.split(/[.!?]/).filter((s) => s.trim().length > 0)
   if (sentences.length <= 2) {
     return content
   }
@@ -325,9 +331,11 @@ const extractKeywords = (content: string): string[] => {
   const words = content.toLowerCase()
     .replace(/[^\w\s-]/g, ' ')
     .split(/\s+/)
-    .filter(word => word.length > 3)
-    .filter(word => !['this', 'that', 'with', 'from', 'they', 'have', 'will', 'been', 'were'].includes(word))
-  
+    .filter((word) => word.length > 3)
+    .filter((word) =>
+      !['this', 'that', 'with', 'from', 'they', 'have', 'will', 'been', 'were'].includes(word)
+    )
+
   const uniqueWords = Array.from(new Set(words))
   return uniqueWords.slice(0, 10)
 }
@@ -338,7 +346,7 @@ const extractKeywords = (content: string): string[] => {
 const extractEntities = (content: string) => {
   const entities = []
   const text = content.toLowerCase()
-  
+
   // Simple pattern matching for common entities
   const patterns = [
     { pattern: /effect-ts|effect/g, type: 'library' as const },
@@ -346,7 +354,7 @@ const extractEntities = (content: string) => {
     { pattern: /typescript|javascript/g, type: 'concept' as const },
     { pattern: /\.ts|\.js|\.tsx|\.jsx/g, type: 'file' as const },
   ]
-  
+
   for (const { pattern, type } of patterns) {
     const matches = text.match(pattern)
     if (matches) {
@@ -354,12 +362,12 @@ const extractEntities = (content: string) => {
         entities.push({
           name: match,
           type,
-          relevance: 0.8
+          relevance: 0.8,
         })
       }
     }
   }
-  
+
   return entities.slice(0, 5) // Limit to 5 entities
 }
 
@@ -369,19 +377,28 @@ const extractEntities = (content: string) => {
 const extractTopics = (content: string): string[] => {
   const topics = []
   const text = content.toLowerCase()
-  
+
   const topicPatterns = [
-    'programming', 'development', 'architecture', 'design',
-    'testing', 'debugging', 'performance', 'security',
-    'frontend', 'backend', 'database', 'api'
+    'programming',
+    'development',
+    'architecture',
+    'design',
+    'testing',
+    'debugging',
+    'performance',
+    'security',
+    'frontend',
+    'backend',
+    'database',
+    'api',
   ]
-  
+
   for (const topic of topicPatterns) {
     if (text.includes(topic)) {
       topics.push(topic)
     }
   }
-  
+
   return topics.slice(0, 3)
 }
 
@@ -390,16 +407,16 @@ const extractTopics = (content: string): string[] => {
  */
 const calculateCompleteness = (content: string, metadata: MemoryMetadataInput): number => {
   let score = 0
-  
+
   // Content length
   if (content.length > 50) score += 0.3
   if (content.length > 200) score += 0.2
-  
+
   // Metadata completeness
   if (metadata.tags.length > 0) score += 0.2
   if (metadata.source.tool) score += 0.1
   if (metadata.source.sessionId) score += 0.1
   if (metadata.source.location) score += 0.1
-  
+
   return Math.min(score, 1.0)
 }

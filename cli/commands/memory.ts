@@ -4,13 +4,13 @@
  */
 
 import { Effect, pipe } from 'effect'
-import { 
-  storeMemory, 
-  searchMemory, 
-  getMemory, 
-  deleteMemory, 
+import {
+  deleteMemory,
+  getMemory,
   loadMemories,
-  type MemoryMetadataInput 
+  type MemoryMetadataInput,
+  searchMemory,
+  storeMemory,
 } from '../../memory/index.ts'
 import { MemoryQuerySchema } from '../../schemas/memory.ts'
 import { createCliError } from '../../lib/errors.ts'
@@ -28,35 +28,38 @@ export const addMemoryCommand = (
     source?: string
     sessionId?: string
     relatedFiles?: string[]
-  } = {}
+  } = {},
 ) =>
   pipe(
     Effect.log('💾 Adding memory entry...'),
     Effect.flatMap(() => {
       const metadata: MemoryMetadataInput = {
-        type: (options.type as 'knowledge' | 'conversation' | 'decision' | 'insight' | 'pattern') || 'knowledge',
+        type: (options.type as 'knowledge' | 'conversation' | 'decision' | 'insight' | 'pattern') ||
+          'knowledge',
         source: {
           tool: (options.source as 'cursor' | 'windsurf' | 'claude' | 'copilot') || undefined,
           sessionId: options.sessionId || crypto.randomUUID(),
           timestamp: new Date().toISOString(),
-          location: projectPath
+          location: projectPath,
         },
         tags: options.tags || [],
         importance: (options.importance as 'low' | 'medium' | 'high') || 'medium',
         projectPath,
         relatedFiles: options.relatedFiles || [],
-        associatedRules: []
+        associatedRules: [],
       }
-      
+
       return storeMemory(projectPath, content, metadata)
     }),
-    Effect.flatMap(result => 
+    Effect.flatMap((result) =>
       pipe(
         Effect.log(`✅ Memory stored with ID: ${result.id}`),
-        Effect.flatMap(() => Effect.log(`📅 Created: ${new Date(result.timestamp).toLocaleString()}`)),
-        Effect.map(() => result)
+        Effect.flatMap(() =>
+          Effect.log(`📅 Created: ${new Date(result.timestamp).toLocaleString()}`)
+        ),
+        Effect.map(() => result),
       )
-    )
+    ),
   )
 
 /**
@@ -70,10 +73,10 @@ export const searchMemoryCommand = (
     tags?: string[]
     tool?: string[]
     importance?: string[]
-    timeRange?: { from?: string, to?: string }
+    timeRange?: { from?: string; to?: string }
     limit?: number
     threshold?: number
-  } = {}
+  } = {},
 ) =>
   pipe(
     Effect.log(`🔍 Searching memories for: "${query}"`),
@@ -87,32 +90,46 @@ export const searchMemoryCommand = (
         timeRange: options.timeRange,
         limit: options.limit || 10,
         threshold: options.threshold || 0.1,
-        includeArchived: false
+        includeArchived: false,
       })
-      
+
       return searchMemory(projectPath, searchQuery)
     }),
-    Effect.flatMap(results => 
+    Effect.flatMap((results) =>
       pipe(
         Effect.log(`📊 Found ${results.length} matching memories:`),
         Effect.flatMap(() => Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')),
-        Effect.flatMap(() => 
+        Effect.flatMap(() =>
           Effect.all(
             results.map((result, index) =>
               pipe(
-                Effect.log(`${index + 1}. ${result.memory.content.title} (Score: ${result.score.toFixed(2)})`),
-                Effect.flatMap(() => Effect.log(`   Type: ${result.memory.metadata.type} | Importance: ${result.memory.metadata.importance}`)),
-                Effect.flatMap(() => Effect.log(`   Tags: ${result.memory.metadata.tags.join(', ')}`)),
-                Effect.flatMap(() => Effect.log(`   Created: ${new Date(result.memory.lifecycle.created).toLocaleDateString()}`)),
-                Effect.flatMap(() => Effect.log(`   Summary: ${result.memory.content.summary.slice(0, 100)}...`)),
-                Effect.flatMap(() => Effect.log(''))
+                Effect.log(
+                  `${index + 1}. ${result.memory.content.title} (Score: ${
+                    result.score.toFixed(2)
+                  })`,
+                ),
+                Effect.flatMap(() => Effect.log(
+                  `   Type: ${result.memory.metadata.type} | Importance: ${result.memory.metadata.importance}`,
+                )),
+                Effect.flatMap(() =>
+                  Effect.log(`   Tags: ${result.memory.metadata.tags.join(', ')}`)
+                ),
+                Effect.flatMap(() =>
+                  Effect.log(
+                    `   Created: ${new Date(result.memory.lifecycle.created).toLocaleDateString()}`,
+                  )
+                ),
+                Effect.flatMap(() =>
+                  Effect.log(`   Summary: ${result.memory.content.summary.slice(0, 100)}...`)
+                ),
+                Effect.flatMap(() => Effect.log('')),
               )
-            )
+            ),
           )
         ),
-        Effect.map(() => results)
+        Effect.map(() => results),
       )
-    )
+    ),
   )
 
 /**
@@ -120,26 +137,32 @@ export const searchMemoryCommand = (
  */
 export const getMemoryCommand = (
   projectPath: string,
-  memoryId: string
+  memoryId: string,
 ) =>
   pipe(
     Effect.log(`📖 Retrieving memory: ${memoryId}`),
     Effect.flatMap(() => getMemory(projectPath, memoryId)),
-    Effect.flatMap(memory => {
+    Effect.flatMap((memory) => {
       if (!memory) {
         return pipe(
           Effect.log(`❌ Memory not found: ${memoryId}`),
-          Effect.flatMap(() => Effect.fail(createCliError(new Error('Memory not found'), 'Memory not found', 'get-memory')))
+          Effect.flatMap(() =>
+            Effect.fail(
+              createCliError(new Error('Memory not found'), 'Memory not found', 'get-memory'),
+            )
+          ),
         )
       }
-      
+
       return pipe(
         Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'),
         Effect.flatMap(() => Effect.log(`📋 Title: ${memory.content.title}`)),
         Effect.flatMap(() => Effect.log(`🏷️  Type: ${memory.metadata.type}`)),
         Effect.flatMap(() => Effect.log(`⭐ Importance: ${memory.metadata.importance}`)),
         Effect.flatMap(() => Effect.log(`🏷️  Tags: ${memory.metadata.tags.join(', ')}`)),
-        Effect.flatMap(() => Effect.log(`📅 Created: ${new Date(memory.lifecycle.created).toLocaleString()}`)),
+        Effect.flatMap(() =>
+          Effect.log(`📅 Created: ${new Date(memory.lifecycle.created).toLocaleString()}`)
+        ),
         Effect.flatMap(() => Effect.log(`👁️  Access Count: ${memory.metadata.accessCount}`)),
         Effect.flatMap(() => Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')),
         Effect.flatMap(() => Effect.log('📖 Summary:')),
@@ -150,9 +173,9 @@ export const getMemoryCommand = (
         Effect.flatMap(() => Effect.log('')),
         Effect.flatMap(() => Effect.log('🔑 Keywords:')),
         Effect.flatMap(() => Effect.log(memory.content.keywords.join(', '))),
-        Effect.map(() => memory)
+        Effect.map(() => memory),
       )
-    })
+    }),
   )
 
 /**
@@ -165,52 +188,68 @@ export const listMemoriesCommand = (
     importance?: string
     limit?: number
     recent?: boolean
-  } = {}
+  } = {},
 ) =>
   pipe(
     Effect.log('📚 Loading memories...'),
     Effect.flatMap(() => loadMemories(projectPath)),
-    Effect.flatMap(memories => {
+    Effect.flatMap((memories) => {
       let filteredMemories = memories
-      
+
       // Apply filters
       if (options.type) {
-        filteredMemories = filteredMemories.filter(m => m.metadata.type === options.type)
+        filteredMemories = filteredMemories.filter((m) => m.metadata.type === options.type)
       }
-      
+
       if (options.importance) {
-        filteredMemories = filteredMemories.filter(m => m.metadata.importance === options.importance)
+        filteredMemories = filteredMemories.filter((m) =>
+          m.metadata.importance === options.importance
+        )
       }
-      
+
       // Sort by creation date (newest first)
-      filteredMemories.sort((a, b) => 
+      filteredMemories.sort((a, b) =>
         new Date(b.lifecycle.created).getTime() - new Date(a.lifecycle.created).getTime()
       )
-      
+
       // Apply limit
       if (options.limit) {
         filteredMemories = filteredMemories.slice(0, options.limit)
       }
-      
+
       return pipe(
         Effect.log(`📊 Found ${filteredMemories.length} memories (${memories.length} total):`),
         Effect.flatMap(() => Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')),
-        Effect.flatMap(() => 
+        Effect.flatMap(() =>
           Effect.all(
             filteredMemories.map((memory, index) =>
               pipe(
                 Effect.log(`${index + 1}. ${memory.content.title}`),
-                Effect.flatMap(() => Effect.log(`   ID: ${memory.metadata.id.slice(0, 8)}... | Type: ${memory.metadata.type} | Importance: ${memory.metadata.importance}`)),
-                Effect.flatMap(() => Effect.log(`   Created: ${new Date(memory.lifecycle.created).toLocaleDateString()} | Access Count: ${memory.metadata.accessCount}`)),
-                Effect.flatMap(() => Effect.log(`   Summary: ${memory.content.summary.slice(0, 80)}...`)),
-                Effect.flatMap(() => Effect.log(''))
+                Effect.flatMap(() =>
+                  Effect.log(
+                    `   ID: ${
+                      memory.metadata.id.slice(0, 8)
+                    }... | Type: ${memory.metadata.type} | Importance: ${memory.metadata.importance}`,
+                  )
+                ),
+                Effect.flatMap(() =>
+                  Effect.log(
+                    `   Created: ${
+                      new Date(memory.lifecycle.created).toLocaleDateString()
+                    } | Access Count: ${memory.metadata.accessCount}`,
+                  )
+                ),
+                Effect.flatMap(() =>
+                  Effect.log(`   Summary: ${memory.content.summary.slice(0, 80)}...`)
+                ),
+                Effect.flatMap(() => Effect.log('')),
               )
-            )
+            ),
           )
         ),
-        Effect.map(() => filteredMemories)
+        Effect.map(() => filteredMemories),
       )
-    })
+    }),
   )
 
 /**
@@ -219,7 +258,7 @@ export const listMemoriesCommand = (
 export const deleteMemoryCommand = (
   projectPath: string,
   memoryId: string,
-  options: { force?: boolean } = {}
+  options: { force?: boolean } = {},
 ) =>
   pipe(
     Effect.log(`🗑️ Deleting memory: ${memoryId}`),
@@ -228,22 +267,38 @@ export const deleteMemoryCommand = (
         return pipe(
           Effect.log('⚠️  Are you sure? This cannot be undone.'),
           Effect.flatMap(() => Effect.log('   Use --force flag to confirm deletion.')),
-          Effect.flatMap(() => Effect.fail(createCliError(new Error('Deletion cancelled'), 'Deletion cancelled - use --force flag', 'delete-memory')))
+          Effect.flatMap(() =>
+            Effect.fail(
+              createCliError(
+                new Error('Deletion cancelled'),
+                'Deletion cancelled - use --force flag',
+                'delete-memory',
+              ),
+            )
+          ),
         )
       }
-      
+
       return deleteMemory(projectPath, memoryId)
     }),
-    Effect.flatMap(deleted => {
+    Effect.flatMap((deleted) => {
       if (deleted) {
         return Effect.log('✅ Memory deleted successfully')
       } else {
         return pipe(
           Effect.log('❌ Memory not found or could not be deleted'),
-          Effect.flatMap(() => Effect.fail(createCliError(new Error('Memory deletion failed'), 'Memory deletion failed', 'delete-memory')))
+          Effect.flatMap(() =>
+            Effect.fail(
+              createCliError(
+                new Error('Memory deletion failed'),
+                'Memory deletion failed',
+                'delete-memory',
+              ),
+            )
+          ),
         )
       }
-    })
+    }),
   )
 
 /**
@@ -254,61 +309,66 @@ export const memoryStatsCommand = (projectPath: string) =>
     Effect.log('📊 Memory System Statistics'),
     Effect.flatMap(() => Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━')),
     Effect.flatMap(() => loadMemories(projectPath)),
-    Effect.flatMap(memories => {
+    Effect.flatMap((memories) => {
       const stats = {
         total: memories.length,
         byType: {} as Record<string, number>,
         byImportance: {} as Record<string, number>,
         totalAccesses: 0,
         averageContentLength: 0,
-        recentCount: 0
+        recentCount: 0,
       }
-      
+
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      
+
       for (const memory of memories) {
         // Count by type
         stats.byType[memory.metadata.type] = (stats.byType[memory.metadata.type] || 0) + 1
-        
+
         // Count by importance
-        stats.byImportance[memory.metadata.importance] = (stats.byImportance[memory.metadata.importance] || 0) + 1
-        
+        stats.byImportance[memory.metadata.importance] =
+          (stats.byImportance[memory.metadata.importance] || 0) + 1
+
         // Total accesses
         stats.totalAccesses += memory.metadata.accessCount
-        
+
         // Content length
         stats.averageContentLength += memory.content.content.length
-        
+
         // Recent count
         if (new Date(memory.lifecycle.created) > oneWeekAgo) {
           stats.recentCount++
         }
       }
-      
+
       if (memories.length > 0) {
         stats.averageContentLength = Math.round(stats.averageContentLength / memories.length)
       }
-      
+
       return pipe(
         Effect.log(`📚 Total memories: ${stats.total}`),
         Effect.flatMap(() => Effect.log(`📈 Recent (last 7 days): ${stats.recentCount}`)),
         Effect.flatMap(() => Effect.log(`👁️  Total accesses: ${stats.totalAccesses}`)),
-        Effect.flatMap(() => Effect.log(`📏 Average content length: ${stats.averageContentLength} chars`)),
+        Effect.flatMap(() =>
+          Effect.log(`📏 Average content length: ${stats.averageContentLength} chars`)
+        ),
         Effect.flatMap(() => Effect.log('')),
         Effect.flatMap(() => Effect.log('📊 By Type:')),
-        Effect.flatMap(() => Effect.all(
-          Object.entries(stats.byType).map(([type, count]) =>
-            Effect.log(`   ${type}: ${count}`)
+        Effect.flatMap(() =>
+          Effect.all(
+            Object.entries(stats.byType).map(([type, count]) => Effect.log(`   ${type}: ${count}`)),
           )
-        )),
+        ),
         Effect.flatMap(() => Effect.log('')),
         Effect.flatMap(() => Effect.log('⭐ By Importance:')),
-        Effect.flatMap(() => Effect.all(
-          Object.entries(stats.byImportance).map(([importance, count]) =>
-            Effect.log(`   ${importance}: ${count}`)
+        Effect.flatMap(() =>
+          Effect.all(
+            Object.entries(stats.byImportance).map(([importance, count]) =>
+              Effect.log(`   ${importance}: ${count}`)
+            ),
           )
-        )),
-        Effect.map(() => stats)
+        ),
+        Effect.map(() => stats),
       )
-    })
+    }),
   )

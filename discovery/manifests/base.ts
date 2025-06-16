@@ -42,17 +42,17 @@ export interface ManifestParser {
   readonly type: string
   readonly supportedFiles: readonly string[]
   readonly packageManager: string
-  
+
   /**
    * Check if this parser can handle the given manifest file
    */
   canParse(manifestPath: string): Effect.Effect<boolean, VibeError>
-  
+
   /**
    * Parse the manifest file and extract dependencies
    */
   parse(manifestPath: string): Effect.Effect<ManifestParseResult, VibeError>
-  
+
   /**
    * Get additional metadata about the project from the manifest
    */
@@ -70,25 +70,25 @@ export interface ManifestParserRegistryState {
  * Creates an empty manifest parser registry state
  */
 export const createManifestParserRegistry = (): ManifestParserRegistryState => ({
-  parsers: new Map<string, ManifestParser>()
+  parsers: new Map<string, ManifestParser>(),
 })
 
 /**
  * Registers a parser in the registry state
  */
 export const registerParser = (
-  state: ManifestParserRegistryState, 
-  parser: ManifestParser
+  state: ManifestParserRegistryState,
+  parser: ManifestParser,
 ): ManifestParserRegistryState => ({
-  parsers: new Map(state.parsers).set(parser.type, parser)
+  parsers: new Map(state.parsers).set(parser.type, parser),
 })
 
 /**
  * Gets a parser by type from the registry state
  */
 export const getParser = (
-  state: ManifestParserRegistryState, 
-  type: string
+  state: ManifestParserRegistryState,
+  type: string,
 ): ManifestParser | undefined => {
   return state.parsers.get(type)
 }
@@ -104,17 +104,17 @@ export const getAllParsers = (state: ManifestParserRegistryState): ManifestParse
  * Gets the appropriate parser for a file path
  */
 export const getParserForFile = (
-  state: ManifestParserRegistryState, 
-  filePath: string
+  state: ManifestParserRegistryState,
+  filePath: string,
 ): ManifestParser | undefined => {
   const fileName = filePath.split('/').pop() || ''
-  
+
   for (const parser of state.parsers.values()) {
     if (parser.supportedFiles.includes(fileName)) {
       return parser
     }
   }
-  
+
   return undefined
 }
 
@@ -124,11 +124,12 @@ export const getParserForFile = (
 export const parseJsonSafely = (content: string) =>
   Effect.try({
     try: () => JSON.parse(content),
-    catch: (error) => createParseError(
-      error,
-      content,
-      `Failed to parse JSON: ${error instanceof Error ? error.message : 'Unknown error'}`
-    ),
+    catch: (error) =>
+      createParseError(
+        error,
+        content,
+        `Failed to parse JSON: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      ),
   })
 
 export const parseTomlSafely = (content: string) =>
@@ -138,11 +139,12 @@ export const parseTomlSafely = (content: string) =>
       const { parse } = await import('@ltd/j-toml')
       return parse(content)
     },
-    catch: (error) => createParseError(
-      error,
-      content,
-      `Failed to parse TOML: ${error instanceof Error ? error.message : 'Unknown error'}`
-    ),
+    catch: (error) =>
+      createParseError(
+        error,
+        content,
+        `Failed to parse TOML: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      ),
   })
 
 /**

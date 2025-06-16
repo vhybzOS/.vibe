@@ -1,7 +1,7 @@
 import { Effect, pipe } from 'effect'
 
 export const mcpServerCommand = (
-  options: { port: string; host: string }
+  options: { port: string; host: string },
 ) =>
   pipe(
     Effect.log('🚀 Starting .vibe MCP server...'),
@@ -32,7 +32,7 @@ export const mcpServerCommand = (
     Effect.tap(() => Effect.log('    }')),
     Effect.tap(() => Effect.log('  }')),
     Effect.tap(() => Effect.log('')),
-    Effect.flatMap(() => waitForever())
+    Effect.flatMap(() => waitForever()),
   )
 
 const startMcpServer = async () => {
@@ -44,7 +44,7 @@ const waitForever = () =>
   Effect.async<never, never, void>(() => {
     // Keep the process alive
     const interval = setInterval(() => {}, 1000)
-    
+
     return Effect.sync(() => {
       clearInterval(interval)
     })

@@ -35,7 +35,7 @@ async function main() {
   // Handle tool calls
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params
-    
+
     try {
       const result = await vibeServer.handleToolCall(name, args || {})
       return {
@@ -62,7 +62,7 @@ async function main() {
   // Handle resource requests
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     const { uri } = request.params
-    
+
     try {
       const result = await vibeServer.handleResourceRead(uri)
       return {
@@ -75,7 +75,11 @@ async function main() {
         ],
       }
     } catch (error) {
-      throw new Error(`Failed to read resource ${uri}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to read resource ${uri}: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      )
     }
   })
 
@@ -94,7 +98,7 @@ async function main() {
   // Start server
   const transport = new StdioServerTransport()
   await server.connect(transport)
-  
+
   console.error('🚀 .vibe MCP server started')
 }
 

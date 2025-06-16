@@ -71,8 +71,8 @@ export interface WatcherEvent {
 export const startFileWatcher = (config: WatcherConfig) =>
   pipe(
     Effect.sync(() => new FileWatcherService(config)),
-    Effect.flatMap(watcher => watcher.start()),
-    Effect.tap(() => Effect.log(`✅ File watcher started for ${config.projectPath}`))
+    Effect.flatMap((watcher) => watcher.start()),
+    Effect.tap(() => Effect.log(`✅ File watcher started for ${config.projectPath}`)),
   )
 
 /**
@@ -81,30 +81,34 @@ export const startFileWatcher = (config: WatcherConfig) =>
  */
 export class FileWatcherService {
   private config: WatcherConfig
-  
+
   constructor(config: WatcherConfig) {
     this.config = config
   }
-  
+
   /**
    * Starts watching for file changes
    */
   start() {
     return pipe(
       Effect.log(`📁 Starting file watcher for ${this.config.projectPath}`),
-      Effect.flatMap(() => Effect.log(`🔍 Watching patterns: ${this.config.watchPatterns.join(', ')}`)),
-      Effect.flatMap(() => Effect.log(`🚫 Ignoring patterns: ${this.config.ignorePatterns.join(', ')}`)),
-      Effect.flatMap(() => Effect.succeed({ started: true }))
+      Effect.flatMap(() =>
+        Effect.log(`🔍 Watching patterns: ${this.config.watchPatterns.join(', ')}`)
+      ),
+      Effect.flatMap(() =>
+        Effect.log(`🚫 Ignoring patterns: ${this.config.ignorePatterns.join(', ')}`)
+      ),
+      Effect.flatMap(() => Effect.succeed({ started: true })),
     )
   }
-  
+
   /**
    * Stops the file watcher
    */
   stop() {
     return pipe(
       Effect.log('🛑 Stopping file watcher'),
-      Effect.flatMap(() => Effect.succeed({ stopped: true }))
+      Effect.flatMap(() => Effect.succeed({ stopped: true })),
     )
   }
 }

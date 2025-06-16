@@ -14,10 +14,10 @@ The `vibe-daemon` solves this. It's a single, unified server that runs on your m
 
 The daemon is a small but mighty HTTP server that runs on `http://localhost:4242` and is responsible for everything that makes `.vibe` smart:
 
--   **🔍 Autonomous Project Discovery:** It constantly scans your system for `.vibe`-enabled projects, so it always knows what you're working on.
--   **🔄 Real-Time File Watching:** The moment you change a `package.json` or a tool-specific config file, the daemon sees it and springs into action.
--   **🧠 The Intelligence Engine:** All the heavy lifting—fetching metadata, checking GitHub, and running AI inference—is handled by the daemon in the background, so your terminal is never blocked.
--   **📡 A Single, Unified API:** The daemon serves a clean API for the future `.vibe` Dashboard, and a Server-Sent Events (SSE) stream at `/api/events` for real-time progress updates.
+- **🔍 Autonomous Project Discovery:** It constantly scans your system for `.vibe`-enabled projects, so it always knows what you're working on.
+- **🔄 Real-Time File Watching:** The moment you change a `package.json` or a tool-specific config file, the daemon sees it and springs into action.
+- **🧠 The Intelligence Engine:** All the heavy lifting—fetching metadata, checking GitHub, and running AI inference—is handled by the daemon in the background, so your terminal is never blocked.
+- **📡 A Single, Unified API:** The daemon serves a clean API for the future `.vibe` Dashboard, and a Server-Sent Events (SSE) stream at `/api/events` for real-time progress updates.
 
 ### The Payoff: True Cross-Platform Magic
 

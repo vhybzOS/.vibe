@@ -3,22 +3,21 @@
  * Testing the search functionality before implementation
  */
 
-import { assertEquals, assert } from '@std/assert'
-import { describe, it, beforeEach, afterEach } from '@std/testing/bdd'
+import { assert, assertEquals } from '@std/assert'
+import { afterEach, beforeEach, describe, it } from '@std/testing/bdd'
 import { resolve } from '@std/path'
 import { Effect } from 'effect'
 
-
 // Import functions to be implemented
 import {
+  clearIndex,
+  deleteDocument,
   initializeSearch,
   insertDocument,
   insertDocuments,
-  updateDocument,
-  deleteDocument,
-  searchDocuments,
   rebuildIndex,
-  clearIndex
+  searchDocuments,
+  updateDocument,
 } from '../index.ts'
 
 describe('🔍 Search System', () => {
@@ -45,16 +44,17 @@ describe('🔍 Search System', () => {
   describe('🏗️ Index Management', () => {
     it('should initialize search index', async () => {
       await Effect.runPromise(initializeSearch(testDir))
-      
+
       // Should create search index files
-      const indexExists = await Deno.stat(resolve(searchPath, 'search.index')).then(() => true).catch(() => false)
+      const indexExists = await Deno.stat(resolve(searchPath, 'search.index')).then(() => true)
+        .catch(() => false)
       assert(indexExists, 'Search index file should be created')
     })
 
     it('should rebuild index from existing documents', async () => {
       // Setup: Initialize and add some documents
       await Effect.runPromise(initializeSearch(testDir))
-      
+
       const testDoc = {
         id: 'test-doc-1',
         doc_type: 'memory' as const,
@@ -66,24 +66,24 @@ describe('🔍 Search System', () => {
           source: 'test',
           priority: 'medium' as const,
           category: 'test',
-          title: 'Test Document'
-        }
+          title: 'Test Document',
+        },
       }
-      
+
       await Effect.runPromise(insertDocument(testDoc))
-      
+
       // Test: Rebuild index
       await Effect.runPromise(rebuildIndex(testDir))
-      
+
       // Verify: Should be able to search after rebuild
       const searchQuery = {
         term: 'document',
         filters: {},
         mode: 'keyword' as const,
         limit: 10,
-        offset: 0
+        offset: 0,
       }
-      
+
       const searchResult = await Effect.runPromise(searchDocuments(searchQuery))
       assert(searchResult.results.length > 0, 'Should find documents after rebuild')
     })
@@ -106,8 +106,8 @@ describe('🔍 Search System', () => {
           source: 'test',
           priority: 'high' as const,
           category: 'learning',
-          title: 'Effect-TS Learning'
-        }
+          title: 'Effect-TS Learning',
+        },
       }
 
       // Insert document
@@ -119,11 +119,11 @@ describe('🔍 Search System', () => {
         filters: {},
         mode: 'keyword' as const,
         limit: 10,
-        offset: 0
+        offset: 0,
       }
 
       const result = await Effect.runPromise(searchDocuments(searchQuery))
-      
+
       assertEquals(result.results.length, 1)
       assert(result.results[0], 'Should have first result')
       assertEquals(result.results[0].document.id, 'test-memory-1')
@@ -141,14 +141,14 @@ describe('🔍 Search System', () => {
           project_path: testDir,
           source: 'test',
           priority: 'medium' as const,
-          category: 'decision'
-        }
+          category: 'decision',
+        },
       }
 
       const updatedDoc = {
         ...originalDoc,
         content: 'Updated content about Effect-TS and React patterns',
-        tags: ['react', 'effect-ts']
+        tags: ['react', 'effect-ts'],
       }
 
       // Insert then update
@@ -161,7 +161,7 @@ describe('🔍 Search System', () => {
         filters: {},
         mode: 'keyword' as const,
         limit: 10,
-        offset: 0
+        offset: 0,
       }
 
       const result = await Effect.runPromise(searchDocuments(searchQuery))
@@ -181,19 +181,19 @@ describe('🔍 Search System', () => {
           project_path: testDir,
           source: 'test',
           priority: 'low' as const,
-          category: 'test'
-        }
+          category: 'test',
+        },
       }
 
       // Insert and verify it exists
       await Effect.runPromise(insertDocument(testDoc))
-      
+
       let searchResult = await Effect.runPromise(searchDocuments({
         term: 'deleted',
         filters: {},
         mode: 'keyword' as const,
         limit: 10,
-        offset: 0
+        offset: 0,
       }))
       assertEquals(searchResult.results.length, 1)
 
@@ -206,7 +206,7 @@ describe('🔍 Search System', () => {
         filters: {},
         mode: 'keyword' as const,
         limit: 10,
-        offset: 0
+        offset: 0,
       }))
       assertEquals(searchResult.results.length, 0)
     })
@@ -215,7 +215,7 @@ describe('🔍 Search System', () => {
   describe('🔍 Search Functionality', () => {
     beforeEach(async () => {
       await Effect.runPromise(initializeSearch(testDir))
-      
+
       // Insert test documents
       const testDocs = [
         {
@@ -228,8 +228,8 @@ describe('🔍 Search System', () => {
             project_path: testDir,
             source: 'test',
             priority: 'high' as const,
-            category: 'learning'
-          }
+            category: 'learning',
+          },
         },
         {
           id: 'diary-1',
@@ -241,8 +241,8 @@ describe('🔍 Search System', () => {
             project_path: testDir,
             source: 'test',
             priority: 'high' as const,
-            category: 'decision'
-          }
+            category: 'decision',
+          },
         },
         {
           id: 'rule-1',
@@ -254,9 +254,9 @@ describe('🔍 Search System', () => {
             project_path: testDir,
             source: 'test',
             priority: 'medium' as const,
-            category: 'coding-standard'
-          }
-        }
+            category: 'coding-standard',
+          },
+        },
       ]
 
       for (const doc of testDocs) {
@@ -270,22 +270,22 @@ describe('🔍 Search System', () => {
         filters: {},
         mode: 'keyword' as const,
         limit: 10,
-        offset: 0
+        offset: 0,
       }
 
       const result = await Effect.runPromise(searchDocuments(searchQuery))
-      
+
       assertEquals(result.results.length, 3)
-      
+
       // Results should be sorted by relevance/timestamp
       assert(result.results[0] && result.results[1], 'Should have at least 2 results')
       assert(result.results[0].score >= result.results[1].score)
-      
+
       // All results should contain the search term
       for (const item of result.results) {
         assert(
           item.document.content.toLowerCase().includes('effect-ts') ||
-          item.document.tags.some(tag => tag.toLowerCase().includes('effect-ts'))
+            item.document.tags.some((tag) => tag.toLowerCase().includes('effect-ts')),
         )
       }
     })
@@ -294,15 +294,15 @@ describe('🔍 Search System', () => {
       const searchQuery = {
         term: 'Effect-TS',
         filters: {
-          doc_type: 'memory' as const
+          doc_type: 'memory' as const,
         },
         mode: 'keyword' as const,
         limit: 10,
-        offset: 0
+        offset: 0,
       }
 
       const result = await Effect.runPromise(searchDocuments(searchQuery))
-      
+
       assertEquals(result.results.length, 1)
       assert(result.results[0], 'Should have first result')
       assertEquals(result.results[0].document.doc_type, 'memory')
@@ -313,15 +313,15 @@ describe('🔍 Search System', () => {
       const searchQuery = {
         term: 'Effect-TS',
         filters: {
-          tags: ['decision']
+          tags: ['decision'],
         },
         mode: 'keyword' as const,
         limit: 10,
-        offset: 0
+        offset: 0,
       }
 
       const result = await Effect.runPromise(searchDocuments(searchQuery))
-      
+
       assertEquals(result.results.length, 1)
       assert(result.results[0], 'Should have first result')
       assertEquals(result.results[0].document.id, 'diary-1')
@@ -332,15 +332,15 @@ describe('🔍 Search System', () => {
       const searchQuery = {
         term: 'Effect-TS',
         filters: {
-          priority: 'high' as const
+          priority: 'high' as const,
         },
         mode: 'keyword' as const,
         limit: 10,
-        offset: 0
+        offset: 0,
       }
 
       const result = await Effect.runPromise(searchDocuments(searchQuery))
-      
+
       assertEquals(result.results.length, 2)
       for (const item of result.results) {
         assertEquals(item.document.metadata.priority, 'high')
@@ -350,21 +350,21 @@ describe('🔍 Search System', () => {
     it('should filter by date range', async () => {
       const now = Date.now()
       const recentThreshold = now - 600 // Last 600ms
-      
+
       const searchQuery = {
         term: 'Effect-TS',
         filters: {
           date_range: {
-            start: recentThreshold
-          }
+            start: recentThreshold,
+          },
         },
         mode: 'keyword' as const,
         limit: 10,
-        offset: 0
+        offset: 0,
       }
 
       const result = await Effect.runPromise(searchDocuments(searchQuery))
-      
+
       // Should only find recent documents
       assert(result.results.length <= 2)
       for (const item of result.results) {
@@ -379,7 +379,7 @@ describe('🔍 Search System', () => {
         filters: {},
         mode: 'keyword' as const,
         limit: 2,
-        offset: 0
+        offset: 0,
       }
 
       const query2 = {
@@ -387,7 +387,7 @@ describe('🔍 Search System', () => {
         filters: {},
         mode: 'keyword' as const,
         limit: 2,
-        offset: 2
+        offset: 2,
       }
 
       const result1 = await Effect.runPromise(searchDocuments(query1))
@@ -395,11 +395,11 @@ describe('🔍 Search System', () => {
 
       assertEquals(result1.results.length, 2)
       assertEquals(result2.results.length, 1)
-      
+
       // Should not have duplicate results
-      const ids1 = result1.results.map(r => r.document.id)
-      const ids2 = result2.results.map(r => r.document.id)
-      const intersection = ids1.filter(id => ids2.includes(id))
+      const ids1 = result1.results.map((r) => r.document.id)
+      const ids2 = result2.results.map((r) => r.document.id)
+      const intersection = ids1.filter((id) => ids2.includes(id))
       assertEquals(intersection.length, 0)
     })
 
@@ -409,7 +409,7 @@ describe('🔍 Search System', () => {
         filters: {},
         mode: 'keyword' as const,
         limit: 10,
-        offset: 0
+        offset: 0,
       }
 
       const result = await Effect.runPromise(searchDocuments(searchQuery))
@@ -421,27 +421,29 @@ describe('🔍 Search System', () => {
   describe('⚡ Performance', () => {
     it('should handle large document sets efficiently', async () => {
       await Effect.runPromise(initializeSearch(testDir))
-      
+
       // Insert 1000 test documents
       const docs = Array.from({ length: 1000 }, (_, i) => ({
         id: `perf-doc-${i}`,
         doc_type: 'memory' as const,
         timestamp: Date.now() - Math.random() * 1000000,
-        content: `Performance test document ${i} with Effect-TS patterns and ${Math.random() > 0.5 ? 'important' : 'regular'} content`,
+        content: `Performance test document ${i} with Effect-TS patterns and ${
+          Math.random() > 0.5 ? 'important' : 'regular'
+        } content`,
         tags: ['performance', 'test', i % 2 === 0 ? 'even' : 'odd'],
         metadata: {
           project_path: testDir,
           source: 'perf-test',
           priority: i % 3 === 0 ? 'high' as const : 'medium' as const,
-          category: 'test'
-        }
+          category: 'test',
+        },
       }))
 
       // Measure insertion time using batch operation
       const insertStart = Date.now()
       await Effect.runPromise(insertDocuments(docs))
       const insertTime = Date.now() - insertStart
-      
+
       // Should insert 1000 docs in reasonable time (< 5 seconds)
       assert(insertTime < 5000, `Insertion too slow: ${insertTime}ms`)
 
@@ -452,7 +454,7 @@ describe('🔍 Search System', () => {
         filters: {},
         mode: 'keyword' as const,
         limit: 50,
-        offset: 0
+        offset: 0,
       }))
       const searchTime = Date.now() - searchStart
 
@@ -470,7 +472,7 @@ describe('🔍 Search System', () => {
         filters: {},
         mode: 'keyword' as const,
         limit: 10,
-        offset: 0
+        offset: 0,
       }
 
       try {
@@ -484,14 +486,14 @@ describe('🔍 Search System', () => {
 
     it('should handle invalid document IDs', async () => {
       await Effect.runPromise(initializeSearch(testDir))
-      
+
       const result = await Effect.runPromise(deleteDocument('nonexistent-id'))
       assertEquals(result, false)
     })
 
     it('should validate search query parameters', async () => {
       await Effect.runPromise(initializeSearch(testDir))
-      
+
       // Invalid limit
       try {
         await Effect.runPromise(searchDocuments({
@@ -499,7 +501,7 @@ describe('🔍 Search System', () => {
           filters: {},
           mode: 'keyword' as const,
           limit: 0, // Invalid
-          offset: 0
+          offset: 0,
         }))
         assert(false, 'Should validate limit > 0')
       } catch (error) {

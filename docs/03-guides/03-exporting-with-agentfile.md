@@ -29,9 +29,9 @@ vibe export --format rules-only
 
 ### Why is this useful?
 
--   **Portability:** Move your entire AI context to another machine or share it with a team member who also uses `.vibe` or another AgentFile-compatible tool.
--   **Backup:** Create a single-file snapshot of your project's entire AI configuration.
--   **Interoperability:** As the AgentFile ecosystem grows, you'll be able to import your `.vibe` context into other intelligent developer tools.
+- **Portability:** Move your entire AI context to another machine or share it with a team member who also uses `.vibe` or another AgentFile-compatible tool.
+- **Backup:** Create a single-file snapshot of your project's entire AI configuration.
+- **Interoperability:** As the AgentFile ecosystem grows, you'll be able to import your `.vibe` context into other intelligent developer tools.
 
 This feature is a core part of our philosophy: your data is yours, and you should be able to take it anywhere.
 

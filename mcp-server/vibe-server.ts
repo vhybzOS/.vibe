@@ -10,22 +10,14 @@ import { loadRules } from '../rules/index.ts'
 import { UniversalRule } from '../schemas/universal-rule.ts'
 import { MemoryTypeSchema } from '../schemas/memory.ts'
 import { DIARY_CATEGORIES } from '../schemas/diary.ts'
-import { 
-  storeMemory, 
-  searchMemory, 
+import {
   loadMemories,
-  type MemoryMetadataInput 
+  type MemoryMetadataInput,
+  searchMemory,
+  storeMemory,
 } from '../memory/index.ts'
-import { 
-  searchDocuments, 
-  initializeSearch 
-} from '../search/index.ts'
-import { 
-  createEntry, 
-  searchDiary, 
-  getTimeline,
-  type DiaryEntryInput 
-} from '../diary/index.ts'
+import { initializeSearch, searchDocuments } from '../search/index.ts'
+import { createEntry, type DiaryEntryInput, getTimeline, searchDiary } from '../diary/index.ts'
 
 export class VibeServer {
   private projectPath: string
@@ -55,7 +47,7 @@ export class VibeServer {
           return await this.getRules(args)
         case 'get-tools':
           return await this.getDetectedTools(args)
-        
+
         // Memory tools
         case 'search-memory':
           return await this.searchMemory(args)
@@ -63,11 +55,11 @@ export class VibeServer {
           return await this.addMemory(args)
         case 'list-memories':
           return await this.listMemories(args)
-        
+
         // Search tools
         case 'global-search':
           return await this.globalSearch(args)
-        
+
         // Diary tools
         case 'search-diary':
           return await this.searchDiary(args)
@@ -75,7 +67,7 @@ export class VibeServer {
           return await this.addDiaryEntry(args)
         case 'get-diary-timeline':
           return await this.getDiaryTimeline(args)
-        
+
         default:
           throw new Error(`Unknown tool: ${name}`)
       }
@@ -90,11 +82,11 @@ export class VibeServer {
 
   async handleResourceRead(uri: string) {
     const [scheme, path] = uri.split('://', 2)
-    
+
     if (scheme === 'vibe' && path) {
       return await this.readVibeResource(path)
     }
-    
+
     throw new Error(`Unsupported resource scheme: ${scheme}`)
   }
 
@@ -170,7 +162,7 @@ export class VibeServer {
           properties: {},
         },
       },
-      
+
       // Memory tools
       {
         name: 'search-memory',
@@ -179,7 +171,11 @@ export class VibeServer {
           type: 'object',
           properties: {
             query: { type: 'string', description: 'Search query text' },
-            type: { type: 'array', items: { type: 'string' }, description: 'Memory types to filter by' },
+            type: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Memory types to filter by',
+            },
             tags: { type: 'array', items: { type: 'string' }, description: 'Tags to filter by' },
             limit: { type: 'number', default: 10, description: 'Maximum number of results' },
           },
@@ -193,9 +189,21 @@ export class VibeServer {
           type: 'object',
           properties: {
             content: { type: 'string', description: 'Memory content to store' },
-            type: { type: 'string', default: 'knowledge', description: 'Type of memory (conversation, decision, pattern, etc.)' },
-            tags: { type: 'array', items: { type: 'string' }, description: 'Tags for categorization' },
-            importance: { type: 'string', default: 'medium', description: 'Importance level (low, medium, high)' },
+            type: {
+              type: 'string',
+              default: 'knowledge',
+              description: 'Type of memory (conversation, decision, pattern, etc.)',
+            },
+            tags: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Tags for categorization',
+            },
+            importance: {
+              type: 'string',
+              default: 'medium',
+              description: 'Importance level (low, medium, high)',
+            },
           },
           required: ['content'],
         },
@@ -211,7 +219,7 @@ export class VibeServer {
           },
         },
       },
-      
+
       // Search tools
       {
         name: 'global-search',
@@ -220,13 +228,17 @@ export class VibeServer {
           type: 'object',
           properties: {
             query: { type: 'string', description: 'Search query text' },
-            type: { type: 'array', items: { type: 'string' }, description: 'Document types to search (memory, diary, rule)' },
+            type: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Document types to search (memory, diary, rule)',
+            },
             limit: { type: 'number', default: 10, description: 'Maximum number of results' },
           },
           required: ['query'],
         },
       },
-      
+
       // Diary tools
       {
         name: 'search-diary',
@@ -235,7 +247,10 @@ export class VibeServer {
           type: 'object',
           properties: {
             query: { type: 'string', description: 'Search query text' },
-            category: { type: 'string', description: 'Category to filter by (architecture, design, technology, process)' },
+            category: {
+              type: 'string',
+              description: 'Category to filter by (architecture, design, technology, process)',
+            },
             tags: { type: 'array', items: { type: 'string' }, description: 'Tags to filter by' },
             limit: { type: 'number', default: 10, description: 'Maximum number of results' },
           },
@@ -249,14 +264,26 @@ export class VibeServer {
           type: 'object',
           properties: {
             title: { type: 'string', description: 'Decision title' },
-            category: { type: 'string', default: 'decision', description: 'Category (architecture, design, technology, process)' },
-            tags: { type: 'array', items: { type: 'string' }, description: 'Tags for categorization' },
+            category: {
+              type: 'string',
+              default: 'decision',
+              description: 'Category (architecture, design, technology, process)',
+            },
+            tags: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Tags for categorization',
+            },
             problem: {
               type: 'object',
               properties: {
                 description: { type: 'string', description: 'Problem description' },
                 context: { type: 'string', description: 'Context information' },
-                constraints: { type: 'array', items: { type: 'string' }, description: 'Constraints list' },
+                constraints: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Constraints list',
+                },
               },
               required: ['description', 'context'],
             },
@@ -265,7 +292,11 @@ export class VibeServer {
               properties: {
                 chosen: { type: 'string', description: 'Chosen decision' },
                 rationale: { type: 'string', description: 'Decision rationale' },
-                alternatives: { type: 'array', items: { type: 'string' }, description: 'Alternative options considered' },
+                alternatives: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Alternative options considered',
+                },
               },
               required: ['chosen', 'rationale'],
             },
@@ -293,9 +324,9 @@ export class VibeServer {
       includeRules: z.boolean().default(true),
       includeTools: z.boolean().default(true),
     })
-    
+
     const params = schema.parse(args)
-    
+
     interface StatusResult {
       project: {
         path: string
@@ -311,7 +342,7 @@ export class VibeServer {
         active: Awaited<ReturnType<typeof detectAITools>>
       }
     }
-    
+
     const result: StatusResult = {
       project: {
         path: this.projectPath,
@@ -356,16 +387,16 @@ export class VibeServer {
     const schema = z.object({
       activeOnly: z.boolean().default(false),
     })
-    
+
     const params = schema.parse(args)
-    
+
     try {
       const rules = await Effect.runPromise(loadRules(this.vibePath))
-      
+
       if (params.activeOnly) {
         return rules.filter((r: UniversalRule) => r.application.mode === 'always')
       }
-      
+
       return rules
     } catch (error) {
       return {
@@ -406,7 +437,7 @@ export class VibeServer {
             mimeType: 'application/json',
           }
         }
-        
+
       case 'tools':
         try {
           const tools = await Effect.runPromise(detectAITools(this.projectPath))
@@ -420,7 +451,7 @@ export class VibeServer {
             mimeType: 'application/json',
           }
         }
-        
+
       case 'status':
         try {
           const [rules, tools, memories, timeline] = await Promise.all([
@@ -429,7 +460,7 @@ export class VibeServer {
             Effect.runPromise(loadMemories(this.projectPath)).catch(() => []),
             Effect.runPromise(getTimeline(this.projectPath)).catch(() => []),
           ])
-          
+
           const status = {
             project: this.projectPath,
             vibePath: this.vibePath,
@@ -439,7 +470,7 @@ export class VibeServer {
             diary: { count: timeline.length },
             timestamp: new Date().toISOString(),
           }
-          
+
           return {
             content: JSON.stringify(status, null, 2),
             mimeType: 'application/json',
@@ -450,45 +481,55 @@ export class VibeServer {
             mimeType: 'application/json',
           }
         }
-        
+
       case 'memory/recent':
         try {
           const memories = await Effect.runPromise(loadMemories(this.projectPath))
           const recent = memories
-            .sort((a, b) => new Date(b.lifecycle.created).getTime() - new Date(a.lifecycle.created).getTime())
+            .sort((a, b) =>
+              new Date(b.lifecycle.created).getTime() - new Date(a.lifecycle.created).getTime()
+            )
             .slice(0, 10)
-          
+
           return {
             content: JSON.stringify(recent, null, 2),
             mimeType: 'application/json',
           }
         } catch (error) {
           return {
-            content: JSON.stringify({ error: 'Failed to load recent memories', details: error }, null, 2),
+            content: JSON.stringify(
+              { error: 'Failed to load recent memories', details: error },
+              null,
+              2,
+            ),
             mimeType: 'application/json',
           }
         }
-        
+
       case 'diary/timeline':
         try {
           const timeline = await Effect.runPromise(getTimeline(this.projectPath))
           const recent = timeline.slice(0, 20)
-          
+
           return {
             content: JSON.stringify(recent, null, 2),
             mimeType: 'application/json',
           }
         } catch (error) {
           return {
-            content: JSON.stringify({ error: 'Failed to load diary timeline', details: error }, null, 2),
+            content: JSON.stringify(
+              { error: 'Failed to load diary timeline', details: error },
+              null,
+              2,
+            ),
             mimeType: 'application/json',
           }
         }
-        
+
       case 'search/index':
         try {
           await Effect.runPromise(initializeSearch(this.projectPath))
-          
+
           // Get index stats by performing a broad search
           const searchResult = await Effect.runPromise(searchDocuments({
             term: '*',
@@ -497,31 +538,35 @@ export class VibeServer {
             limit: 1000,
             offset: 0,
           }))
-          
+
           const stats = {
             totalDocuments: searchResult.total,
             indexed: searchResult.results.length,
             byType: {} as Record<string, number>,
             timestamp: new Date().toISOString(),
           }
-          
+
           // Count by document type
           for (const result of searchResult.results) {
             const type = result.document.doc_type
             stats.byType[type] = (stats.byType[type] || 0) + 1
           }
-          
+
           return {
             content: JSON.stringify(stats, null, 2),
             mimeType: 'application/json',
           }
         } catch (error) {
           return {
-            content: JSON.stringify({ error: 'Failed to get search index status', details: error }, null, 2),
+            content: JSON.stringify(
+              { error: 'Failed to get search index status', details: error },
+              null,
+              2,
+            ),
             mimeType: 'application/json',
           }
         }
-        
+
       default:
         throw new Error(`Unknown vibe resource: ${path}`)
     }
@@ -536,9 +581,9 @@ export class VibeServer {
       tags: z.array(z.string()).optional(),
       limit: z.number().default(10),
     })
-    
+
     const params = schema.parse(args)
-    
+
     try {
       const searchQuery = {
         query: params.query,
@@ -549,16 +594,16 @@ export class VibeServer {
         timeRange: {},
         limit: params.limit,
         threshold: 0.1,
-        includeArchived: false
+        includeArchived: false,
       }
-      
+
       const results = await Effect.runPromise(searchMemory(this.projectPath, searchQuery))
-      
+
       return {
         success: true,
-        results: results.map(r => ({
+        results: results.map((r) => ({
           memory: r.memory,
-          score: r.score
+          score: r.score,
         })),
         total: results.length,
         timestamp: new Date().toISOString(),
@@ -579,9 +624,9 @@ export class VibeServer {
       tags: z.array(z.string()).default([]),
       importance: z.string().default('medium'),
     })
-    
+
     const params = schema.parse(args)
-    
+
     try {
       const metadata: MemoryMetadataInput = {
         type: MemoryTypeSchema.parse(params.type),
@@ -589,17 +634,19 @@ export class VibeServer {
           tool: 'mcp',
           sessionId: crypto.randomUUID(),
           timestamp: new Date().toISOString(),
-          location: this.projectPath
+          location: this.projectPath,
         },
         tags: params.tags,
         importance: z.enum(['low', 'medium', 'high', 'critical']).parse(params.importance),
         projectPath: this.projectPath,
         relatedFiles: [],
-        associatedRules: []
+        associatedRules: [],
       }
-      
-      const result = await Effect.runPromise(storeMemory(this.projectPath, params.content, metadata))
-      
+
+      const result = await Effect.runPromise(
+        storeMemory(this.projectPath, params.content, metadata),
+      )
+
       return {
         success: true,
         memoryId: result.id,
@@ -620,22 +667,24 @@ export class VibeServer {
       type: z.string().optional(),
       limit: z.number().default(20),
     })
-    
+
     const params = schema.parse(args)
-    
+
     try {
       const memories = await Effect.runPromise(loadMemories(this.projectPath))
-      
+
       let filtered = memories
       if (params.type) {
-        filtered = memories.filter(m => m.metadata.type === params.type)
+        filtered = memories.filter((m) => m.metadata.type === params.type)
       }
-      
+
       // Sort by creation date (newest first) and limit
       const result = filtered
-        .sort((a, b) => new Date(b.lifecycle.created).getTime() - new Date(a.lifecycle.created).getTime())
+        .sort((a, b) =>
+          new Date(b.lifecycle.created).getTime() - new Date(a.lifecycle.created).getTime()
+        )
         .slice(0, params.limit)
-      
+
       return {
         success: true,
         memories: result,
@@ -660,28 +709,30 @@ export class VibeServer {
       type: z.array(z.string()).optional(),
       limit: z.number().default(10),
     })
-    
+
     const params = schema.parse(args)
-    
+
     try {
       await Effect.runPromise(initializeSearch(this.projectPath))
-      
+
       const searchQuery = {
         term: params.query,
         filters: {
-          doc_type: params.type?.[0] ? z.enum(['memory', 'diary', 'rule', 'dependency']).parse(params.type[0]) : undefined,
+          doc_type: params.type?.[0]
+            ? z.enum(['memory', 'diary', 'rule', 'dependency']).parse(params.type[0])
+            : undefined,
           tags: undefined,
           date_range: undefined,
           priority: undefined,
-          category: undefined
+          category: undefined,
         },
         mode: 'keyword' as const,
         limit: params.limit,
         offset: 0,
       }
-      
+
       const results = await Effect.runPromise(searchDocuments(searchQuery))
-      
+
       return {
         success: true,
         results: results.results,
@@ -706,20 +757,20 @@ export class VibeServer {
       tags: z.array(z.string()).optional(),
       limit: z.number().default(10),
     })
-    
+
     const params = schema.parse(args)
-    
+
     try {
       const searchQuery = {
         query: params.query,
         category: z.enum(DIARY_CATEGORIES).parse(params.category),
         tags: params.tags,
         dateRange: undefined,
-        limit: params.limit
+        limit: params.limit,
       }
-      
+
       const results = await Effect.runPromise(searchDiary(this.projectPath, searchQuery))
-      
+
       return {
         success: true,
         results,
@@ -751,9 +802,9 @@ export class VibeServer {
         alternatives: z.array(z.string()).default([]),
       }),
     })
-    
+
     const params = schema.parse(args)
-    
+
     try {
       const diaryEntry: DiaryEntryInput = {
         title: params.title,
@@ -762,25 +813,25 @@ export class VibeServer {
         problem: {
           description: params.problem.description,
           context: params.problem.context,
-          constraints: params.problem.constraints
+          constraints: params.problem.constraints,
         },
         decision: {
           chosen: params.decision.chosen,
           rationale: params.decision.rationale,
-          alternatives: params.decision.alternatives.map(alt => ({
+          alternatives: params.decision.alternatives.map((alt) => ({
             option: alt,
-            reason: 'Alternative option'
-          }))
+            reason: 'Alternative option',
+          })),
         },
         impact: {
           benefits: [],
           risks: [],
-          migrationNotes: null
-        }
+          migrationNotes: null,
+        },
       }
-      
+
       const result = await Effect.runPromise(createEntry(this.projectPath, diaryEntry))
-      
+
       return {
         success: true,
         entry: result,
@@ -802,18 +853,20 @@ export class VibeServer {
       until: z.string().optional(),
       limit: z.number().default(20),
     })
-    
+
     const params = schema.parse(args)
-    
+
     try {
-      const dateRange = (params.since || params.until) ? {
-        from: params.since || new Date(0).toISOString(),
-        to: params.until || new Date().toISOString()
-      } : undefined
-      
+      const dateRange = (params.since || params.until)
+        ? {
+          from: params.since || new Date(0).toISOString(),
+          to: params.until || new Date().toISOString(),
+        }
+        : undefined
+
       const timeline = await Effect.runPromise(getTimeline(this.projectPath, dateRange))
       const result = timeline.slice(0, params.limit)
-      
+
       return {
         success: true,
         timeline: result,

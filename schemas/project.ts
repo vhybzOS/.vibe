@@ -3,7 +3,7 @@ import { AIToolTypeSchema, DetectedToolSchema } from './ai-tool-config.ts'
 
 export const ProjectLanguageSchema = z.enum([
   'typescript',
-  'javascript', 
+  'javascript',
   'python',
   'rust',
   'go',
@@ -65,7 +65,9 @@ export const ProjectTypeSchema = z.enum([
 export const ProjectStructureSchema = z.object({
   rootPath: z.string(),
   gitRepository: z.boolean(),
-  packageManagers: z.array(z.enum(['npm', 'yarn', 'pnpm', 'pip', 'poetry', 'cargo', 'go', 'gradle', 'maven'])),
+  packageManagers: z.array(
+    z.enum(['npm', 'yarn', 'pnpm', 'pip', 'poetry', 'cargo', 'go', 'gradle', 'maven']),
+  ),
   buildTools: z.array(z.string()).default([]),
   testFrameworks: z.array(z.string()).default([]),
   linters: z.array(z.string()).default([]),
@@ -152,12 +154,15 @@ export const VibeConfigSchema = z.object({
     dependencies: z.string().default('dependencies'),
     config: z.string().default('config'),
   }),
-  integrations: z.record(AIToolTypeSchema, z.object({
-    enabled: z.boolean(),
-    configPath: z.string().optional(),
-    lastSync: z.string().datetime().optional(),
-    syncStrategy: z.enum(['overwrite', 'merge', 'manual']).default('merge'),
-  })).default(() => ({
+  integrations: z.record(
+    AIToolTypeSchema,
+    z.object({
+      enabled: z.boolean(),
+      configPath: z.string().optional(),
+      lastSync: z.string().datetime().optional(),
+      syncStrategy: z.enum(['overwrite', 'merge', 'manual']).default('merge'),
+    }),
+  ).default(() => ({
     cursor: { enabled: false, syncStrategy: 'merge' as const },
     windsurf: { enabled: false, syncStrategy: 'merge' as const },
     claude: { enabled: false, syncStrategy: 'merge' as const },

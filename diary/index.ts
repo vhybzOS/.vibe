@@ -5,20 +5,20 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { 
-  DiaryEntry, 
-  DiaryEntrySchema,
-  type Problem,
+import {
   type Decision,
-  type Impact,
+  DIARY_CATEGORIES,
   type DiaryCategory,
-  DIARY_CATEGORIES
+  DiaryEntry,
+  DiaryEntrySchema,
+  type Impact,
+  type Problem,
 } from '../schemas/diary.ts'
-import { 
-  initializeSearch, 
-  insertDocument, 
-  searchDocuments, 
-  type SearchDocument 
+import {
+  initializeSearch,
+  insertDocument,
+  type SearchDocument,
+  searchDocuments,
 } from '../search/index.ts'
 import { createFileSystemError, createParseError, type VibeError } from '../lib/errors.ts'
 
@@ -87,18 +87,18 @@ export interface ConversationData {
  */
 export const createEntry = (
   vibePath: string,
-  entryInput: DiaryEntryInput
+  entryInput: DiaryEntryInput,
 ) =>
   pipe(
     Effect.sync(() => createDiaryEntry(entryInput, vibePath)),
-    Effect.flatMap(entry => 
+    Effect.flatMap((entry) =>
       pipe(
         validateDiaryEntry(entry),
         Effect.flatMap(() => saveEntryToFile(vibePath, entry)),
         Effect.flatMap(() => indexDiaryEntry(vibePath, entry)),
-        Effect.map(() => entry)
+        Effect.map(() => entry),
       )
-    )
+    ),
   )
 
 /**
@@ -106,7 +106,7 @@ export const createEntry = (
  */
 export const searchDiary = (
   vibePath: string,
-  query: DiarySearchQuery
+  query: DiarySearchQuery,
 ) =>
   pipe(
     initializeSearch(vibePath),
@@ -117,35 +117,35 @@ export const searchDiary = (
         filters: {
           doc_type: 'diary' as const,
           tags: query.tags && query.tags.length > 0 ? query.tags : undefined,
-          date_range: query.dateRange ? {
-            start: new Date(query.dateRange.from).getTime(),
-            end: new Date(query.dateRange.to).getTime(),
-          } : undefined,
+          date_range: query.dateRange
+            ? {
+              start: new Date(query.dateRange.from).getTime(),
+              end: new Date(query.dateRange.to).getTime(),
+            }
+            : undefined,
           category: query.category || undefined,
         },
         mode: 'keyword' as const,
         limit: query.limit || 20,
         offset: 0,
       }
-      
+
       return searchDocuments(searchQuery)
     }),
-    Effect.flatMap(response => 
+    Effect.flatMap((response) =>
       pipe(
         // Filter results by relevance score first - lower threshold for filter-only searches
-        Effect.sync(() => response.results.filter(result => 
-          query.query ? result.score >= 0.5 : result.score >= 0.1
-        )),
-        Effect.flatMap(filteredResults =>
-          Effect.all(
-            filteredResults.map(result => 
-              loadEntryFromId(vibePath, result.document.id)
-            )
+        Effect.sync(() =>
+          response.results.filter((result) =>
+            query.query ? result.score >= 0.5 : result.score >= 0.1
           )
         ),
-        Effect.map(entries => entries.filter((entry): entry is DiaryEntry => entry !== null))
+        Effect.flatMap((filteredResults) => Effect.all(
+          filteredResults.map((result) => loadEntryFromId(vibePath, result.document.id)),
+        )),
+        Effect.map((entries) => entries.filter((entry): entry is DiaryEntry => entry !== null)),
       )
-    )
+    ),
   )
 
 /**
@@ -153,29 +153,29 @@ export const searchDiary = (
  */
 export const getTimeline = (
   vibePath: string,
-  dateRange?: TimelineRange
+  dateRange?: TimelineRange,
 ) =>
   pipe(
     loadAllEntries(vibePath),
-    Effect.map(entries => {
+    Effect.map((entries) => {
       let filteredEntries = entries
-      
+
       // Apply date range filter if provided
       if (dateRange) {
         const fromTime = new Date(dateRange.from).getTime()
         const toTime = new Date(dateRange.to).getTime()
-        
-        filteredEntries = entries.filter(entry => {
+
+        filteredEntries = entries.filter((entry) => {
           const entryTime = new Date(entry.timestamp).getTime()
           return entryTime >= fromTime && entryTime <= toTime
         })
       }
-      
+
       // Sort by timestamp (newest first)
-      return filteredEntries.sort((a, b) => 
+      return filteredEntries.sort((a, b) =>
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       )
-    })
+    }),
   )
 
 /**
@@ -184,19 +184,19 @@ export const getTimeline = (
 export const updateEntry = (
   vibePath: string,
   id: string,
-  updates: DiaryEntryUpdate
+  updates: DiaryEntryUpdate,
 ) =>
   pipe(
     loadEntryFromId(vibePath, id),
-    Effect.flatMap(entry => {
+    Effect.flatMap((entry) => {
       if (!entry) {
         return Effect.fail(createFileSystemError(
-          new Error('Entry not found'), 
-          `${vibePath}/.vibe/diary/${id}.json`, 
-          'Diary entry not found'
+          new Error('Entry not found'),
+          `${vibePath}/.vibe/diary/${id}.json`,
+          'Diary entry not found',
         ))
       }
-      
+
       const updatedEntry: DiaryEntry = {
         ...entry,
         ...updates,
@@ -205,14 +205,14 @@ export const updateEntry = (
         impact: updates.impact ? { ...entry.impact, ...updates.impact } : entry.impact,
         timestamp: new Date().toISOString(), // Update timestamp
       }
-      
+
       return pipe(
         validateDiaryEntry(updatedEntry),
         Effect.flatMap(() => saveEntryToFile(vibePath, updatedEntry)),
         Effect.flatMap(() => indexDiaryEntry(vibePath, updatedEntry)),
-        Effect.map(() => updatedEntry)
+        Effect.map(() => updatedEntry),
       )
-    })
+    }),
   )
 
 /**
@@ -220,7 +220,7 @@ export const updateEntry = (
  */
 export const deleteEntry = (
   vibePath: string,
-  id: string
+  id: string,
 ) =>
   pipe(
     Effect.tryPromise({
@@ -229,9 +229,9 @@ export const deleteEntry = (
         await Deno.remove(entryPath)
         return true
       },
-      catch: () => false
+      catch: () => false,
     }),
-    Effect.catchAll(() => Effect.succeed(false))
+    Effect.catchAll(() => Effect.succeed(false)),
   )
 
 /**
@@ -239,17 +239,17 @@ export const deleteEntry = (
  */
 export const autoCapture = (
   vibePath: string,
-  conversationData: ConversationData
+  conversationData: ConversationData,
 ) =>
   pipe(
     Effect.sync(() => analyzeConversationForDecision(conversationData)),
-    Effect.flatMap(analysisResult => {
+    Effect.flatMap((analysisResult) => {
       if (!analysisResult) {
         return Effect.succeed(null)
       }
-      
+
       return createEntry(vibePath, analysisResult)
-    })
+    }),
   )
 
 /**
@@ -257,17 +257,17 @@ export const autoCapture = (
  */
 export const exportDiary = (
   vibePath: string,
-  format: 'markdown' | 'json'
+  format: 'markdown' | 'json',
 ) =>
   pipe(
     loadAllEntries(vibePath),
-    Effect.map(entries => {
+    Effect.map((entries) => {
       if (format === 'json') {
         return JSON.stringify(entries, null, 2)
       }
-      
+
       return exportToMarkdown(entries)
-    })
+    }),
   )
 
 // ==================== Helper Functions ====================
@@ -277,11 +277,11 @@ export const exportDiary = (
  */
 const createDiaryEntry = (
   entryInput: DiaryEntryInput,
-  vibePath: string
+  vibePath: string,
 ): DiaryEntry => {
   const now = new Date().toISOString()
   const entryId = crypto.randomUUID()
-  
+
   return {
     id: entryId,
     title: entryInput.title,
@@ -290,7 +290,7 @@ const createDiaryEntry = (
     timestamp: now,
     problem: entryInput.problem,
     decision: entryInput.decision,
-    impact: entryInput.impact
+    impact: entryInput.impact,
   }
 }
 
@@ -300,7 +300,7 @@ const createDiaryEntry = (
 const validateDiaryEntry = (entry: DiaryEntry) =>
   Effect.try({
     try: () => DiaryEntrySchema.parse(entry),
-    catch: (error) => createParseError(error, 'diary-entry', 'Invalid diary entry schema')
+    catch: (error) => createParseError(error, 'diary-entry', 'Invalid diary entry schema'),
   })
 
 /**
@@ -312,13 +312,13 @@ const saveEntryToFile = (vibePath: string, entry: DiaryEntry) =>
       try: async () => {
         const diaryDir = resolve(vibePath, '.vibe', 'diary')
         await Deno.mkdir(diaryDir, { recursive: true })
-        
+
         const filePath = resolve(diaryDir, `${entry.id}.json`)
         await Deno.writeTextFile(filePath, JSON.stringify(entry, null, 2))
         return filePath
       },
-      catch: (error) => createFileSystemError(error, vibePath, 'Failed to save diary entry')
-    })
+      catch: (error) => createFileSystemError(error, vibePath, 'Failed to save diary entry'),
+    }),
   )
 
 /**
@@ -339,10 +339,10 @@ const indexDiaryEntry = (vibePath: string, entry: DiaryEntry) =>
         `Risks: ${entry.impact.risks.join(', ')}`,
         `Tags: ${entry.tags.join(', ')}`,
         `Constraints: ${entry.problem.constraints.join(', ')}`,
-        ...(entry.decision.alternatives.map(alt => `Alternative: ${alt.option} - ${alt.reason}`)),
-        ...(entry.impact.migrationNotes ? [`Migration: ${entry.impact.migrationNotes}`] : [])
+        ...(entry.decision.alternatives.map((alt) => `Alternative: ${alt.option} - ${alt.reason}`)),
+        ...(entry.impact.migrationNotes ? [`Migration: ${entry.impact.migrationNotes}`] : []),
       ].join('\n\n')
-      
+
       const document: SearchDocument = {
         id: entry.id,
         doc_type: 'diary',
@@ -357,9 +357,9 @@ const indexDiaryEntry = (vibePath: string, entry: DiaryEntry) =>
           title: entry.title,
         },
       }
-      
+
       return insertDocument(document)
-    })
+    }),
   )
 
 /**
@@ -373,15 +373,20 @@ const loadEntryFromId = (vibePath: string, id: string) =>
         const content = await Deno.readTextFile(filePath)
         return JSON.parse(content)
       },
-      catch: (error) => createFileSystemError(error, `${vibePath}/.vibe/diary/${id}.json`, 'Failed to load diary entry')
+      catch: (error) =>
+        createFileSystemError(
+          error,
+          `${vibePath}/.vibe/diary/${id}.json`,
+          'Failed to load diary entry',
+        ),
     }),
-    Effect.flatMap(data => 
+    Effect.flatMap((data) =>
       Effect.try({
         try: () => DiaryEntrySchema.parse(data),
-        catch: (error) => createParseError(error, `${id}.json`, 'Invalid diary entry schema')
+        catch: (error) => createParseError(error, `${id}.json`, 'Invalid diary entry schema'),
       })
     ),
-    Effect.catchAll(() => Effect.succeed(null))
+    Effect.catchAll(() => Effect.succeed(null)),
   )
 
 /**
@@ -404,15 +409,15 @@ const loadAllEntries = (vibePath: string) =>
         }
         return files
       },
-      catch: () => []
+      catch: () => [],
     }),
-    Effect.flatMap(files => 
+    Effect.flatMap((files) =>
       Effect.all(
         files.map(loadSingleEntryFile),
-        { concurrency: 10 }
+        { concurrency: 10 },
       )
     ),
-    Effect.map(entries => entries.filter((entry): entry is DiaryEntry => entry !== null))
+    Effect.map((entries) => entries.filter((entry): entry is DiaryEntry => entry !== null)),
   )
 
 /**
@@ -425,27 +430,29 @@ const loadSingleEntryFile = (filePath: string) =>
         const content = await Deno.readTextFile(filePath)
         return JSON.parse(content)
       },
-      catch: () => null
+      catch: () => null,
     }),
-    Effect.flatMap(data => {
+    Effect.flatMap((data) => {
       if (!data) return Effect.succeed(null)
-      
+
       return Effect.try({
         try: () => DiaryEntrySchema.parse(data),
-        catch: () => null
+        catch: () => null,
       })
     }),
-    Effect.catchAll(() => Effect.succeed(null))
+    Effect.catchAll(() => Effect.succeed(null)),
   )
 
 /**
  * Analyzes conversation for decision patterns
  */
-const analyzeConversationForDecision = (conversationData: ConversationData): DiaryEntryInput | null => {
+const analyzeConversationForDecision = (
+  conversationData: ConversationData,
+): DiaryEntryInput | null => {
   const conversationText = conversationData.messages
-    .map(msg => `${msg.role}: ${msg.content}`)
+    .map((msg) => `${msg.role}: ${msg.content}`)
     .join('\n\n')
-  
+
   // Simple decision detection patterns
   const decisionPatterns = [
     /should we/i,
@@ -456,26 +463,24 @@ const analyzeConversationForDecision = (conversationData: ConversationData): Dia
     /use.*instead/i,
     /better to/i,
     /recommend/i,
-    /yes.*effect-ts/i
+    /yes.*effect-ts/i,
   ]
-  
-  const hasDecisionPattern = decisionPatterns.some(pattern => 
-    pattern.test(conversationText)
-  )
-  
+
+  const hasDecisionPattern = decisionPatterns.some((pattern) => pattern.test(conversationText))
+
   if (!hasDecisionPattern) {
     return null
   }
-  
+
   // Auto-detect category based on content
   const category = detectCategory(conversationText)
-  
+
   // Extract key concepts for title
   const title = extractDecisionTitle(conversationText)
-  
+
   // Extract tags from content
   const tags = extractTags(conversationText)
-  
+
   return {
     title,
     category,
@@ -483,18 +488,18 @@ const analyzeConversationForDecision = (conversationData: ConversationData): Dia
     problem: {
       description: extractProblemDescription(conversationText),
       context: `Auto-captured from ${conversationData.tool} conversation`,
-      constraints: []
+      constraints: [],
     },
     decision: {
       chosen: extractDecision(conversationText),
       rationale: extractRationale(conversationText),
-      alternatives: []
+      alternatives: [],
     },
     impact: {
       benefits: extractBenefits(conversationText),
       risks: extractRisks(conversationText),
-      migrationNotes: null
-    }
+      migrationNotes: null,
+    },
   }
 }
 
@@ -503,12 +508,14 @@ const analyzeConversationForDecision = (conversationData: ConversationData): Dia
  */
 const detectCategory = (content: string): DiaryCategory => {
   const text = content.toLowerCase()
-  
+
   if (text.includes('architect') || text.includes('design pattern')) return 'architecture'
   if (text.includes('design') || text.includes('interface')) return 'design'
-  if (text.includes('technology') || text.includes('library') || text.includes('framework')) return 'technology'
+  if (text.includes('technology') || text.includes('library') || text.includes('framework')) {
+    return 'technology'
+  }
   if (text.includes('process') || text.includes('workflow')) return 'process'
-  
+
   return 'technology' // Default fallback
 }
 
@@ -517,22 +524,22 @@ const detectCategory = (content: string): DiaryCategory => {
  */
 const extractDecisionTitle = (content: string): string => {
   const text = content.toLowerCase()
-  
+
   // Look for common decision patterns
   const patterns = [
     /migration to ([^.!?]+)/i,
     /switch to ([^.!?]+)/i,
     /use ([^.!?]+)/i,
-    /decided to ([^.!?]+)/i
+    /decided to ([^.!?]+)/i,
   ]
-  
+
   for (const pattern of patterns) {
     const match = content.match(pattern)
     if (match && match[1]) {
       return `Decision: ${match[1].trim()}`
     }
   }
-  
+
   return 'Auto-captured Decision'
 }
 
@@ -542,18 +549,28 @@ const extractDecisionTitle = (content: string): string => {
 const extractTags = (content: string): string[] => {
   const text = content.toLowerCase()
   const tags = []
-  
+
   const techPatterns = [
-    'effect-ts', 'react', 'typescript', 'javascript', 'async', 'await',
-    'migration', 'testing', 'performance', 'security', 'api', 'database'
+    'effect-ts',
+    'react',
+    'typescript',
+    'javascript',
+    'async',
+    'await',
+    'migration',
+    'testing',
+    'performance',
+    'security',
+    'api',
+    'database',
   ]
-  
+
   for (const tech of techPatterns) {
     if (text.includes(tech)) {
       tags.push(tech)
     }
   }
-  
+
   return tags.slice(0, 5) // Limit to 5 tags
 }
 
@@ -562,15 +579,15 @@ const extractTags = (content: string): string[] => {
  */
 const extractProblemDescription = (content: string): string => {
   const lines = content.split('\n')
-  const userMessages = lines.filter(line => line.startsWith('user:'))
-  
+  const userMessages = lines.filter((line) => line.startsWith('user:'))
+
   if (userMessages.length > 0) {
     const firstMessage = userMessages[0]
     if (firstMessage) {
       return firstMessage.replace('user:', '').trim().slice(0, 200)
     }
   }
-  
+
   return 'Problem extracted from conversation'
 }
 
@@ -579,8 +596,8 @@ const extractProblemDescription = (content: string): string => {
  */
 const extractDecision = (content: string): string => {
   const assistantMessages = content.split('\n')
-    .filter(line => line.startsWith('assistant:'))
-  
+    .filter((line) => line.startsWith('assistant:'))
+
   if (assistantMessages.length > 0) {
     const firstMessage = assistantMessages[0]
     if (firstMessage) {
@@ -588,7 +605,7 @@ const extractDecision = (content: string): string => {
       return firstResponse.slice(0, 100) + (firstResponse.length > 100 ? '...' : '')
     }
   }
-  
+
   return 'Decision captured from conversation'
 }
 
@@ -597,14 +614,14 @@ const extractDecision = (content: string): string => {
  */
 const extractRationale = (content: string): string => {
   const text = content.toLowerCase()
-  
+
   if (text.includes('because')) {
     const becauseMatch = content.match(/because ([^.!?]+)/i)
     if (becauseMatch && becauseMatch[1]) {
       return becauseMatch[1].trim()
     }
   }
-  
+
   return 'Rationale from conversation analysis'
 }
 
@@ -614,12 +631,12 @@ const extractRationale = (content: string): string => {
 const extractBenefits = (content: string): string[] => {
   const text = content.toLowerCase()
   const benefits = []
-  
+
   if (text.includes('better')) benefits.push('Better approach')
   if (text.includes('performance')) benefits.push('Performance improvement')
   if (text.includes('type safety')) benefits.push('Type safety')
   if (text.includes('composable')) benefits.push('Better composability')
-  
+
   return benefits.slice(0, 3)
 }
 
@@ -629,11 +646,11 @@ const extractBenefits = (content: string): string[] => {
 const extractRisks = (content: string): string[] => {
   const text = content.toLowerCase()
   const risks = []
-  
+
   if (text.includes('learning curve')) risks.push('Learning curve')
   if (text.includes('breaking change')) risks.push('Breaking changes')
   if (text.includes('migration')) risks.push('Migration complexity')
-  
+
   return risks.slice(0, 3)
 }
 
@@ -641,23 +658,23 @@ const extractRisks = (content: string): string[] => {
  * Exports diary entries to markdown format
  */
 const exportToMarkdown = (entries: DiaryEntry[]): string => {
-  const sortedEntries = entries.sort((a, b) => 
+  const sortedEntries = entries.sort((a, b) =>
     new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   )
-  
+
   let markdown = '# Decision Diary\n\n'
   markdown += `Generated on ${new Date().toISOString()}\n\n`
-  
+
   for (const entry of sortedEntries) {
     markdown += `## ${entry.title}\n\n`
     markdown += `**Category**: ${entry.category}  \n`
     markdown += `**Date**: ${new Date(entry.timestamp).toLocaleDateString()}  \n`
     markdown += `**Tags**: ${entry.tags.join(', ')}\n\n`
-    
+
     markdown += `### Problem\n\n`
     markdown += `${entry.problem.description}\n\n`
     markdown += `**Context**: ${entry.problem.context}\n\n`
-    
+
     if (entry.problem.constraints.length > 0) {
       markdown += `**Constraints**:\n`
       for (const constraint of entry.problem.constraints) {
@@ -665,11 +682,11 @@ const exportToMarkdown = (entries: DiaryEntry[]): string => {
       }
       markdown += `\n`
     }
-    
+
     markdown += `### Decision\n\n`
     markdown += `**Chosen**: ${entry.decision.chosen}\n\n`
     markdown += `**Rationale**: ${entry.decision.rationale}\n\n`
-    
+
     if (entry.decision.alternatives.length > 0) {
       markdown += `**Alternatives Considered**:\n`
       for (const alt of entry.decision.alternatives) {
@@ -677,9 +694,9 @@ const exportToMarkdown = (entries: DiaryEntry[]): string => {
       }
       markdown += `\n`
     }
-    
+
     markdown += `### Impact\n\n`
-    
+
     if (entry.impact.benefits.length > 0) {
       markdown += `**Benefits**:\n`
       for (const benefit of entry.impact.benefits) {
@@ -687,7 +704,7 @@ const exportToMarkdown = (entries: DiaryEntry[]): string => {
       }
       markdown += `\n`
     }
-    
+
     if (entry.impact.risks.length > 0) {
       markdown += `**Risks**:\n`
       for (const risk of entry.impact.risks) {
@@ -695,13 +712,13 @@ const exportToMarkdown = (entries: DiaryEntry[]): string => {
       }
       markdown += `\n`
     }
-    
+
     if (entry.impact.migrationNotes) {
       markdown += `**Migration Notes**: ${entry.impact.migrationNotes}\n\n`
     }
-    
+
     markdown += `---\n\n`
   }
-  
+
   return markdown
 }

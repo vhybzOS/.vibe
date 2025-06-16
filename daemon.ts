@@ -10,7 +10,7 @@ import { VibeDaemon } from './daemon/index.ts'
 // Run daemon if this file is executed directly
 if (import.meta.main) {
   const daemon = new VibeDaemon()
-  
+
   daemon.start().catch((error) => {
     console.error('❌ Daemon failed to start:', error)
     Deno.exit(1)

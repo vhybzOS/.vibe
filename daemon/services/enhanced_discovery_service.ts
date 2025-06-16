@@ -34,13 +34,13 @@ interface DiscoveryResult {
   method: 'repository' | 'homepage' | 'inference'
   source?: string
 }
-import { VibeError, ensureDir, writeTextFile } from '../../lib/effects.ts'
+import { ensureDir, VibeError, writeTextFile } from '../../lib/effects.ts'
 import { createNetworkError } from '../../lib/errors.ts'
 import {
-  PackageMetadata,
   DiscoveredRule,
-  makeHttpRequest,
   extractGitHubRepo,
+  makeHttpRequest,
+  PackageMetadata,
 } from '../../discovery/registries/base.ts'
 import { UniversalRule, UniversalRuleSchema } from '../../schemas/universal-rule.ts'
 import { getSecret, type SecretProvider } from './secrets_service.ts'
@@ -107,7 +107,7 @@ const extractApexDomain = (url: string): string | null => {
 const discoverFromRepository = (metadata: PackageMetadata, projectPath: string) =>
   pipe(
     Effect.sync(() => extractGitHubRepo(metadata.repository)),
-    Effect.flatMap(githubRepo => {
+    Effect.flatMap((githubRepo) => {
       if (!githubRepo) {
         return Effect.succeed({
           method: 'direct' as const,
@@ -121,7 +121,7 @@ const discoverFromRepository = (metadata: PackageMetadata, projectPath: string) 
 
       return pipe(
         getSecret('github', projectPath),
-        Effect.flatMap(githubToken => {
+        Effect.flatMap((githubToken) => {
           if (!githubToken) {
             return Effect.succeed({
               method: 'direct' as const,
@@ -135,7 +135,7 @@ const discoverFromRepository = (metadata: PackageMetadata, projectPath: string) 
 
           return pipe(
             checkRepositoryForRules(githubRepo, githubToken, metadata),
-            Effect.map(rules => ({
+            Effect.map((rules) => ({
               method: 'direct' as const,
               source: 'repository' as const,
               url: `https://github.com/${githubRepo}`,
@@ -151,11 +151,11 @@ const discoverFromRepository = (metadata: PackageMetadata, projectPath: string) 
                 success: false,
                 error: error instanceof Error ? error.message : 'An unknown error occurred',
               })
-            )
+            ),
           )
-        })
+        }),
       )
-    })
+    }),
   )
 
 /**
@@ -195,14 +195,14 @@ const discoverFromHomepage = (metadata: PackageMetadata) =>
         success: false,
       }
     }),
-    Effect.flatMap(initial => {
+    Effect.flatMap((initial) => {
       if (!initial.success && initial.error) {
         return Effect.succeed(initial)
       }
 
       return pipe(
         fetchLlmsTxt(initial.url),
-        Effect.map(llmsContent => ({
+        Effect.map((llmsContent) => ({
           ...initial,
           rules: llmsContent ? [createLlmsTxtRule(metadata, llmsContent, initial.url)] : [],
           success: !!llmsContent,
@@ -212,9 +212,9 @@ const discoverFromHomepage = (metadata: PackageMetadata) =>
             ...initial,
             error: error instanceof Error ? error.message : 'Unknown error',
           })
-        )
+        ),
       )
-    })
+    }),
   )
 
 /**
@@ -232,71 +232,87 @@ const checkRepositoryForRules = (githubRepo: string, token: string, metadata: Pa
       }).pipe(Effect.catchAll(() => Effect.succeed(null))),
     ]),
     Effect.flatMap(([vibeDir, cursorrules]) => {
-      const vibeEffect = vibeDir ? parseVibeDirectory(githubRepo, token, vibeDir, metadata) : Effect.succeed([])
+      const vibeEffect = vibeDir
+        ? parseVibeDirectory(githubRepo, token, vibeDir, metadata)
+        : Effect.succeed([])
       const cursorruleEffect = cursorrules
         ? parseCursorrules(githubRepo, token, cursorrules, metadata)
         : Effect.succeed([])
 
       return pipe(
         Effect.all([vibeEffect, cursorruleEffect]),
-        Effect.map(([vibeRules, cursorruleRules]) => [...vibeRules, ...cursorruleRules])
+        Effect.map(([vibeRules, cursorruleRules]) => [...vibeRules, ...cursorruleRules]),
       )
-    })
+    }),
   )
 
 /**
  * Parses .vibe directory contents from GitHub API response
  */
-const parseVibeDirectory = (githubRepo: string, token: string, vibeDir: GitHubFileItem[], metadata: PackageMetadata) =>
+const parseVibeDirectory = (
+  githubRepo: string,
+  token: string,
+  vibeDir: GitHubFileItem[],
+  metadata: PackageMetadata,
+) =>
   pipe(
     Effect.sync(() => {
       if (!Array.isArray(vibeDir)) return []
       return vibeDir.filter(
-        (item) => item.type === 'file' && item.name.endsWith('.json') && item.download_url
+        (item) => item.type === 'file' && item.name.endsWith('.json') && item.download_url,
       )
     }),
-    Effect.flatMap(jsonFiles =>
+    Effect.flatMap((jsonFiles) =>
       Effect.all(
         jsonFiles.map((file) =>
           pipe(
             makeHttpRequest(file.download_url, {}), // download_url is unauthenticated
-            Effect.flatMap(content =>
+            Effect.flatMap((content) =>
               Effect.try({
                 try: () => UniversalRuleSchema.array().parse(content),
                 catch: () => [] as UniversalRule[],
               })
             ),
-            Effect.map(rules => rules.map(rule => convertUniversalRuleToDiscovered(rule, metadata, 'repository'))),
-            Effect.catchAll(() => Effect.succeed([] as DiscoveredRule[]))
+            Effect.map((rules) =>
+              rules.map((rule) => convertUniversalRuleToDiscovered(rule, metadata, 'repository'))
+            ),
+            Effect.catchAll(() => Effect.succeed([] as DiscoveredRule[])),
           )
         ),
-        { concurrency: 3 }
+        { concurrency: 3 },
       )
     ),
-    Effect.map(results => results.flat())
+    Effect.map((results) => results.flat()),
   )
 
 /**
  * Parses .cursorrules file content from GitHub API response
  */
-const parseCursorrules = (githubRepo: string, token: string, cursorrules: GitHubContentResponse, metadata: PackageMetadata) =>
+const parseCursorrules = (
+  githubRepo: string,
+  token: string,
+  cursorrules: GitHubContentResponse,
+  metadata: PackageMetadata,
+) =>
   pipe(
     Effect.succeed(cursorrules?.content),
-    Effect.flatMap(base64Content => {
+    Effect.flatMap((base64Content) => {
       if (!base64Content) return Effect.succeed('')
       return Effect.try({
         try: () => atob(base64Content),
         catch: () => '',
       })
     }),
-    Effect.flatMap(contentStr => {
+    Effect.flatMap((contentStr) => {
       if (!contentStr) return Effect.succeed([])
       return pipe(
         parseToolConfig('cursor', contentStr),
-        Effect.map(rules => rules.map(rule => convertUniversalRuleToDiscovered(rule, metadata, 'repository'))),
-        Effect.catchAll(() => Effect.succeed([] as DiscoveredRule[]))
+        Effect.map((rules) =>
+          rules.map((rule) => convertUniversalRuleToDiscovered(rule, metadata, 'repository'))
+        ),
+        Effect.catchAll(() => Effect.succeed([] as DiscoveredRule[])),
       )
-    })
+    }),
   )
 
 /**
@@ -313,15 +329,19 @@ const fetchLlmsTxt = (url: string) =>
         if (!response.ok) return null
         return await response.text()
       },
-      catch: error => createNetworkError(error, `llms.txt fetch failed for ${url}`, url),
+      catch: (error) => createNetworkError(error, `llms.txt fetch failed for ${url}`, url),
     }),
-    Effect.catchAll(() => Effect.succeed(null))
+    Effect.catchAll(() => Effect.succeed(null)),
   )
 
 /**
  * Creates a rule from llms.txt content
  */
-const createLlmsTxtRule = (metadata: PackageMetadata, content: string, url: string): DiscoveredRule => ({
+const createLlmsTxtRule = (
+  metadata: PackageMetadata,
+  content: string,
+  url: string,
+): DiscoveredRule => ({
   id: `llms-txt-${metadata.name}-${crypto.randomUUID()}`,
   name: `${metadata.name} LLM Documentation`,
   description: `Official LLM-optimized documentation for ${metadata.name} from its homepage.`,
@@ -344,42 +364,62 @@ const createLlmsTxtRule = (metadata: PackageMetadata, content: string, url: stri
   discoveredAt: new Date().toISOString(),
 })
 
-
 /**
  * Performs AI inference to generate rules, trying available providers in sequence.
  */
 const performInference = (metadata: PackageMetadata, projectPath: string) => {
-  const tryProvider = (provider: SecretProvider, modelGenerator: (key: string) => ReturnType<typeof openai> | ReturnType<typeof anthropic> | ReturnType<typeof google>, modelName: string) =>
+  const tryProvider = (
+    provider: SecretProvider,
+    modelGenerator: (
+      key: string,
+    ) => ReturnType<typeof openai> | ReturnType<typeof anthropic> | ReturnType<typeof google>,
+    modelName: string,
+  ) =>
     pipe(
       getSecret(provider, projectPath),
-      Effect.flatMap(apiKey => {
+      Effect.flatMap((apiKey) => {
         if (!apiKey) {
-          return Effect.fail(new Error(`No ${provider} key`));
+          return Effect.fail(new Error(`No ${provider} key`))
         }
         return pipe(
           fetchReadmeContent(metadata),
-          Effect.flatMap(readmeContent => generateRulesWithAI(metadata, readmeContent, apiKey, modelGenerator(apiKey), modelName, provider))
-        );
-      })
-    );
+          Effect.flatMap((readmeContent) =>
+            generateRulesWithAI(
+              metadata,
+              readmeContent,
+              apiKey,
+              modelGenerator(apiKey),
+              modelName,
+              provider,
+            )
+          ),
+        )
+      }),
+    )
 
   return pipe(
     tryProvider('openai', (apiKey) => {
-      Deno.env.set('OPENAI_API_KEY', apiKey);
-      return openai('gpt-4o-mini');
+      Deno.env.set('OPENAI_API_KEY', apiKey)
+      return openai('gpt-4o-mini')
     }, 'gpt-4o-mini'),
-    Effect.orElse(() => tryProvider('anthropic', (apiKey) => {
-      Deno.env.set('ANTHROPIC_API_KEY', apiKey);
-      return anthropic('claude-3-haiku-20240307');
-    }, 'claude-3-haiku')),
-    Effect.orElse(() => tryProvider('google', (apiKey) => {
-      Deno.env.set('GOOGLE_GENERATIVE_AI_API_KEY', apiKey);
-      return google('models/gemini-1.5-flash-latest');
-    }, 'gemini-1.5-flash')),
-    Effect.orElse(() => tryProvider('cohere', (apiKey) => {
-      Deno.env.set('COHERE_API_KEY', apiKey);
-      return cohere('command-r');
-    }, 'command-r')),
+    Effect.orElse(() =>
+      tryProvider('anthropic', (apiKey) => {
+        Deno.env.set('ANTHROPIC_API_KEY', apiKey)
+        return anthropic('claude-3-haiku-20240307')
+      }, 'claude-3-haiku')
+    ),
+    Effect.orElse(() =>
+      tryProvider('google', (apiKey) => {
+        Deno.env.set('GOOGLE_GENERATIVE_AI_API_KEY', apiKey)
+        return google('models/gemini-1.5-flash-latest')
+      }, 'gemini-1.5-flash')
+    ),
+    Effect.orElse(() =>
+      tryProvider('cohere', (apiKey) => {
+        Deno.env.set('COHERE_API_KEY', apiKey)
+        return cohere('command-r')
+      }, 'command-r')
+    ),
     Effect.catchAll(() =>
       Effect.succeed({
         method: 'inference' as const,
@@ -389,9 +429,9 @@ const performInference = (metadata: PackageMetadata, projectPath: string) => {
         success: false,
         error: 'No suitable AI provider API key is configured. Please set one in the dashboard.',
       })
-    )
-  );
-};
+    ),
+  )
+}
 
 /**
  * Fetches README content from GitHub
@@ -399,14 +439,16 @@ const performInference = (metadata: PackageMetadata, projectPath: string) => {
 const fetchReadmeContent = (metadata: PackageMetadata) =>
   pipe(
     Effect.sync(() => extractGitHubRepo(metadata.repository)),
-    Effect.flatMap(githubRepo => {
+    Effect.flatMap((githubRepo) => {
       if (!githubRepo) return Effect.succeed('')
       return pipe(
         makeHttpRequest(`https://api.github.com/repos/${githubRepo}/readme`),
-        Effect.map((response: GitHubContentResponse) => (response.content ? atob(response.content) : '')),
-        Effect.catchAll(() => Effect.succeed(''))
+        Effect.map((
+          response: GitHubContentResponse,
+        ) => (response.content ? atob(response.content) : '')),
+        Effect.catchAll(() => Effect.succeed('')),
       )
-    })
+    }),
   )
 
 /**
@@ -418,12 +460,13 @@ const generateRulesWithAI = (
   apiKey: string,
   model: ReturnType<typeof openai> | ReturnType<typeof anthropic> | ReturnType<typeof google>,
   modelName: string,
-  provider: SecretProvider
+  provider: SecretProvider,
 ) =>
   pipe(
     Effect.tryPromise({
       try: async () => {
-          const prompt = `You are an expert-level software developer and technical writer tasked with creating a set of rules for an AI pair programming assistant. Your goal is to provide high-quality, actionable guidance for using a specific software library.
+        const prompt =
+          `You are an expert-level software developer and technical writer tasked with creating a set of rules for an AI pair programming assistant. Your goal is to provide high-quality, actionable guidance for using a specific software library.
 
 You must generate a valid JSON array of 'UniversalRule' objects based on the provided package information and its README.
 
@@ -478,27 +521,30 @@ const value = useExampleHook();
 
 Now, generate the JSON array of UniversalRule objects for the '${metadata.name}' library.`
 
-          const { object, usage } = await generateObject({
-            model,
-            prompt,
-            schema: z.array(UniversalRuleSchema),
-          })
-          
-          return {
-            method: 'inference' as const,
-            provider: provider,
-            model: modelName,
-            rules: (object as UniversalRule[]).map(rule => convertUniversalRuleToDiscovered(rule, metadata, 'inference')),
-            success: true,
-            usage: {
-              promptTokens: usage.promptTokens,
-              completionTokens: usage.completionTokens,
-              totalTokens: usage.totalTokens,
-            },
-          }
+        const { object, usage } = await generateObject({
+          model,
+          prompt,
+          schema: z.array(UniversalRuleSchema),
+        })
+
+        return {
+          method: 'inference' as const,
+          provider: provider,
+          model: modelName,
+          rules: (object as UniversalRule[]).map((rule) =>
+            convertUniversalRuleToDiscovered(rule, metadata, 'inference')
+          ),
+          success: true,
+          usage: {
+            promptTokens: usage.promptTokens,
+            completionTokens: usage.completionTokens,
+            totalTokens: usage.totalTokens,
+          },
+        }
       },
-      catch: error => new Error(`AI inference failed: ${error instanceof Error ? error.message : String(error)}`),
-    })
+      catch: (error) =>
+        new Error(`AI inference failed: ${error instanceof Error ? error.message : String(error)}`),
+    }),
   )
 
 /**
@@ -507,7 +553,7 @@ Now, generate the JSON array of UniversalRule objects for the '${metadata.name}'
 const convertUniversalRuleToDiscovered = (
   rule: UniversalRule,
   metadata: PackageMetadata,
-  source: 'inference' | 'repository'
+  source: 'inference' | 'repository',
 ): DiscoveredRule => ({
   id: rule.id || crypto.randomUUID(),
   name: rule.metadata.name,
@@ -520,7 +566,7 @@ const convertUniversalRuleToDiscovered = (
   category: source === 'repository' ? 'configuration' : 'ai-generated',
   content: {
     markdown: rule.content.markdown,
-    examples: (rule.content.examples || []).map(ex => ({
+    examples: (rule.content.examples || []).map((ex) => ({
       title: ex.description || 'Code Example',
       code: ex.code,
       language: ex.language,
@@ -542,10 +588,12 @@ const convertUniversalRuleToDiscovered = (
 export const enhancedDiscoverRules = (metadata: PackageMetadata, projectPath: string) =>
   pipe(
     Effect.log(`🔍 Starting enhanced discovery for ${metadata.name} in project ${projectPath}`),
-    Effect.flatMap(() => Effect.all([
+    Effect.flatMap(() =>
+      Effect.all([
         discoverFromRepository(metadata, projectPath),
-        discoverFromHomepage(metadata)
-    ])),
+        discoverFromHomepage(metadata),
+      ])
+    ),
     Effect.flatMap(([repoResult, homepageResult]: [DiscoveryResult, DiscoveryResult]) => {
       const directRules = [...repoResult.rules, ...homepageResult.rules]
       const anyDirectSuccess = repoResult.success || homepageResult.success
@@ -561,19 +609,19 @@ export const enhancedDiscoverRules = (metadata: PackageMetadata, projectPath: st
 
       return pipe(
         performInference(metadata, projectPath),
-        Effect.map(inferenceResult => ({
+        Effect.map((inferenceResult) => ({
           method: 'inference' as const,
           results: [repoResult, homepageResult, inferenceResult],
           rules: inferenceResult.rules,
           success: inferenceResult.success,
-        }))
+        })),
       )
     }),
     Effect.tap((result: { method: string; results: DiscoveryResult[]; rules: DiscoveredRule[] }) =>
       Effect.log(
-        `📋 Enhanced discovery for ${metadata.name}: ${result.rules.length} rules found via ${result.method}`
+        `📋 Enhanced discovery for ${metadata.name}: ${result.rules.length} rules found via ${result.method}`,
       )
-    )
+    ),
   )
 
 /**
@@ -582,23 +630,28 @@ export const enhancedDiscoverRules = (metadata: PackageMetadata, projectPath: st
 export const cacheEnhancedResults = (
   metadata: PackageMetadata,
   results: EnhancedDiscoveryResult[],
-  projectPath: string
+  projectPath: string,
 ) =>
   pipe(
-    Effect.sync(() => resolve(projectPath, '.vibe', 'dependencies', metadata.name, metadata.version)),
-    Effect.flatMap(cacheDir => 
+    Effect.sync(() =>
+      resolve(projectPath, '.vibe', 'dependencies', metadata.name, metadata.version)
+    ),
+    Effect.flatMap((cacheDir) =>
       pipe(
         ensureDir(cacheDir),
         Effect.flatMap(() =>
           Effect.all([
-            writeTextFile(resolve(cacheDir, 'discovery-results.json'), JSON.stringify(results, null, 2)),
+            writeTextFile(
+              resolve(cacheDir, 'discovery-results.json'),
+              JSON.stringify(results, null, 2),
+            ),
             writeTextFile(resolve(cacheDir, 'metadata.json'), JSON.stringify(metadata, null, 2)),
             writeTextFile(resolve(cacheDir, 'cached-at.txt'), new Date().toISOString()),
           ])
-        )
+        ),
       )
     ),
     Effect.tap(() =>
       Effect.log(`💾 Cached enhanced discovery results for ${metadata.name}@${metadata.version}`)
-    )
+    ),
   )

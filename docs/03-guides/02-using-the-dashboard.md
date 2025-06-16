@@ -10,10 +10,10 @@ The dashboard is designed to be your central hub for observing and interacting w
 
 Planned features include:
 
--   **📊 Live Activity Feed:** Watch in real-time as the daemon discovers dependencies, analyzes repositories, and infers rules. See a live stream of events from the `/api/events` endpoint.
--   **⚙️ Secrets Management:** A secure, user-friendly interface for adding and managing your project-level and global API keys. No more `curl` required!
--   **🔍 Dependency Overview:** See a list of all your project's dependencies and their current rule status ("Discovered," "Inferred," "Pending").
--   **🤖 Rule Curation:** Browse through the rules `.vibe` has discovered or generated for your dependencies. With a single click, "promote" a rule to activate it for your project, copying it into your active ruleset.
+- **📊 Live Activity Feed:** Watch in real-time as the daemon discovers dependencies, analyzes repositories, and infers rules. See a live stream of events from the `/api/events` endpoint.
+- **⚙️ Secrets Management:** A secure, user-friendly interface for adding and managing your project-level and global API keys. No more `curl` required!
+- **🔍 Dependency Overview:** See a list of all your project's dependencies and their current rule status ("Discovered," "Inferred," "Pending").
+- **🤖 Rule Curation:** Browse through the rules `.vibe` has discovered or generated for your dependencies. With a single click, "promote" a rule to activate it for your project, copying it into your active ruleset.
 
 The dashboard will be built using **Fresh** and **Tailwind CSS**, providing a modern, responsive, and fast interface served directly from the same daemon you already have running.
 

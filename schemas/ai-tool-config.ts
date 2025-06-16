@@ -2,7 +2,7 @@ import { z } from 'zod/v4'
 
 export const AIToolTypeSchema = z.enum([
   'cursor',
-  'windsurf', 
+  'windsurf',
   'claude',
   'copilot',
   'codeium',
@@ -77,7 +77,7 @@ export const ToolSyncResultSchema = z.object({
 })
 
 export type AIToolType = z.output<typeof AIToolTypeSchema>
-export type AIToolConfig = z.output<typeof AIToolConfigSchema> 
+export type AIToolConfig = z.output<typeof AIToolConfigSchema>
 export type DetectedTool = z.output<typeof DetectedToolSchema>
 export type ToolSyncResult = z.output<typeof ToolSyncResultSchema>
 export type ToolDetectionPattern = z.output<typeof ToolDetectionPatternSchema>

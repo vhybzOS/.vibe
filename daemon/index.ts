@@ -7,32 +7,29 @@
 import { Effect, pipe } from 'effect'
 import { z } from 'zod/v4'
 import { createDaemonError } from '../lib/errors.ts'
-import { 
-  getSecretsStatus, 
-  setSecretAndInferProvider,
-} from './services/secrets_service.ts'
+import { getSecretsStatus, setSecretAndInferProvider } from './services/secrets_service.ts'
 import { startMcpServer } from '../mcp-server/server.ts'
-import { 
-  storeMemory, 
-  searchMemory, 
-  getMemory, 
+import {
   deleteMemory,
+  getMemory,
   loadMemories,
-  type MemoryMetadataInput 
+  type MemoryMetadataInput,
+  searchMemory,
+  storeMemory,
 } from '../memory/index.ts'
-import { 
-  searchDocuments, 
+import {
   initializeSearch,
   insertDocument,
-  type SearchQuery 
+  searchDocuments,
+  type SearchQuery,
 } from '../search/index.ts'
-import { 
-  createEntry, 
-  searchDiary, 
-  getTimeline, 
-  updateEntry, 
+import {
+  createEntry,
   deleteEntry,
-  type DiaryEntryInput 
+  type DiaryEntryInput,
+  getTimeline,
+  searchDiary,
+  updateEntry,
 } from '../diary/index.ts'
 
 const DAEMON_VERSION = '1.0.0'
@@ -72,8 +69,8 @@ export class VibeDaemon {
           return Effect.log('✅ Daemon started successfully')
         }),
         Effect.tap(() => this.printStatus()),
-        Effect.flatMap(() => this.waitForever())
-      )
+        Effect.flatMap(() => this.waitForever()),
+      ),
     )
   }
 
@@ -83,37 +80,43 @@ export class VibeDaemon {
         try: async () => {
           const handler = async (req: Request): Promise<Response> => {
             const url = new URL(req.url)
-            
+
             // Handle API routes
             if (url.pathname.startsWith('/api/')) {
               return await this.handleApiRequest(req, url)
             }
-            
+
             // Handle basic routes
             switch (url.pathname) {
               case '/':
               case '/status':
-                return new Response(JSON.stringify({
-                  daemon: {
-                    status: 'running',
-                    version: DAEMON_VERSION,
-                    startedAt: this.state.startedAt,
-                    port: this.state.port,
-                    pid: Deno.pid,
+                return new Response(
+                  JSON.stringify({
+                    daemon: {
+                      status: 'running',
+                      version: DAEMON_VERSION,
+                      startedAt: this.state.startedAt,
+                      port: this.state.port,
+                      pid: Deno.pid,
+                    },
+                    mcpServer: this.state.mcpServer,
+                  }),
+                  {
+                    headers: { 'Content-Type': 'application/json' },
                   },
-                  mcpServer: this.state.mcpServer,
-                }), {
-                  headers: { 'Content-Type': 'application/json' },
-                })
-              
+                )
+
               case '/health':
-                return new Response(JSON.stringify({ 
-                  status: 'healthy',
-                  timestamp: new Date().toISOString(),
-                }), {
-                  headers: { 'Content-Type': 'application/json' },
-                })
-              
+                return new Response(
+                  JSON.stringify({
+                    status: 'healthy',
+                    timestamp: new Date().toISOString(),
+                  }),
+                  {
+                    headers: { 'Content-Type': 'application/json' },
+                  },
+                )
+
               case '/shutdown':
                 if (req.method === 'POST') {
                   setTimeout(() => {
@@ -125,22 +128,22 @@ export class VibeDaemon {
                   })
                 }
                 return new Response('Method not allowed', { status: 405 })
-              
+
               default:
                 return new Response('Vibe Daemon is running', { status: 200 })
             }
           }
-          
+
           this.httpServer = Deno.serve({
             port: this.state.port,
             hostname: 'localhost',
           }, handler)
-          
+
           return this.httpServer
         },
         catch: (error) => createDaemonError(error, 'Failed to start HTTP server', 'http-server'),
       }),
-      Effect.tap(() => Effect.log(`🌐 HTTP server running on http://localhost:${this.state.port}`))
+      Effect.tap(() => Effect.log(`🌐 HTTP server running on http://localhost:${this.state.port}`)),
     )
 
   private startMcpServer = () =>
@@ -157,29 +160,29 @@ export class VibeDaemon {
         this.state.mcpServer.startedAt = new Date().toISOString()
         return Effect.log(`✅ MCP server running on port ${this.state.mcpServer.port}`)
       }),
-      Effect.catchAll(error => 
+      Effect.catchAll((error) =>
         pipe(
           Effect.log(`⚠️ Failed to start MCP server: ${error}`),
-          Effect.map(() => undefined) // Continue even if MCP server fails
+          Effect.map(() => undefined), // Continue even if MCP server fails
         )
-      )
+      ),
     )
 
   private handleApiRequest = async (req: Request, url: URL): Promise<Response> => {
     const path = url.pathname
-    
+
     // CORS headers for development
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     }
-    
+
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders })
     }
-    
+
     try {
       switch (path) {
         case '/api/secrets/status':
@@ -187,7 +190,7 @@ export class VibeDaemon {
             return await this.handleGetSecretsStatusAsync(req)
           }
           break
-          
+
         case '/api/secrets':
           if (req.method === 'POST') {
             return await this.handleSetSecret(req)
@@ -200,7 +203,7 @@ export class VibeDaemon {
             return await this.handleMemorySearch(req, url)
           }
           break
-          
+
         case '/api/memory':
           if (req.method === 'GET') {
             return await this.handleMemoryList(req, url)
@@ -208,39 +211,39 @@ export class VibeDaemon {
             return await this.handleMemoryCreate(req, url)
           }
           break
-          
+
         // Search API endpoints
         case '/api/search':
           if (req.method === 'GET') {
             return await this.handleGlobalSearch(req, url)
           }
           break
-          
+
         case '/api/search/reindex':
           if (req.method === 'POST') {
             return await this.handleSearchReindex(req, url)
           }
           break
-          
+
         // Diary API endpoints
         case '/api/diary/timeline':
           if (req.method === 'GET') {
             return await this.handleDiaryTimeline(req, url)
           }
           break
-          
+
         case '/api/diary':
           if (req.method === 'POST') {
             return await this.handleDiaryCreate(req, url)
           }
           break
-          
+
         case '/api/diary/capture':
           if (req.method === 'POST') {
             return await this.handleDiaryAutoCapture(req, url)
           }
           break
-          
+
         default:
           // Handle dynamic routes with IDs
           if (path.startsWith('/api/memory/') && path.split('/').length === 4) {
@@ -258,44 +261,50 @@ export class VibeDaemon {
               return await this.handleDiaryDelete(req, url, diaryId)
             }
           }
-          
-          return new Response('API endpoint not found', { 
+
+          return new Response('API endpoint not found', {
             status: 404,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           })
       }
-      
-      return new Response('Method not allowed', { 
+
+      return new Response('Method not allowed', {
         status: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     } catch (error) {
       console.error('API request error:', error)
-      return new Response(JSON.stringify({ 
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }), { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Internal server error',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
   private handleGetSecretsStatusAsync = async (req: Request): Promise<Response> => {
     try {
       const result = await Effect.runPromise(getSecretsStatus())
-      
+
       return new Response(JSON.stringify(result), {
         headers: { 'Content-Type': 'application/json' },
       })
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to get secrets status',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to get secrets status',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
@@ -305,30 +314,39 @@ export class VibeDaemon {
       const { apiKey, projectPath } = body
 
       if (!apiKey || typeof apiKey !== 'string') {
-        return new Response(JSON.stringify({ 
-          error: 'Missing or invalid apiKey field' 
-        }), { 
-          status: 400, 
-          headers: { 'Content-Type': 'application/json' } 
-        })
+        return new Response(
+          JSON.stringify({
+            error: 'Missing or invalid apiKey field',
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
       }
 
       await Effect.runPromise(setSecretAndInferProvider(apiKey, projectPath))
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: `API key saved successfully for ${projectPath ? 'project' : 'global'} scope.` 
-      }), { 
-        headers: { 'Content-Type': 'application/json' } 
-      })
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `API key saved successfully for ${projectPath ? 'project' : 'global'} scope.`,
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to save secret', 
-        message: error instanceof Error ? error.message : 'Unknown error' 
-      }), { 
-        status: 500, 
-        headers: { 'Content-Type': 'application/json' } 
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to save secret',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
@@ -342,7 +360,7 @@ export class VibeDaemon {
       const limit = parseInt(searchParams.get('limit') || '10')
       const type = searchParams.get('type')?.split(',') || []
       const tags = searchParams.get('tags')?.split(',') || []
-      
+
       const searchQuery = {
         query,
         type,
@@ -352,29 +370,35 @@ export class VibeDaemon {
         timeRange: {},
         limit,
         threshold: 0.1,
-        includeArchived: false
+        includeArchived: false,
       }
-      
+
       const results = await Effect.runPromise(searchMemory(projectPath, searchQuery))
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        results: results.map(r => ({
-          memory: r.memory,
-          score: r.score
-        })),
-        total: results.length
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          results: results.map((r) => ({
+            memory: r.memory,
+            score: r.score,
+          })),
+          total: results.length,
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to search memory',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to search memory',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
@@ -382,24 +406,30 @@ export class VibeDaemon {
     try {
       const searchParams = url.searchParams
       const projectPath = searchParams.get('path') || Deno.cwd()
-      
+
       const memories = await Effect.runPromise(loadMemories(projectPath))
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        memories,
-        total: memories.length
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          memories,
+          total: memories.length,
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to list memories',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to list memories',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
@@ -409,12 +439,15 @@ export class VibeDaemon {
       const { content, metadata, projectPath } = body
 
       if (!content || typeof content !== 'string') {
-        return new Response(JSON.stringify({ 
-          error: 'Missing or invalid content field' 
-        }), { 
-          status: 400, 
-          headers: { 'Content-Type': 'application/json' } 
-        })
+        return new Response(
+          JSON.stringify({
+            error: 'Missing or invalid content field',
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
       }
 
       const memoryMetadata: MemoryMetadataInput = {
@@ -423,32 +456,40 @@ export class VibeDaemon {
           tool: undefined,
           sessionId: crypto.randomUUID(),
           timestamp: new Date().toISOString(),
-          location: projectPath || Deno.cwd()
+          location: projectPath || Deno.cwd(),
         },
         tags: metadata?.tags || [],
         importance: metadata?.importance || 'medium',
         projectPath: projectPath || Deno.cwd(),
         relatedFiles: metadata?.relatedFiles || [],
-        associatedRules: metadata?.associatedRules || []
+        associatedRules: metadata?.associatedRules || [],
       }
 
-      const result = await Effect.runPromise(storeMemory(projectPath || Deno.cwd(), content, memoryMetadata))
+      const result = await Effect.runPromise(
+        storeMemory(projectPath || Deno.cwd(), content, memoryMetadata),
+      )
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        memoryId: result.id,
-        message: 'Memory created successfully'
-      }), { 
-        headers: { 'Content-Type': 'application/json' } 
-      })
+      return new Response(
+        JSON.stringify({
+          success: true,
+          memoryId: result.id,
+          message: 'Memory created successfully',
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to create memory', 
-        message: error instanceof Error ? error.message : 'Unknown error' 
-      }), { 
-        status: 500, 
-        headers: { 'Content-Type': 'application/json' } 
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to create memory',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
@@ -456,65 +497,87 @@ export class VibeDaemon {
     try {
       const searchParams = url.searchParams
       const projectPath = searchParams.get('path') || Deno.cwd()
-      
+
       const memory = await Effect.runPromise(getMemory(projectPath, memoryId))
-      
+
       if (!memory) {
-        return new Response(JSON.stringify({ 
-          error: 'Memory not found' 
-        }), { 
-          status: 404, 
-          headers: { 'Content-Type': 'application/json' } 
-        })
+        return new Response(
+          JSON.stringify({
+            error: 'Memory not found',
+          }),
+          {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
       }
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        memory
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          memory,
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to get memory',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to get memory',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
-  private handleMemoryDelete = async (req: Request, url: URL, memoryId: string): Promise<Response> => {
+  private handleMemoryDelete = async (
+    req: Request,
+    url: URL,
+    memoryId: string,
+  ): Promise<Response> => {
     try {
       const searchParams = url.searchParams
       const projectPath = searchParams.get('path') || Deno.cwd()
-      
+
       const deleted = await Effect.runPromise(deleteMemory(projectPath, memoryId))
-      
+
       if (!deleted) {
-        return new Response(JSON.stringify({ 
-          error: 'Memory not found or could not be deleted' 
-        }), { 
-          status: 404, 
-          headers: { 'Content-Type': 'application/json' } 
-        })
+        return new Response(
+          JSON.stringify({
+            error: 'Memory not found or could not be deleted',
+          }),
+          {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
       }
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Memory deleted successfully'
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Memory deleted successfully',
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to delete memory',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to delete memory',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
@@ -528,39 +591,47 @@ export class VibeDaemon {
       const limit = parseInt(searchParams.get('limit') || '10')
       const type = searchParams.get('type')?.split(',')
       const tags = searchParams.get('tags')?.split(',')
-      
+
       const searchQuery: SearchQuery = {
         term,
         filters: {
-          doc_type: type?.[0] ? z.enum(['memory', 'diary', 'rule', 'dependency']).parse(type[0]) : undefined,
+          doc_type: type?.[0]
+            ? z.enum(['memory', 'diary', 'rule', 'dependency']).parse(type[0])
+            : undefined,
           tags,
           date_range: undefined,
           priority: undefined,
-          category: undefined
+          category: undefined,
         },
         mode: 'keyword' as const,
         limit,
-        offset: 0
+        offset: 0,
       }
-      
+
       await Effect.runPromise(initializeSearch(projectPath))
       const results = await Effect.runPromise(searchDocuments(searchQuery))
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        results: results.results,
-        total: results.total
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          results: results.results,
+          total: results.total,
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to perform global search',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to perform global search',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
@@ -568,23 +639,29 @@ export class VibeDaemon {
     try {
       const searchParams = url.searchParams
       const projectPath = searchParams.get('path') || Deno.cwd()
-      
+
       await Effect.runPromise(initializeSearch(projectPath))
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Search index rebuilt successfully'
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Search index rebuilt successfully',
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to rebuild search index',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to rebuild search index',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
@@ -596,29 +673,37 @@ export class VibeDaemon {
       const projectPath = searchParams.get('path') || Deno.cwd()
       const since = searchParams.get('since')
       const until = searchParams.get('until')
-      
-      const dateRange = (since || until) ? {
-        from: since || new Date(0).toISOString(),
-        to: until || new Date().toISOString()
-      } : undefined
-      
+
+      const dateRange = (since || until)
+        ? {
+          from: since || new Date(0).toISOString(),
+          to: until || new Date().toISOString(),
+        }
+        : undefined
+
       const timeline = await Effect.runPromise(getTimeline(projectPath, dateRange))
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        timeline,
-        total: timeline.length
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          timeline,
+          total: timeline.length,
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to get diary timeline',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to get diary timeline',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
@@ -628,12 +713,15 @@ export class VibeDaemon {
       const { entry, projectPath } = body
 
       if (!entry || !entry.title) {
-        return new Response(JSON.stringify({ 
-          error: 'Missing or invalid entry data - title is required' 
-        }), { 
-          status: 400, 
-          headers: { 'Content-Type': 'application/json' } 
-        })
+        return new Response(
+          JSON.stringify({
+            error: 'Missing or invalid entry data - title is required',
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
       }
 
       const diaryEntry: DiaryEntryInput = {
@@ -643,37 +731,43 @@ export class VibeDaemon {
         problem: entry.problem || {
           description: 'Problem description needed',
           context: 'Context information needed',
-          constraints: []
+          constraints: [],
         },
         decision: entry.decision || {
           chosen: 'Decision details needed',
           rationale: 'Rationale needed',
-          alternatives: []
+          alternatives: [],
         },
         impact: entry.impact || {
           benefits: [],
           risks: [],
-          migrationNotes: null
-        }
+          migrationNotes: null,
+        },
       }
 
       const result = await Effect.runPromise(createEntry(projectPath || Deno.cwd(), diaryEntry))
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        entry: result,
-        message: 'Diary entry created successfully'
-      }), { 
-        headers: { 'Content-Type': 'application/json' } 
-      })
+      return new Response(
+        JSON.stringify({
+          success: true,
+          entry: result,
+          message: 'Diary entry created successfully',
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to create diary entry', 
-        message: error instanceof Error ? error.message : 'Unknown error' 
-      }), { 
-        status: 500, 
-        headers: { 'Content-Type': 'application/json' } 
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to create diary entry',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
@@ -681,66 +775,88 @@ export class VibeDaemon {
     try {
       const searchParams = url.searchParams
       const projectPath = searchParams.get('path') || Deno.cwd()
-      
+
       const timeline = await Effect.runPromise(getTimeline(projectPath))
-      const entry = timeline.find(e => e.id === diaryId || e.id.startsWith(diaryId))
-      
+      const entry = timeline.find((e) => e.id === diaryId || e.id.startsWith(diaryId))
+
       if (!entry) {
-        return new Response(JSON.stringify({ 
-          error: 'Diary entry not found' 
-        }), { 
-          status: 404, 
-          headers: { 'Content-Type': 'application/json' } 
-        })
+        return new Response(
+          JSON.stringify({
+            error: 'Diary entry not found',
+          }),
+          {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
       }
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        entry
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          entry,
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to get diary entry',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to get diary entry',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
-  private handleDiaryDelete = async (req: Request, url: URL, diaryId: string): Promise<Response> => {
+  private handleDiaryDelete = async (
+    req: Request,
+    url: URL,
+    diaryId: string,
+  ): Promise<Response> => {
     try {
       const searchParams = url.searchParams
       const projectPath = searchParams.get('path') || Deno.cwd()
-      
+
       const deleted = await Effect.runPromise(deleteEntry(projectPath, diaryId))
-      
+
       if (!deleted) {
-        return new Response(JSON.stringify({ 
-          error: 'Diary entry not found or could not be deleted' 
-        }), { 
-          status: 404, 
-          headers: { 'Content-Type': 'application/json' } 
-        })
+        return new Response(
+          JSON.stringify({
+            error: 'Diary entry not found or could not be deleted',
+          }),
+          {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
       }
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Diary entry deleted successfully'
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Diary entry deleted successfully',
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to delete diary entry',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to delete diary entry',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
@@ -750,30 +866,39 @@ export class VibeDaemon {
       const { conversationData, projectPath } = body
 
       if (!conversationData || !conversationData.messages) {
-        return new Response(JSON.stringify({ 
-          error: 'Missing or invalid conversation data' 
-        }), { 
-          status: 400, 
-          headers: { 'Content-Type': 'application/json' } 
-        })
+        return new Response(
+          JSON.stringify({
+            error: 'Missing or invalid conversation data',
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
       }
 
       // Note: autoCapture is not implemented in the diary module yet
-      return new Response(JSON.stringify({ 
-        success: true, 
-        captured: null,
-        message: 'Auto-capture functionality not yet implemented'
-      }), { 
-        headers: { 'Content-Type': 'application/json' } 
-      })
+      return new Response(
+        JSON.stringify({
+          success: true,
+          captured: null,
+          message: 'Auto-capture functionality not yet implemented',
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     } catch (error) {
-      return new Response(JSON.stringify({ 
-        error: 'Failed to auto-capture diary entry', 
-        message: error instanceof Error ? error.message : 'Unknown error' 
-      }), { 
-        status: 500, 
-        headers: { 'Content-Type': 'application/json' } 
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to auto-capture diary entry',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
     }
   }
 
@@ -785,7 +910,11 @@ export class VibeDaemon {
       Effect.log(`🚀 Status: ${this.state.isRunning ? 'Running' : 'Stopped'}`),
       Effect.log(`📅 Started: ${new Date(this.state.startedAt).toLocaleString()}`),
       Effect.log(`🌐 Port: ${this.state.port}`),
-      Effect.log(`🔌 MCP Server: ${this.state.mcpServer.running ? `Running on port ${this.state.mcpServer.port}` : 'Available (not started)'}`),
+      Effect.log(`🔌 MCP Server: ${
+        this.state.mcpServer.running
+          ? `Running on port ${this.state.mcpServer.port}`
+          : 'Available (not started)'
+      }`),
       Effect.log(`🆔 PID: ${Deno.pid}`),
       Effect.log(''),
       Effect.log('📡 Endpoints:'),
@@ -814,7 +943,7 @@ export class VibeDaemon {
       Effect.log(`   POST http://localhost:${this.state.port}/api/diary/capture`),
       Effect.log(''),
       Effect.log('🛑 Stop: Ctrl+C or POST /shutdown'),
-      Effect.log('')
+      Effect.log(''),
     ], { discard: true })
 
   private waitForever = () =>
@@ -830,16 +959,16 @@ export class VibeDaemon {
         Deno.addSignalListener('SIGTERM', handleSignal)
 
         // Keep running
-      })
+      }),
     )
 
   private async shutdown() {
     console.log('🛑 Shutting down daemon...')
-    
+
     if (this.httpServer) {
       await this.httpServer.shutdown()
     }
-    
+
     console.log('✅ Daemon stopped')
     Deno.exit(0)
   }
@@ -848,8 +977,8 @@ export class VibeDaemon {
 // Main entry point
 if (import.meta.main) {
   const daemon = new VibeDaemon()
-  
-  daemon.start().catch(error => {
+
+  daemon.start().catch((error) => {
     console.error('❌ Daemon failed to start:', error)
     Deno.exit(1)
   })

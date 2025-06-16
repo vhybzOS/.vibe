@@ -16,8 +16,8 @@ export const SearchDocumentSchema = z.object({
     source: z.string(),
     priority: z.enum(['low', 'medium', 'high']),
     category: z.string(),
-    title: z.string().optional()
-  })
+    title: z.string().optional(),
+  }),
 })
 
 export const SearchQuerySchema = z.object({
@@ -27,20 +27,20 @@ export const SearchQuerySchema = z.object({
     tags: z.array(z.string()).optional(),
     date_range: z.object({
       start: z.number().optional(),
-      end: z.number().optional()
+      end: z.number().optional(),
     }).optional(),
     priority: z.enum(['low', 'medium', 'high']).optional(),
-    category: z.string().optional()
+    category: z.string().optional(),
   }).optional(),
   mode: z.enum(['keyword', 'semantic', 'hybrid']).default('keyword'),
   limit: z.number().min(1).max(100).default(10),
-  offset: z.number().min(0).default(0)
+  offset: z.number().min(0).default(0),
 })
 
 export const SearchResultSchema = z.object({
   document: SearchDocumentSchema,
   score: z.number().min(0).max(1),
-  highlights: z.array(z.string()).optional()
+  highlights: z.array(z.string()).optional(),
 })
 
 export const SearchResponseSchema = z.object({
@@ -48,7 +48,7 @@ export const SearchResponseSchema = z.object({
   total: z.number().min(0),
   query: SearchQuerySchema,
   took: z.number().min(0), // Search time in milliseconds
-  max_score: z.number().min(0).max(1).optional()
+  max_score: z.number().min(0).max(1).optional(),
 })
 
 // Export types

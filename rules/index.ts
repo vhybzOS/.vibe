@@ -6,7 +6,7 @@
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
 import { UniversalRule, UniversalRuleSchema } from '../schemas/universal-rule.ts'
-import { readJSONFile, writeJSONFile, listFiles } from '../lib/fs.ts'
+import { listFiles, readJSONFile, writeJSONFile } from '../lib/fs.ts'
 import { logWithContext } from '../lib/effects.ts'
 import { createParseError } from '../lib/errors.ts'
 
@@ -15,13 +15,11 @@ import { createParseError } from '../lib/errors.ts'
  */
 export const loadRules = (vibePath: string) =>
   pipe(
-    listFiles(resolve(vibePath, 'rules'), entry => entry.name.endsWith('.json')),
-    Effect.flatMap(ruleFiles => 
-      Effect.all(ruleFiles.map(loadSingleRule))
-    ),
-    Effect.map(rules => rules.filter((rule): rule is UniversalRule => rule !== null)),
-    Effect.tap(rules => logWithContext('Rules', `Loaded ${rules.length} rules`)),
-    Effect.catchAll(() => Effect.succeed([] as UniversalRule[]))
+    listFiles(resolve(vibePath, 'rules'), (entry) => entry.name.endsWith('.json')),
+    Effect.flatMap((ruleFiles) => Effect.all(ruleFiles.map(loadSingleRule))),
+    Effect.map((rules) => rules.filter((rule): rule is UniversalRule => rule !== null)),
+    Effect.tap((rules) => logWithContext('Rules', `Loaded ${rules.length} rules`)),
+    Effect.catchAll(() => Effect.succeed([] as UniversalRule[])),
   )
 
 /**
@@ -30,16 +28,17 @@ export const loadRules = (vibePath: string) =>
 const loadSingleRule = (filePath: string) =>
   pipe(
     readJSONFile<unknown>(filePath),
-    Effect.flatMap(data => 
+    Effect.flatMap((data) =>
       Effect.try({
         try: () => UniversalRuleSchema.parse(data),
-        catch: (error) => createParseError(error, filePath, `Invalid rule schema in ${filePath}: ${error}`),
+        catch: (error) =>
+          createParseError(error, filePath, `Invalid rule schema in ${filePath}: ${error}`),
       })
     ),
-    Effect.catchAll(error => {
+    Effect.catchAll((error) => {
       logWithContext('Rules', `Failed to load ${filePath}: ${error.message}`)
       return Effect.succeed(null)
-    })
+    }),
   )
 
 /**
@@ -51,28 +50,28 @@ export const saveRule = (vibePath: string, rule: UniversalRule) =>
       const fileName = `${rule.metadata.name.toLowerCase().replace(/\s+/g, '-')}.json`
       return resolve(vibePath, 'rules', fileName)
     }),
-    Effect.flatMap(filePath => writeJSONFile(filePath, rule)),
+    Effect.flatMap((filePath) => writeJSONFile(filePath, rule)),
     Effect.tap(() => logWithContext('Rules', `Saved rule: ${rule.metadata.name}`)),
-    Effect.map(() => rule)
+    Effect.map(() => rule),
   )
 
 /**
  * Generates rules from project analysis
  */
 export const generateRulesFromProject = (
-  projectPath: string, 
-  options: { threshold: number; includePatterns: string[] }
+  projectPath: string,
+  options: { threshold: number; includePatterns: string[] },
 ) =>
   pipe(
     analyzeProjectPatterns(projectPath),
-    Effect.map(patterns => 
+    Effect.map((patterns) =>
       patterns
         .filter((pattern: { confidence: number }) => pattern.confidence >= options.threshold)
         .map(createRuleFromPattern)
     ),
-    Effect.tap(rules => 
+    Effect.tap((rules) =>
       logWithContext('Generation', `Generated ${rules.length} rules from project analysis`)
-    )
+    ),
   )
 
 /**
@@ -82,9 +81,14 @@ const analyzeProjectPatterns = (projectPath: string) =>
   pipe(
     Effect.tryPromise({
       try: () => analyzeCodebaseStructure(projectPath),
-      catch: () => createParseError('Failed to analyze project structure', '', 'Failed to analyze project structure'),
+      catch: () =>
+        createParseError(
+          'Failed to analyze project structure',
+          '',
+          'Failed to analyze project structure',
+        ),
     }),
-    Effect.map(structure => extractPatterns(structure))
+    Effect.map((structure) => extractPatterns(structure)),
   )
 
 /**
@@ -115,7 +119,11 @@ const analyzeCodebaseStructure = (projectPath: string) => {
 /**
  * Extracts patterns with metadata
  */
-const extractPatterns = (structure: { patterns: Array<{ type: string; description: string; confidence: number; examples: string[] }> }) =>
+const extractPatterns = (
+  structure: {
+    patterns: Array<{ type: string; description: string; confidence: number; examples: string[] }>
+  },
+) =>
   structure.patterns.map((pattern) => ({
     ...pattern,
     id: crypto.randomUUID(),
@@ -125,7 +133,9 @@ const extractPatterns = (structure: { patterns: Array<{ type: string; descriptio
 /**
  * Creates a Universal Rule from a detected pattern
  */
-const createRuleFromPattern = (pattern: { type: string; description: string; confidence: number; examples: string[] }): UniversalRule => ({
+const createRuleFromPattern = (
+  pattern: { type: string; description: string; confidence: number; examples: string[] },
+): UniversalRule => ({
   id: crypto.randomUUID(),
   metadata: {
     name: `Auto-generated: ${pattern.description}`,
@@ -143,7 +153,9 @@ const createRuleFromPattern = (pattern: { type: string; description: string; con
     contexts: [],
   },
   content: {
-    markdown: `## ${pattern.description}\n\n${pattern.examples.map((ex: string) => `- \`${ex}\``).join('\n')}`,
+    markdown: `## ${pattern.description}\n\n${
+      pattern.examples.map((ex: string) => `- \`${ex}\``).join('\n')
+    }`,
     examples: pattern.examples.map((ex: string) => ({
       code: ex,
       language: 'typescript',

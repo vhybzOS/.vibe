@@ -14,7 +14,7 @@ import { loadRules } from '../../rules/index.ts'
  */
 export const exportCommand = (
   projectPath: string,
-  options: { output?: string; format?: string }
+  options: { output?: string; format?: string },
 ) =>
   pipe(
     Effect.log('📤 Exporting .vibe data...'),
@@ -24,11 +24,11 @@ export const exportCommand = (
         return pipe(
           Effect.log('❌ .vibe not initialized in this directory'),
           Effect.flatMap(() => Effect.log('   Run `vibe init` first')),
-          Effect.flatMap(() => Effect.fail(new Error('.vibe not initialized')))
+          Effect.flatMap(() => Effect.fail(new Error('.vibe not initialized'))),
         )
       }
       return performExport(projectPath, options)
-    })
+    }),
   )
 
 /**
@@ -41,7 +41,7 @@ const checkVibeDirectory = (projectPath: string) =>
       const stat = await Deno.stat(vibePath)
       return stat.isDirectory
     },
-    catch: () => false
+    catch: () => false,
   })
 
 /**
@@ -49,14 +49,14 @@ const checkVibeDirectory = (projectPath: string) =>
  */
 const performExport = (
   projectPath: string,
-  options: { output?: string; format?: string }
+  options: { output?: string; format?: string },
 ) =>
   pipe(
     Effect.log(`📊 Collecting data from ${projectPath}/.vibe`),
     Effect.flatMap(() => collectVibeData(projectPath)),
     Effect.flatMap((data) => formatExportData(data, options)),
     Effect.flatMap((formattedData) => writeExportFile(formattedData, projectPath, options)),
-    Effect.flatMap((outputPath) => showExportResults(outputPath, options))
+    Effect.flatMap((outputPath) => showExportResults(outputPath, options)),
   )
 
 /**
@@ -66,28 +66,30 @@ const collectVibeData = (projectPath: string) =>
   pipe(
     Effect.sync(() => ({
       projectName: projectPath.split('/').pop() || 'unknown',
-      vibePath: resolve(projectPath, '.vibe')
+      vibePath: resolve(projectPath, '.vibe'),
     })),
     Effect.flatMap(({ projectName, vibePath }) =>
       Effect.all([
         loadRules(vibePath).pipe(Effect.catchAll(() => Effect.succeed([]))),
         loadMemories(projectPath).pipe(Effect.catchAll(() => Effect.succeed([]))),
         getTimeline(projectPath).pipe(Effect.catchAll(() => Effect.succeed([]))),
-        loadConfig(vibePath).pipe(Effect.catchAll(() => Effect.succeed({ version: '1.0.0', tools: [] })))
+        loadConfig(vibePath).pipe(
+          Effect.catchAll(() => Effect.succeed({ version: '1.0.0', tools: [] })),
+        ),
       ]).pipe(
         Effect.map(([rules, memory, diary, config]) => ({
           project: {
             name: projectName,
             path: projectPath,
-            exportedAt: new Date().toISOString()
+            exportedAt: new Date().toISOString(),
           },
           rules,
           memory,
           diary,
-          config
-        }))
+          config,
+        })),
       )
-    )
+    ),
   )
 
 /**
@@ -100,41 +102,48 @@ const loadConfig = (vibePath: string) =>
       const content = await Deno.readTextFile(configPath)
       return JSON.parse(content)
     },
-    catch: () => ({ version: '1.0.0', tools: [] })
+    catch: () => ({ version: '1.0.0', tools: [] }),
   })
 
 /**
  * Format data according to export format
  */
-const formatExportData = (data: { rules?: Array<{ id: string; description: string }>; memory?: Array<{ id: string; content: string }>; diary?: Array<{ id: string; title: string }> }, options: { format?: string }) =>
+const formatExportData = (
+  data: {
+    rules?: Array<{ id: string; description: string }>
+    memory?: Array<{ id: string; content: string }>
+    diary?: Array<{ id: string; title: string }>
+  },
+  options: { format?: string },
+) =>
   Effect.sync(() => {
     const format = options.format || 'full'
-    
+
     switch (format) {
       case 'rules-only':
         return {
           agentfile_version: '1.0',
           name: data.project.name,
           rules: data.rules,
-          exported: data.project.exportedAt
+          exported: data.project.exportedAt,
         }
-      
+
       case 'memory-only':
         return {
           agentfile_version: '1.0',
           name: data.project.name,
           memory: data.memory,
-          exported: data.project.exportedAt
+          exported: data.project.exportedAt,
         }
-      
+
       case 'diary-only':
         return {
           agentfile_version: '1.0',
           name: data.project.name,
           diary: data.diary,
-          exported: data.project.exportedAt
+          exported: data.project.exportedAt,
         }
-      
+
       case 'full':
       default:
         return {
@@ -145,7 +154,7 @@ const formatExportData = (data: { rules?: Array<{ id: string; description: strin
           memory: data.memory,
           diary: data.diary,
           config: data.config,
-          exported: data.project.exportedAt
+          exported: data.project.exportedAt,
         }
     }
   })
@@ -156,17 +165,17 @@ const formatExportData = (data: { rules?: Array<{ id: string; description: strin
 const writeExportFile = (
   data: { rules?: unknown[]; memory?: unknown[]; diary?: unknown[]; config?: unknown },
   projectPath: string,
-  options: { output?: string }
+  options: { output?: string },
 ) =>
   Effect.tryPromise({
     try: async () => {
       const outputPath = options.output || resolve(projectPath, '.vibe.af.json')
       const content = JSON.stringify(data, null, 2)
-      
+
       await Deno.writeTextFile(outputPath, content)
       return outputPath
     },
-    catch: (error) => new Error(`Failed to write export file: ${error}`)
+    catch: (error) => new Error(`Failed to write export file: ${error}`),
   })
 
 /**
@@ -182,7 +191,9 @@ const showExportResults = (outputPath: string, options: { format?: string }) =>
     Effect.flatMap(() => getFileSize(outputPath)),
     Effect.flatMap((size) => Effect.log(`   📦 Size: ${formatBytes(size)}`)),
     Effect.flatMap(() => Effect.log('')),
-    Effect.flatMap(() => Effect.log('💡 Use this file with AI assistants that support AgentFile format'))
+    Effect.flatMap(() =>
+      Effect.log('💡 Use this file with AI assistants that support AgentFile format')
+    ),
   )
 
 /**
@@ -194,7 +205,7 @@ const getFileSize = (path: string) =>
       const stat = await Deno.stat(path)
       return stat.size
     },
-    catch: () => 0
+    catch: () => 0,
   })
 
 /**

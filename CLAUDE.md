@@ -72,6 +72,7 @@
 ## Quick Start
 
 ### Prerequisites
+
 - **Deno** (latest stable version)
 - **Node.js** (for projects that need it)
 
@@ -147,6 +148,7 @@ deno task mcp-server
 ## Daemon Architecture
 
 The persistent daemon (`vibe-daemon`) provides:
+
 - **Auto-Discovery**: Scans filesystem for .vibe projects
 - **File Watching**: Monitors config changes in real-time
 - **MCP Server**: Universal AI tool integration
@@ -157,6 +159,7 @@ The persistent daemon (`vibe-daemon`) provides:
 ## MCP Server Integration
 
 The MCP server provides:
+
 - Real-time conversation monitoring
 - Automatic decision capture
 - Rule and context injection
@@ -167,12 +170,14 @@ The MCP server provides:
 ## Testing Strategy
 
 ### Comprehensive Test Suite
+
 - **Integration Tests**: End-to-end workflow validation
 - **Unit Tests**: Individual function and schema testing
 - **E2E Tests**: CLI commands and daemon lifecycle
 - **Performance Tests**: Benchmarking and regression detection
 
 ### Test Commands
+
 ```bash
 # Quick tests (2-3 minutes)
 deno task test
@@ -185,6 +190,7 @@ deno task test:perf
 ```
 
 ### CI/CD Integration
+
 - GitHub Actions workflow with multi-platform testing
 - Automated security scanning and type checking
 - Code coverage reporting via Codecov
@@ -258,6 +264,7 @@ deno task test:perf
 ### Common Issues
 
 **Daemon won't start**:
+
 ```bash
 # Check if port is already in use
 lsof -i :4242
@@ -270,6 +277,7 @@ tail -f /tmp/vibe-daemon.log
 ```
 
 **Permission errors**:
+
 ```bash
 # Ensure Deno has required permissions
 deno --version
@@ -277,6 +285,7 @@ ls -la vibe vibe-daemon  # Check executable permissions
 ```
 
 **Tests failing**:
+
 ```bash
 # Check dependencies
 deno cache --reload **/*.ts

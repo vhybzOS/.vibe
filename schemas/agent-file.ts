@@ -31,7 +31,7 @@ export const AgentConfigurationSchema = z.object({
   description: z.string(),
   capabilities: z.array(z.enum([
     'code-analysis',
-    'rule-application', 
+    'rule-application',
     'decision-tracking',
     'memory-management',
     'dependency-awareness',

@@ -92,7 +92,7 @@ Your AI assistant context, rules, and memory follow you everywhere.
 **The secret sauce**: Instead of CLI tools that run and die, .vibe runs a **persistent background daemon** that:
 
 - 🔍 **Auto-Discovery**: Scans and monitors all `.vibe` projects on your system
-- 🔄 **Real-Time Sync**: Watches file changes and syncs configs instantly  
+- 🔄 **Real-Time Sync**: Watches file changes and syncs configs instantly
 - 📡 **MCP Server**: Serves a single endpoint for all AI tools to connect
 - 💚 **Health Monitoring**: Auto-restart failed components, graceful degradation
 - 🌐 **Cross-Platform**: Same daemon works on Linux, macOS, Windows, WSL2
@@ -175,6 +175,7 @@ deno task lint      # Lint code
 ### Example MCP Configuration
 
 **Cursor (.cursor/config.json)**:
+
 ```json
 {
   "mcpServers": {
@@ -187,6 +188,7 @@ deno task lint      # Lint code
 ```
 
 **Claude Desktop**:
+
 ```json
 {
   "mcpServers": {
@@ -209,7 +211,7 @@ deno task lint      # Lint code
 ## 🤖 AI Tool Compatibility
 
 - ✅ Cursor
-- ✅ Windsurf  
+- ✅ Windsurf
 - ✅ Claude Desktop
 - ✅ Any MCP-compatible tool
 - 🔄 GitHub Copilot (planned)
@@ -232,6 +234,7 @@ vibe-daemon                 # Start persistent daemon
 ## 🚀 Installation as System Service
 
 **Linux/macOS (systemd)**:
+
 ```bash
 # Install binaries
 sudo cp vibe-daemon /usr/local/bin/
@@ -245,6 +248,7 @@ systemctl --user start vibe-daemon.service
 ```
 
 **Windows (Task Scheduler)**:
+
 ```powershell
 # Run at startup
 schtasks /create /tn "VibeDaemon" /tr "vibe-daemon" /sc onstart

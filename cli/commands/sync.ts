@@ -13,7 +13,7 @@ import { loadRules } from '../../rules/index.ts'
  */
 export const syncCommand = (
   projectPath: string,
-  options: { dryRun?: boolean; force?: boolean }
+  options: { dryRun?: boolean; force?: boolean },
 ) =>
   pipe(
     Effect.log('🔄 Syncing AI tool configurations...'),
@@ -23,11 +23,11 @@ export const syncCommand = (
         return pipe(
           Effect.log('❌ .vibe not initialized in this directory'),
           Effect.flatMap(() => Effect.log('   Run `vibe init` first')),
-          Effect.flatMap(() => Effect.fail(new Error('.vibe not initialized')))
+          Effect.flatMap(() => Effect.fail(new Error('.vibe not initialized'))),
         )
       }
       return performSync(projectPath, options)
-    })
+    }),
   )
 
 /**
@@ -40,7 +40,7 @@ const checkVibeDirectory = (projectPath: string) =>
       const stat = await Deno.stat(vibePath)
       return stat.isDirectory
     },
-    catch: () => false
+    catch: () => false,
   })
 
 /**
@@ -48,26 +48,28 @@ const checkVibeDirectory = (projectPath: string) =>
  */
 const performSync = (
   projectPath: string,
-  options: { dryRun?: boolean; force?: boolean }
+  options: { dryRun?: boolean; force?: boolean },
 ) =>
   pipe(
     Effect.all([
       getToolsAndRules(projectPath),
     ]),
-    Effect.flatMap(([{ tools, rules }]) => 
+    Effect.flatMap(([{ tools, rules }]) =>
       pipe(
         Effect.log(`🔍 Found ${tools.length} AI tools and ${rules.length} rules`),
         Effect.flatMap(() => {
           if (tools.length === 0) {
             return pipe(
               Effect.log('ℹ️  No AI tools detected to sync'),
-              Effect.flatMap(() => Effect.log('   Supported tools: Cursor, Windsurf, Claude Desktop'))
+              Effect.flatMap(() =>
+                Effect.log('   Supported tools: Cursor, Windsurf, Claude Desktop')
+              ),
             )
           }
           return performToolSync(tools, rules, options)
-        })
+        }),
       )
-    )
+    ),
   )
 
 /**
@@ -77,9 +79,9 @@ const getToolsAndRules = (projectPath: string) =>
   pipe(
     Effect.all([
       getDetectedTools(projectPath),
-      getProjectRules(projectPath)
+      getProjectRules(projectPath),
     ]),
-    Effect.map(([tools, rules]) => ({ tools, rules }))
+    Effect.map(([tools, rules]) => ({ tools, rules })),
   )
 
 /**
@@ -88,7 +90,7 @@ const getToolsAndRules = (projectPath: string) =>
 const getDetectedTools = (projectPath: string) =>
   pipe(
     detectAITools(projectPath),
-    Effect.catchAll(() => Effect.succeed([]))
+    Effect.catchAll(() => Effect.succeed([])),
   )
 
 /**
@@ -97,7 +99,7 @@ const getDetectedTools = (projectPath: string) =>
 const getProjectRules = (projectPath: string) =>
   pipe(
     loadRules(resolve(projectPath, '.vibe')),
-    Effect.catchAll(() => Effect.succeed([]))
+    Effect.catchAll(() => Effect.succeed([])),
   )
 
 /**
@@ -106,14 +108,12 @@ const getProjectRules = (projectPath: string) =>
 const performToolSync = (
   tools: Array<{ type: string; name: string }>,
   rules: Array<{ id: string; description: string }>,
-  options: { dryRun?: boolean; force?: boolean }
+  options: { dryRun?: boolean; force?: boolean },
 ) =>
   pipe(
     Effect.log(`🔄 ${options.dryRun ? 'Preview' : 'Syncing'} configurations...`),
-    Effect.flatMap(() => 
-      Effect.all(tools.map(tool => syncSingleTool(tool, rules, options)))
-    ),
-    Effect.flatMap((results) => showSyncResults(results, options))
+    Effect.flatMap(() => Effect.all(tools.map((tool) => syncSingleTool(tool, rules, options)))),
+    Effect.flatMap((results) => showSyncResults(results, options)),
   )
 
 /**
@@ -122,12 +122,12 @@ const performToolSync = (
 const syncSingleTool = (
   tool: { type: string; name: string; configPath?: string },
   rules: Array<{ id: string; description: string; enabled: boolean }>,
-  options: { dryRun?: boolean; force?: boolean }
+  options: { dryRun?: boolean; force?: boolean },
 ) =>
   Effect.sync(() => {
     // Filter rules applicable to this tool
-    const applicableRules = rules.filter(rule => 
-      rule.compatibility?.tools?.includes(tool.type) || 
+    const applicableRules = rules.filter((rule) =>
+      rule.compatibility?.tools?.includes(tool.type) ||
       rule.compatibility?.tools?.length === 0
     )
 
@@ -136,7 +136,7 @@ const syncSingleTool = (
         tool: tool.type,
         action: 'preview' as const,
         rulesCount: applicableRules.length,
-        message: `Would sync ${applicableRules.length} rules`
+        message: `Would sync ${applicableRules.length} rules`,
       }
     }
 
@@ -145,7 +145,7 @@ const syncSingleTool = (
       tool: tool.type,
       action: 'synced' as const,
       rulesCount: applicableRules.length,
-      message: `Synced ${applicableRules.length} rules`
+      message: `Synced ${applicableRules.length} rules`,
     }
   })
 
@@ -154,25 +154,28 @@ const syncSingleTool = (
  */
 const showSyncResults = (
   results: Array<{ tool: string; status: string; changes?: number }>,
-  options: { dryRun?: boolean; force?: boolean }
+  options: { dryRun?: boolean; force?: boolean },
 ) =>
   pipe(
     Effect.log(''),
     Effect.flatMap(() => Effect.log('📊 Sync Results:')),
     Effect.flatMap(() => Effect.log('━━━━━━━━━━━━━━━━━━━━━')),
-    Effect.flatMap(() => 
-      Effect.all(results.map(result =>
+    Effect.flatMap(() =>
+      Effect.all(results.map((result) =>
         Effect.log(`   ${getToolIcon(result.tool)} ${result.tool}: ${result.message}`)
       ))
     ),
     Effect.flatMap(() => {
-      const totalRules = results.reduce((sum, r) => sum + r.rulesCount, 0)
+      const totalRules = results.reduce((sum, r) =>
+        sum + r.rulesCount, 0)
       const action = options.dryRun ? 'would be synced' : 'synced'
       return pipe(
         Effect.log(''),
-        Effect.flatMap(() => Effect.log(`✅ ${totalRules} rules ${action} across ${results.length} tools`))
+        Effect.flatMap(() =>
+          Effect.log(`✅ ${totalRules} rules ${action} across ${results.length} tools`)
+        ),
       )
-    })
+    }),
   )
 
 /**
@@ -180,11 +183,17 @@ const showSyncResults = (
  */
 const getToolIcon = (toolType: string): string => {
   switch (toolType) {
-    case 'cursor': return '🎯'
-    case 'windsurf': return '🏄'
-    case 'claude': return '🤖'
-    case 'copilot': return '🚁'
-    case 'codeium': return '💫'
-    default: return '🔧'
+    case 'cursor':
+      return '🎯'
+    case 'windsurf':
+      return '🏄'
+    case 'claude':
+      return '🤖'
+    case 'copilot':
+      return '🚁'
+    case 'codeium':
+      return '💫'
+    default:
+      return '🔧'
   }
 }

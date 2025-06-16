@@ -8,11 +8,11 @@ import { resolve } from '@std/path'
 import { readTextFile } from '../../lib/effects.ts'
 import { createFileSystemError, type VibeError } from '../../lib/errors.ts'
 import {
+  DetectedDependency,
   ManifestParser,
   ManifestParseResult,
-  DetectedDependency,
-  parseJsonSafely,
   normalizePackageName,
+  parseJsonSafely,
 } from './base.ts'
 
 interface PackageJson {
@@ -45,21 +45,20 @@ const fileExists = (path: string) =>
         return false
       }
     },
-    catch: (error) => createFileSystemError(
-      error,
-      path,
-      'Failed to check file existence'
-    ),
+    catch: (error) =>
+      createFileSystemError(
+        error,
+        path,
+        'Failed to check file existence',
+      ),
   })
 
 const canParseNpm = (manifestPath: string) =>
   pipe(
     Effect.sync(() => manifestPath.endsWith('package.json')),
-    Effect.flatMap(isPackageJson => 
-      isPackageJson 
-        ? fileExists(manifestPath)
-        : Effect.succeed(false)
-    )
+    Effect.flatMap((isPackageJson) =>
+      isPackageJson ? fileExists(manifestPath) : Effect.succeed(false)
+    ),
   )
 
 const extractDependencies = (packageJson: PackageJson, manifestPath: string) =>
@@ -134,14 +133,17 @@ const checkLockFileExists = (manifestPath: string) => {
       fileExists(resolve(manifestDir, 'yarn.lock')),
       fileExists(resolve(manifestDir, 'pnpm-lock.yaml')),
     ]),
-    Effect.map(([npmLock, shrinkwrap, yarnLock, pnpmLock]) => 
+    Effect.map(([npmLock, shrinkwrap, yarnLock, pnpmLock]) =>
       npmLock || shrinkwrap || yarnLock || pnpmLock
     ),
-    Effect.catchAll(() => Effect.succeed(false))
+    Effect.catchAll(() => Effect.succeed(false)),
   )
 }
 
-const calculateConfidence = (dependencies: DetectedDependency[], lockFileExists: boolean): number => {
+const calculateConfidence = (
+  dependencies: DetectedDependency[],
+  lockFileExists: boolean,
+): number => {
   let confidence = 0.8 // Base confidence for valid package.json
 
   // Boost confidence if we have dependencies
@@ -160,7 +162,7 @@ const calculateConfidence = (dependencies: DetectedDependency[], lockFileExists:
 const createParseResult = (dependencies: DetectedDependency[], manifestPath: string) =>
   pipe(
     checkLockFileExists(manifestPath),
-    Effect.map(lockFileExists => ({
+    Effect.map((lockFileExists) => ({
       manifestType: npmParserType,
       manifestPath,
       dependencies,
@@ -170,22 +172,22 @@ const createParseResult = (dependencies: DetectedDependency[], manifestPath: str
         parsedAt: new Date().toISOString(),
         confidence: calculateConfidence(dependencies, lockFileExists),
       },
-    } satisfies ManifestParseResult))
+    } satisfies ManifestParseResult)),
   )
 
 const parseNpm = (manifestPath: string) =>
   pipe(
     readTextFile(manifestPath),
-    Effect.flatMap(content => parseJsonSafely(content)),
-    Effect.flatMap(packageJson => extractDependencies(packageJson as PackageJson, manifestPath)),
-    Effect.flatMap(dependencies => createParseResult(dependencies, manifestPath))
+    Effect.flatMap((content) => parseJsonSafely(content)),
+    Effect.flatMap((packageJson) => extractDependencies(packageJson as PackageJson, manifestPath)),
+    Effect.flatMap((dependencies) => createParseResult(dependencies, manifestPath)),
   )
 
 const getProjectMetadataNpm = (manifestPath: string) =>
   pipe(
     readTextFile(manifestPath),
-    Effect.flatMap(content => parseJsonSafely(content)),
-    Effect.map(packageJson => {
+    Effect.flatMap((content) => parseJsonSafely(content)),
+    Effect.map((packageJson) => {
       const pkg = packageJson as PackageJson
       return {
         projectName: pkg.name,
@@ -195,7 +197,7 @@ const getProjectMetadataNpm = (manifestPath: string) =>
         repository: pkg.repository,
         hasLockFile: false, // Will be set by the discovery service
       }
-    })
+    }),
   )
 
 /**

@@ -18,5 +18,5 @@ export const startMcpServer = (config: McpServerConfig) =>
       },
       catch: (error) => new Error(`Failed to start MCP server: ${error}`),
     }),
-    Effect.tap(() => Effect.log('✅ MCP server started successfully'))
+    Effect.tap(() => Effect.log('✅ MCP server started successfully')),
   )

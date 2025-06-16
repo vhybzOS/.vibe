@@ -6,10 +6,10 @@ The heart of `.vibe` is the **Universal Rule**: a single, expressive JSON format
 
 Every AI tool has its own proprietary format for rules and context:
 
--   `.cursorrules`
--   `.windsurfrules`
--   `.claude/commands`
--   `copilot-instructions.md`
+- `.cursorrules`
+- `.windsurfrules`
+- `.claude/commands`
+- `copilot-instructions.md`
 
 This fragmentation means you're constantly repeating yourself, and your project's "brain" is scattered across a dozen different files. It's unmanageable.
 
@@ -52,10 +52,10 @@ A Universal Rule is just a JSON object with a clear, powerful structure. Here's 
 }
 ```
 
--   **`metadata`**: What the rule is and where it came from.
--   **`targeting`**: When the rule should apply (e.g., only in TypeScript files when the `effect` package is a dependency).
--   **`content`**: The actual guidance for the AI, written in rich Markdown with code examples.
--   **`application`**: How the rule should be applied (e.g., `always` injected into the context, or `manual` for a user-triggered command).
+- **`metadata`**: What the rule is and where it came from.
+- **`targeting`**: When the rule should apply (e.g., only in TypeScript files when the `effect` package is a dependency).
+- **`content`**: The actual guidance for the AI, written in rich Markdown with code examples.
+- **`application`**: How the rule should be applied (e.g., `always` injected into the context, or `manual` for a user-triggered command).
 
 This structure allows for incredibly rich, context-aware AI assistance that is portable across your entire toolchain.
 

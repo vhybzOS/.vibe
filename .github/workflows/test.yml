@@ -2,28 +2,28 @@ name: Build and Test
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
     paths:
-      - "**/*.ts"
-      - "**/*.tsx"
-      - "deno.json"
-      - "deno.lock"
-      - ".github/workflows/test.yml"
+      - '**/*.ts'
+      - '**/*.tsx'
+      - 'deno.json'
+      - 'deno.lock'
+      - '.github/workflows/test.yml'
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
     paths:
-      - "**/*.ts"
-      - "**/*.tsx"
-      - "deno.json"
-      - "deno.lock"
-      - ".github/workflows/test.yml"
+      - '**/*.ts'
+      - '**/*.tsx'
+      - 'deno.json'
+      - 'deno.lock'
+      - '.github/workflows/test.yml'
 
 env:
-  DENO_VERSION: "v2.3.6"
+  DENO_VERSION: 'v2.3.6'
 
 jobs:
   build:
-    name: "Build & Test on ${{ matrix.os }}"
+    name: 'Build & Test on ${{ matrix.os }}'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -62,7 +62,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           deno coverage --lcov --output=coverage.lcov coverage/
-          
+
       - name: 📈 Upload Coverage to Codecov
         if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v4
@@ -84,7 +84,7 @@ jobs:
         uses: denoland/setup-deno@v1
         with:
           deno-version: ${{ env.DENO_VERSION }}
-          
+
       - name: 📦 Restore Deno Cache
         uses: actions/cache@v4
         with:

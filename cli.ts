@@ -33,10 +33,10 @@ const runCommand = (commandEffect: () => Effect.Effect<void, Error, never>) => {
             console.error('Stack trace:', error.stack)
           }
         }),
-        Effect.flatMap(() => Effect.sync(() => Deno.exit(1)))
+        Effect.flatMap(() => Effect.sync(() => Deno.exit(1))),
       )
     ),
-    Effect.runPromise
+    Effect.runPromise,
   ).catch((unexpectedError) => {
     console.error('❌ Unexpected error:', unexpectedError)
     Deno.exit(1)

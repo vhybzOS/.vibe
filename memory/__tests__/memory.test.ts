@@ -3,8 +3,8 @@
  * Testing memory functionality using the existing functional schema
  */
 
-import { assertEquals, assertExists, assert } from '@std/assert'
-import { describe, it, beforeEach, afterEach } from '@std/testing/bdd'
+import { assert, assertEquals, assertExists } from '@std/assert'
+import { afterEach, beforeEach, describe, it } from '@std/testing/bdd'
 import { resolve } from '@std/path'
 import { Effect } from 'effect'
 
@@ -13,12 +13,12 @@ import { type MemoryQuery } from '../../schemas/memory.ts'
 
 // Import functions to be implemented/rewritten
 import {
-  storeMemory,
-  searchMemory,
-  getMemory,
   deleteMemory,
+  getMemory,
+  loadMemories,
+  searchMemory,
+  storeMemory,
   updateMemoryAccess,
-  loadMemories
 } from '../index.ts'
 
 describe('🧠 Memory System', () => {
@@ -29,7 +29,7 @@ describe('🧠 Memory System', () => {
     testDir = await Deno.makeTempDir({ prefix: 'vibe_memory_test_' })
     memoryPath = resolve(testDir, '.vibe')
     await Deno.mkdir(memoryPath, { recursive: true })
-    
+
     // Clear search index at start of each test
     try {
       const { clearIndex } = await import('../../search/index.ts')
@@ -59,21 +59,21 @@ describe('🧠 Memory System', () => {
           tool: 'claude' as const,
           sessionId: 'test-session-1',
           timestamp: new Date().toISOString(),
-          location: '/test/file.ts'
+          location: '/test/file.ts',
         },
         tags: ['effect-ts', 'functional', 'patterns'],
         importance: 'high' as const,
         projectPath: testDir,
         relatedFiles: ['/test/file.ts'],
-        associatedRules: ['rule-1']
+        associatedRules: ['rule-1'],
       }
 
       const result = await Effect.runPromise(storeMemory(testDir, content, metadata))
-      
+
       assertExists(result.id)
       assertEquals(result.success, true)
       assertExists(result.timestamp)
-      
+
       // Verify memory file was created
       const memoryFile = resolve(memoryPath, 'memory', `${result.id}.json`)
       const fileExists = await Deno.stat(memoryFile).then(() => true).catch(() => false)
@@ -81,20 +81,21 @@ describe('🧠 Memory System', () => {
     })
 
     it('should create searchable content with keywords and concepts', async () => {
-      const content = 'Learning about Effect-TS error handling and pipe composition for better async workflows'
+      const content =
+        'Learning about Effect-TS error handling and pipe composition for better async workflows'
       const metadata = {
         type: 'knowledge' as const,
         source: {
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         },
         tags: ['effect-ts', 'learning'],
         importance: 'medium' as const,
-        projectPath: testDir
+        projectPath: testDir,
       }
 
       const result = await Effect.runPromise(storeMemory(testDir, content, metadata))
       const memory = await Effect.runPromise(getMemory(testDir, result.id))
-      
+
       assert(memory, 'Memory should exist')
       assert(memory.content.keywords.length > 0, 'Should have extracted keywords')
       assert(memory.content.summary.length > 0, 'Should have generated summary')
@@ -102,7 +103,14 @@ describe('🧠 Memory System', () => {
     })
 
     it('should handle different memory types correctly', async () => {
-      const memoryTypes = ['conversation', 'decision', 'pattern', 'preference', 'knowledge', 'context'] as const
+      const memoryTypes = [
+        'conversation',
+        'decision',
+        'pattern',
+        'preference',
+        'knowledge',
+        'context',
+      ] as const
       const results = []
 
       for (const type of memoryTypes) {
@@ -112,7 +120,7 @@ describe('🧠 Memory System', () => {
           source: { timestamp: new Date().toISOString() },
           tags: [type],
           importance: 'medium' as const,
-          projectPath: testDir
+          projectPath: testDir,
         }
 
         const result = await Effect.runPromise(storeMemory(testDir, content, metadata))
@@ -134,33 +142,33 @@ describe('🧠 Memory System', () => {
           content: 'Learning about Effect-TS pipe composition and error handling patterns',
           type: 'knowledge' as const,
           tags: ['effect-ts', 'pipes', 'errors'],
-          importance: 'high' as const
+          importance: 'high' as const,
         },
         {
           content: 'Decision to migrate from async/await to Effect-TS for better composability',
           type: 'decision' as const,
           tags: ['effect-ts', 'migration', 'async'],
-          importance: 'high' as const
+          importance: 'high' as const,
         },
         {
           content: 'Conversation about React component patterns and state management',
           type: 'conversation' as const,
           tags: ['react', 'components', 'state'],
-          importance: 'medium' as const
+          importance: 'medium' as const,
         },
         {
           content: 'Pattern for handling complex form validation with functional approaches',
           type: 'pattern' as const,
           tags: ['validation', 'forms', 'functional'],
-          importance: 'medium' as const
-        }
+          importance: 'medium' as const,
+        },
       ]
 
       for (const mem of testMemories) {
         const metadata = {
           ...mem,
           source: { timestamp: new Date().toISOString() },
-          projectPath: testDir
+          projectPath: testDir,
         }
         await Effect.runPromise(storeMemory(testDir, mem.content, metadata))
       }
@@ -175,18 +183,17 @@ describe('🧠 Memory System', () => {
         importance: [],
         limit: 10,
         threshold: 0.5,
-        includeArchived: false
+        includeArchived: false,
       }
 
       const results = await Effect.runPromise(searchMemory(testDir, query))
-      
-      
+
       assert(results.length >= 2, 'Should find at least 2 Effect-TS related memories')
       for (const result of results) {
         assert(
           result.memory.content.content.toLowerCase().includes('effect-ts') ||
-          result.memory.metadata.tags.includes('effect-ts'),
-          'Results should contain Effect-TS'
+            result.memory.metadata.tags.includes('effect-ts'),
+          'Results should contain Effect-TS',
         )
       }
     })
@@ -200,11 +207,11 @@ describe('🧠 Memory System', () => {
         importance: [],
         limit: 10,
         threshold: 0.7,
-        includeArchived: false
+        includeArchived: false,
       }
 
       const results = await Effect.runPromise(searchMemory(testDir, query))
-      
+
       assertEquals(results.length, 1)
       assert(results[0], 'Should have first result')
       assertEquals(results[0].memory.metadata.type, 'decision')
@@ -219,12 +226,11 @@ describe('🧠 Memory System', () => {
         importance: [],
         limit: 10,
         threshold: 0.1, // Lower threshold since we're filtering, not searching
-        includeArchived: false
+        includeArchived: false,
       }
 
       const results = await Effect.runPromise(searchMemory(testDir, query))
-      
-      
+
       assertEquals(results.length, 1)
       assert(results[0], 'Should have first result')
       assert(results[0].memory.metadata.tags.includes('react'))
@@ -239,11 +245,11 @@ describe('🧠 Memory System', () => {
         importance: ['high'],
         limit: 10,
         threshold: 0.1, // Lower threshold since we're filtering, not searching
-        includeArchived: false
+        includeArchived: false,
       }
 
       const results = await Effect.runPromise(searchMemory(testDir, query))
-      
+
       assert(results.length >= 2, 'Should find high importance memories')
       for (const result of results) {
         assertEquals(result.memory.metadata.importance, 'high')
@@ -253,7 +259,7 @@ describe('🧠 Memory System', () => {
     it('should filter by time range', async () => {
       const now = new Date()
       const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
-      
+
       const query: MemoryQuery = {
         query: '', // Empty query to search all documents
         type: [],
@@ -262,15 +268,15 @@ describe('🧠 Memory System', () => {
         importance: [],
         timeRange: {
           from: oneHourAgo.toISOString(),
-          to: now.toISOString()
+          to: now.toISOString(),
         },
         limit: 10,
         threshold: 0.1, // Lower threshold since we're filtering, not searching
-        includeArchived: false
+        includeArchived: false,
       }
 
       const results = await Effect.runPromise(searchMemory(testDir, query))
-      
+
       assert(results.length > 0, 'Should find recent memories')
       for (const result of results) {
         const created = new Date(result.memory.lifecycle.created)
@@ -287,19 +293,19 @@ describe('🧠 Memory System', () => {
         importance: [],
         limit: 10,
         threshold: 0.7,
-        includeArchived: false
+        includeArchived: false,
       }
 
       const results = await Effect.runPromise(searchMemory(testDir, query))
-      
+
       assert(results.length > 0, 'Should have search results')
       for (const result of results) {
         assert(result.score >= 0 && result.score <= 1, 'Score should be between 0 and 1')
       }
-      
+
       // Results should be sorted by score (highest first)
       for (let i = 1; i < results.length; i++) {
-        const prev = results[i-1]
+        const prev = results[i - 1]
         const curr = results[i]
         assert(prev && curr, 'Should have both results for comparison')
         assert(prev.score >= curr.score, 'Results should be sorted by score')
@@ -315,7 +321,7 @@ describe('🧠 Memory System', () => {
         importance: [],
         limit: 10,
         threshold: 0.7,
-        includeArchived: false
+        includeArchived: false,
       }
 
       const results = await Effect.runPromise(searchMemory(testDir, query))
@@ -331,12 +337,12 @@ describe('🧠 Memory System', () => {
         source: { timestamp: new Date().toISOString() },
         tags: ['test'],
         importance: 'medium' as const,
-        projectPath: testDir
+        projectPath: testDir,
       }
 
       const storeResult = await Effect.runPromise(storeMemory(testDir, content, metadata))
       const memory = await Effect.runPromise(getMemory(testDir, storeResult.id))
-      
+
       assert(memory, 'Memory should exist')
       assertEquals(memory.content.content, content)
       assertEquals(memory.metadata.type, 'knowledge')
@@ -356,22 +362,25 @@ describe('🧠 Memory System', () => {
         source: { timestamp: new Date().toISOString() },
         tags: ['access'],
         importance: 'medium' as const,
-        projectPath: testDir
+        projectPath: testDir,
       }
 
       const storeResult = await Effect.runPromise(storeMemory(testDir, content, metadata))
-      
+
       // First access
       const memory1 = await Effect.runPromise(getMemory(testDir, storeResult.id))
       assert(memory1, 'Memory should exist')
-      
+
       // Update access count
       await Effect.runPromise(updateMemoryAccess(testDir, storeResult.id))
-      
+
       // Second access should show updated count
       const memory2 = await Effect.runPromise(getMemory(testDir, storeResult.id))
       assert(memory2, 'Memory should still exist')
-      assert(memory2.metadata.accessCount > memory1.metadata.accessCount, 'Access count should increase')
+      assert(
+        memory2.metadata.accessCount > memory1.metadata.accessCount,
+        'Access count should increase',
+      )
     })
   })
 
@@ -383,19 +392,19 @@ describe('🧠 Memory System', () => {
         source: { timestamp: new Date().toISOString() },
         tags: ['delete-test'],
         importance: 'low' as const,
-        projectPath: testDir
+        projectPath: testDir,
       }
 
       const storeResult = await Effect.runPromise(storeMemory(testDir, content, metadata))
-      
+
       // Verify it exists
       const memory = await Effect.runPromise(getMemory(testDir, storeResult.id))
       assert(memory, 'Memory should exist before deletion')
-      
+
       // Delete it
       const deleted = await Effect.runPromise(deleteMemory(testDir, storeResult.id))
       assertEquals(deleted, true)
-      
+
       // Verify it's gone
       const deletedMemory = await Effect.runPromise(getMemory(testDir, storeResult.id))
       assertEquals(deletedMemory, null)
@@ -412,7 +421,7 @@ describe('🧠 Memory System', () => {
       const memories = [
         { content: 'Memory 1', type: 'knowledge' as const },
         { content: 'Memory 2', type: 'decision' as const },
-        { content: 'Memory 3', type: 'pattern' as const }
+        { content: 'Memory 3', type: 'pattern' as const },
       ]
 
       const storedIds = []
@@ -422,7 +431,7 @@ describe('🧠 Memory System', () => {
           source: { timestamp: new Date().toISOString() },
           tags: ['load-test'],
           importance: 'medium' as const,
-          projectPath: testDir
+          projectPath: testDir,
         }
         const result = await Effect.runPromise(storeMemory(testDir, mem.content, metadata))
         storedIds.push(result.id)
@@ -430,10 +439,13 @@ describe('🧠 Memory System', () => {
 
       // Load all memories
       const loadedMemories = await Effect.runPromise(loadMemories(testDir))
-      
+
       assertEquals(loadedMemories.length, 3)
       for (const memory of loadedMemories) {
-        assert(storedIds.some(id => memory.metadata.id === id), 'Loaded memory should match stored ID')
+        assert(
+          storedIds.some((id) => memory.metadata.id === id),
+          'Loaded memory should match stored ID',
+        )
       }
     })
   })
@@ -441,7 +453,7 @@ describe('🧠 Memory System', () => {
   describe('⚡ Performance', () => {
     it('should handle large numbers of memories efficiently', async () => {
       const startTime = Date.now()
-      
+
       // Store 100 memories
       const promises = Array.from({ length: 100 }, (_, i) => {
         const metadata = {
@@ -449,14 +461,14 @@ describe('🧠 Memory System', () => {
           source: { timestamp: new Date().toISOString() },
           tags: ['performance', `test-${i}`],
           importance: 'medium' as const,
-          projectPath: testDir
+          projectPath: testDir,
         }
         return Effect.runPromise(storeMemory(testDir, `Performance test memory ${i}`, metadata))
       })
 
       await Promise.all(promises)
       const storeTime = Date.now() - startTime
-      
+
       // Search should be fast
       const searchStart = Date.now()
       const query: MemoryQuery = {
@@ -467,7 +479,7 @@ describe('🧠 Memory System', () => {
         importance: [],
         limit: 50,
         threshold: 0.7,
-        includeArchived: false
+        includeArchived: false,
       }
       const results = await Effect.runPromise(searchMemory(testDir, query))
       const searchTime = Date.now() - searchStart
@@ -481,7 +493,7 @@ describe('🧠 Memory System', () => {
   describe('🛡️ Error Handling', () => {
     it('should handle invalid memory directory gracefully', async () => {
       const invalidDir = '/nonexistent/path'
-      
+
       try {
         await Effect.runPromise(searchMemory(invalidDir, {
           type: [],
@@ -490,7 +502,7 @@ describe('🧠 Memory System', () => {
           importance: [],
           limit: 10,
           threshold: 0.7,
-          includeArchived: false
+          includeArchived: false,
         }))
         assert(false, 'Should have thrown error for invalid directory')
       } catch (error) {
@@ -506,9 +518,9 @@ describe('🧠 Memory System', () => {
           source: { timestamp: 'invalid-date' },
           tags: ['test'],
           importance: 'super-high' as 'medium',
-          projectPath: testDir
+          projectPath: testDir,
         }
-        
+
         await Effect.runPromise(storeMemory(testDir, '', invalidMetadata))
         assert(false, 'Should have thrown validation error')
       } catch (error) {

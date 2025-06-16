@@ -12,7 +12,7 @@ import { createCliError } from '../lib/errors.ts'
  */
 export type CommandFunction<T = unknown, R = unknown> = (
   projectPath: string,
-  options: T
+  options: T,
 ) => Effect.Effect<R, Error>
 
 /**
@@ -20,17 +20,16 @@ export type CommandFunction<T = unknown, R = unknown> = (
  * Consolidates: export.ts, status.ts, sync.ts, generate.ts, etc.
  */
 export const withVibeDirectory = <T, R>(
-  command: CommandFunction<T, R>
-) => (projectPath: string, options: T) =>
+  command: CommandFunction<T, R>,
+) =>
+(projectPath: string, options: T) =>
   pipe(
     ensureVibeDirectory(projectPath),
-    Effect.flatMap(vibePath =>
+    Effect.flatMap((vibePath) =>
       command(vibePath, options).pipe(
-        Effect.catchAll(error =>
-          Effect.fail(createCliError(error, `Command failed`, 'cli'))
-        )
+        Effect.catchAll((error) => Effect.fail(createCliError(error, `Command failed`, 'cli'))),
       )
-    )
+    ),
   )
 
 /**
@@ -38,18 +37,19 @@ export const withVibeDirectory = <T, R>(
  * Provides consistent error formatting and logging
  */
 export const withErrorHandling = <T, R>(
-  command: CommandFunction<T, R>
-) => (projectPath: string, options: T) =>
+  command: CommandFunction<T, R>,
+) =>
+(projectPath: string, options: T) =>
   pipe(
     command(projectPath, options),
-    Effect.catchAll(error => {
+    Effect.catchAll((error) => {
       // Log error for debugging
       const errorMessage = error instanceof Error ? error.message : String(error)
       return pipe(
         Effect.log(`❌ Command failed: ${errorMessage}`),
-        Effect.flatMap(() => Effect.fail(error))
+        Effect.flatMap(() => Effect.fail(error)),
       )
-    })
+    }),
   )
 
 /**
@@ -57,23 +57,20 @@ export const withErrorHandling = <T, R>(
  * Most CLI commands should use this wrapper
  */
 export const withStandardPrerequisites = <T, R>(
-  command: CommandFunction<T, R>
+  command: CommandFunction<T, R>,
 ) => withErrorHandling(withVibeDirectory(command))
 
 /**
  * Success message helper for consistent CLI output
  */
-export const logSuccess = (message: string) =>
-  Effect.log(`✅ ${message}`)
+export const logSuccess = (message: string) => Effect.log(`✅ ${message}`)
 
 /**
  * Warning message helper for consistent CLI output
  */
-export const logWarning = (message: string) =>
-  Effect.log(`⚠️  ${message}`)
+export const logWarning = (message: string) => Effect.log(`⚠️  ${message}`)
 
 /**
  * Info message helper for consistent CLI output
  */
-export const logInfo = (message: string) =>
-  Effect.log(`ℹ️  ${message}`)
+export const logInfo = (message: string) => Effect.log(`ℹ️  ${message}`)

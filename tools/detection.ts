@@ -8,11 +8,7 @@ import { resolve } from '@std/path'
 import { fileExists } from '../lib/fs.ts'
 import { logWithContext } from '../lib/effects.ts'
 import { createFileSystemError, type VibeError } from '../lib/errors.ts'
-import { 
-  AIToolConfig, 
-  AIToolType, 
-  DetectedTool
-} from '../schemas/ai-tool-config.ts'
+import { AIToolConfig, AIToolType, DetectedTool } from '../schemas/ai-tool-config.ts'
 
 type ConfigFileInfo = {
   path: string
@@ -51,7 +47,7 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
       customizations: {},
     },
   },
-  
+
   windsurf: {
     tool: 'windsurf',
     name: 'Windsurf',
@@ -77,7 +73,7 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
       customizations: {},
     },
   },
-  
+
   claude: {
     tool: 'claude',
     name: 'Claude Desktop',
@@ -103,7 +99,7 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
       customizations: {},
     },
   },
-  
+
   copilot: {
     tool: 'copilot',
     name: 'GitHub Copilot',
@@ -129,7 +125,7 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
       customizations: {},
     },
   },
-  
+
   codeium: {
     tool: 'codeium',
     name: 'Codeium',
@@ -155,7 +151,7 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
       customizations: {},
     },
   },
-  
+
   cody: {
     tool: 'cody',
     name: 'Sourcegraph Cody',
@@ -181,7 +177,7 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
       customizations: {},
     },
   },
-  
+
   tabnine: {
     tool: 'tabnine',
     name: 'Tabnine',
@@ -215,26 +211,27 @@ export const TOOL_CONFIGS: Record<AIToolType, AIToolConfig> = {
 export const detectAITools = (projectPath: string) =>
   pipe(
     Effect.all(
-      Object.values(TOOL_CONFIGS).map(config =>
-        detectSingleTool(projectPath, config)
-      )
+      Object.values(TOOL_CONFIGS).map((config) => detectSingleTool(projectPath, config)),
     ),
-    Effect.map(results => 
+    Effect.map((results) =>
       results
         .filter((result): result is DetectedTool => result !== null)
         .sort((a, b) => b.confidence - a.confidence)
     ),
-    Effect.tap(tools => 
-      logWithContext('Detection', `Found ${tools.length} AI tools: ${tools.map(t => t.tool).join(', ')}`)
-    )
+    Effect.tap((tools) =>
+      logWithContext(
+        'Detection',
+        `Found ${tools.length} AI tools: ${tools.map((t) => t.tool).join(', ')}`,
+      )
+    ),
   )
 
 /**
  * Detects a single AI tool in the project
  */
 const detectSingleTool = (
-  projectPath: string, 
-  config: AIToolConfig
+  projectPath: string,
+  config: AIToolConfig,
 ): Effect.Effect<DetectedTool | null, VibeError> =>
   pipe(
     Effect.all([
@@ -243,14 +240,14 @@ const detectSingleTool = (
     ]),
     Effect.map(([fileMatches, dirMatches]) => {
       const totalMatches = fileMatches.length + dirMatches.length
-      
+
       if (totalMatches === 0) {
         return null
       }
-      
+
       const confidence = calculateConfidence(config, fileMatches, dirMatches)
       const status = determineToolStatus(fileMatches, dirMatches)
-      
+
       return {
         tool: config.tool,
         confidence,
@@ -262,20 +259,29 @@ const detectSingleTool = (
           version: extractVersion(fileMatches),
         },
       } as DetectedTool
-    })
+    }),
   )
 
 /**
  * Checks for configuration files
  */
-const checkConfigFiles = (projectPath: string, config: AIToolConfig): Effect.Effect<ConfigFileInfo[], VibeError> => {
+const checkConfigFiles = (
+  projectPath: string,
+  config: AIToolConfig,
+): Effect.Effect<ConfigFileInfo[], VibeError> => {
   const checkSingleFile = (file: string): Effect.Effect<ConfigFileInfo, VibeError> => {
     const fullPath = resolve(projectPath, file)
     return pipe(
       fileExists(fullPath),
-      Effect.flatMap(exists => {
+      Effect.flatMap((exists) => {
         if (!exists) {
-          return Effect.fail(createFileSystemError(`File not found: ${file}`, fullPath, `Configuration file ${file} does not exist`))
+          return Effect.fail(
+            createFileSystemError(
+              `File not found: ${file}`,
+              fullPath,
+              `Configuration file ${file} does not exist`,
+            ),
+          )
         }
         return pipe(
           Effect.tryPromise(async () => {
@@ -287,21 +293,23 @@ const checkConfigFiles = (projectPath: string, config: AIToolConfig): Effect.Eff
               size: stat.size,
             } as ConfigFileInfo
           }),
-          Effect.catchAll(() => Effect.succeed({
-            path: file,
-            exists: true,
-          } as ConfigFileInfo))
+          Effect.catchAll(() =>
+            Effect.succeed({
+              path: file,
+              exists: true,
+            } as ConfigFileInfo)
+          ),
         )
-      })
+      }),
     )
   }
 
   return pipe(
     Effect.partition(
-      config.detection.files, 
-      file => checkSingleFile(file)
+      config.detection.files,
+      (file) => checkSingleFile(file),
     ),
-    Effect.map(([_notFound, existingFiles]) => existingFiles)
+    Effect.map(([_notFound, existingFiles]) => existingFiles),
   )
 }
 
@@ -311,16 +319,16 @@ const checkConfigFiles = (projectPath: string, config: AIToolConfig): Effect.Eff
 const checkConfigDirectories = (projectPath: string, config: AIToolConfig) =>
   pipe(
     Effect.all(
-      config.detection.directories.map(dir => {
+      config.detection.directories.map((dir) => {
         const fullPath = resolve(projectPath, dir)
         return pipe(
           fileExists(fullPath),
-          Effect.map(exists => exists ? dir : null),
-          Effect.catchAll(() => Effect.succeed(null))
+          Effect.map((exists) => exists ? dir : null),
+          Effect.catchAll(() => Effect.succeed(null)),
         )
-      })
+      }),
     ),
-    Effect.map(results => results.filter((dir): dir is string => dir !== null))
+    Effect.map((results) => results.filter((dir): dir is string => dir !== null)),
   )
 
 /**
@@ -329,21 +337,22 @@ const checkConfigDirectories = (projectPath: string, config: AIToolConfig) =>
 const calculateConfidence = (
   config: AIToolConfig,
   fileMatches: ConfigFileInfo[],
-  dirMatches: string[]
+  dirMatches: string[],
 ): number => {
-  const requiredFiles = config.configFiles.filter(cf => cf.required).length
-  const foundRequiredFiles = fileMatches.filter(file =>
-    config.configFiles.some(cf => cf.path === file.path && cf.required)
-  ).length
-  
+  const requiredFiles = config.configFiles.filter((cf) => cf.required).length
+  const foundRequiredFiles =
+    fileMatches.filter((file) =>
+      config.configFiles.some((cf) => cf.path === file.path && cf.required)
+    ).length
+
   if (requiredFiles > 0 && foundRequiredFiles === 0) {
     return 0.3 // Low confidence if no required files found
   }
-  
+
   const fileScore = fileMatches.length * 0.4
   const dirScore = dirMatches.length * 0.2
   const requiredBonus = foundRequiredFiles === requiredFiles ? 0.4 : 0
-  
+
   return Math.min(1.0, fileScore + dirScore + requiredBonus)
 }
 
@@ -352,7 +361,7 @@ const calculateConfidence = (
  */
 const determineToolStatus = (
   fileMatches: ConfigFileInfo[],
-  dirMatches: string[]
+  dirMatches: string[],
 ): 'active' | 'configured' | 'partial' => {
   if (fileMatches.length > 0 && dirMatches.length > 0) {
     return 'active'
@@ -374,14 +383,12 @@ const extractVersion = (configFiles: ConfigFileInfo[]): string | undefined => {
 /**
  * Gets configuration for a specific tool
  */
-export const getToolConfig = (tool: AIToolType) =>
-  Effect.sync(() => TOOL_CONFIGS[tool])
+export const getToolConfig = (tool: AIToolType) => Effect.sync(() => TOOL_CONFIGS[tool])
 
 /**
  * Checks if a tool supports a specific capability
  */
 export const toolSupportsCapability = (
   tool: AIToolType,
-  capability: keyof AIToolConfig['capabilities']
-) =>
-  Effect.sync(() => TOOL_CONFIGS[tool].capabilities[capability])
+  capability: keyof AIToolConfig['capabilities'],
+) => Effect.sync(() => TOOL_CONFIGS[tool].capabilities[capability])

@@ -15,8 +15,8 @@ import { diaryStatsCommand } from './diary.ts'
  * Status command that shows comprehensive project information
  */
 export const statusCommand = (
-  projectPath: string, 
-  options: { verbose?: boolean } = {}
+  projectPath: string,
+  options: { verbose?: boolean } = {},
 ) =>
   pipe(
     Effect.log('📊 .vibe Status Report'),
@@ -27,14 +27,14 @@ export const statusCommand = (
         return pipe(
           Effect.log('❌ .vibe not initialized in this directory'),
           Effect.flatMap(() => Effect.log('   Run `vibe init` to get started')),
-          Effect.flatMap(() => Effect.fail(new Error('.vibe not initialized')))
+          Effect.flatMap(() => Effect.fail(new Error('.vibe not initialized'))),
         )
       }
       return pipe(
         showProjectStatus(projectPath, options.verbose || false),
-        Effect.catchAll(() => Effect.fail(new Error('Status check failed')))
+        Effect.catchAll(() => Effect.fail(new Error('Status check failed'))),
       )
-    })
+    }),
   )
 
 /**
@@ -47,7 +47,7 @@ const checkVibeDirectory = (projectPath: string) =>
       const stat = await Deno.stat(vibePath)
       return stat.isDirectory
     },
-    catch: () => false
+    catch: () => false,
   })
 
 /**
@@ -59,7 +59,7 @@ const showProjectStatus = (projectPath: string, verbose: boolean) =>
       getProjectInfo(projectPath),
       getToolsInfo(projectPath),
       getRulesInfo(projectPath),
-      getHealthInfo(projectPath)
+      getHealthInfo(projectPath),
     ]),
     Effect.flatMap(([projectInfo, toolsInfo, rulesInfo, healthInfo]) =>
       pipe(
@@ -80,13 +80,13 @@ const showProjectStatus = (projectPath: string, verbose: boolean) =>
               Effect.log(''),
               Effect.flatMap(() => Effect.log('📊 System Statistics:')),
               Effect.flatMap(() => Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━')),
-              Effect.flatMap(() => showVerboseStats(projectPath))
+              Effect.flatMap(() => showVerboseStats(projectPath)),
             )
           }
           return Effect.void
-        })
+        }),
       )
-    )
+    ),
   )
 
 /**
@@ -95,7 +95,7 @@ const showProjectStatus = (projectPath: string, verbose: boolean) =>
 const getProjectInfo = (projectPath: string) =>
   Effect.sync(() => ({
     name: projectPath.split('/').pop() || 'unknown',
-    path: projectPath
+    path: projectPath,
   }))
 
 /**
@@ -104,7 +104,7 @@ const getProjectInfo = (projectPath: string) =>
 const getToolsInfo = (projectPath: string) =>
   pipe(
     detectAITools(projectPath),
-    Effect.catchAll(() => Effect.succeed([]))
+    Effect.catchAll(() => Effect.succeed([])),
   )
 
 /**
@@ -113,7 +113,7 @@ const getToolsInfo = (projectPath: string) =>
 const getRulesInfo = (projectPath: string) =>
   pipe(
     loadRules(resolve(projectPath, '.vibe')),
-    Effect.catchAll(() => Effect.succeed([]))
+    Effect.catchAll(() => Effect.succeed([])),
   )
 
 /**
@@ -126,15 +126,15 @@ const getHealthInfo = (projectPath: string) =>
       checkFile(resolve(projectPath, '.vibe', 'secrets.json')),
       checkDirectory(resolve(projectPath, '.vibe', 'rules')),
       checkDirectory(resolve(projectPath, '.vibe', 'memory')),
-      checkDirectory(resolve(projectPath, '.vibe', 'diary'))
+      checkDirectory(resolve(projectPath, '.vibe', 'diary')),
     ]),
     Effect.map(([configExists, secretsExists, rulesExists, memoryExists, diaryExists]) => ({
       configExists,
       secretsExists,
       rulesExists,
       memoryExists,
-      diaryExists
-    }))
+      diaryExists,
+    })),
   )
 
 /**
@@ -146,7 +146,7 @@ const checkFile = (path: string) =>
       const stat = await Deno.stat(path)
       return stat.isFile
     },
-    catch: () => false
+    catch: () => false,
   })
 
 /**
@@ -158,18 +158,18 @@ const checkDirectory = (path: string) =>
       const stat = await Deno.stat(path)
       return stat.isDirectory
     },
-    catch: () => false
+    catch: () => false,
   })
 
 /**
  * Display tools information
  */
-const showTools = (tools: Array<{ type: string; name: string; version?: string; configPath?: string }>) =>
+const showTools = (
+  tools: Array<{ type: string; name: string; version?: string; configPath?: string }>,
+) =>
   tools.length === 0
     ? Effect.log('   No AI tools detected')
-    : Effect.all(tools.map(tool => 
-        Effect.log(`   ✅ ${tool.name} (${tool.type})`)
-      ))
+    : Effect.all(tools.map((tool) => Effect.log(`   ✅ ${tool.name} (${tool.type})`)))
 
 /**
  * Display rules information
@@ -178,9 +178,9 @@ const showRules = (rules: Array<{ id: string; description: string; enabled: bool
   pipe(
     Effect.log(`   📊 Total: ${rules.length}`),
     Effect.flatMap(() => {
-      const activeRules = rules.filter(r => r.application?.mode === 'always')
+      const activeRules = rules.filter((r) => r.application?.mode === 'always')
       return Effect.log(`   ⚡ Active: ${activeRules.length}`)
-    })
+    }),
   )
 
 /**
@@ -189,10 +189,14 @@ const showRules = (rules: Array<{ id: string; description: string; enabled: bool
 const showHealth = (health: { status: string; uptime?: number; errors?: string[] }) =>
   pipe(
     Effect.log(`   ⚙️  Configuration: ${health.configExists ? '✅ OK' : '❌ Missing'}`),
-    Effect.flatMap(() => Effect.log(`   🔐 Secrets: ${health.secretsExists ? '✅ OK' : '⚠️  Not configured'}`)),
+    Effect.flatMap(() =>
+      Effect.log(`   🔐 Secrets: ${health.secretsExists ? '✅ OK' : '⚠️  Not configured'}`)
+    ),
     Effect.flatMap(() => Effect.log(`   📋 Rules: ${health.rulesExists ? '✅ OK' : '❌ Missing'}`)),
-    Effect.flatMap(() => Effect.log(`   💾 Memory: ${health.memoryExists ? '✅ OK' : '❌ Missing'}`)),
-    Effect.flatMap(() => Effect.log(`   📔 Diary: ${health.diaryExists ? '✅ OK' : '❌ Missing'}`))
+    Effect.flatMap(() =>
+      Effect.log(`   💾 Memory: ${health.memoryExists ? '✅ OK' : '❌ Missing'}`)
+    ),
+    Effect.flatMap(() => Effect.log(`   📔 Diary: ${health.diaryExists ? '✅ OK' : '❌ Missing'}`)),
   )
 
 /**
@@ -202,17 +206,23 @@ const showVerboseStats = (projectPath: string) =>
   pipe(
     Effect.log(''),
     Effect.flatMap(() => Effect.log('💾 Memory System:')),
-    Effect.flatMap(() => memoryStatsCommand(projectPath).pipe(
-      Effect.catchAll(() => Effect.log('   ❌ Memory system not available'))
-    )),
+    Effect.flatMap(() =>
+      memoryStatsCommand(projectPath).pipe(
+        Effect.catchAll(() => Effect.log('   ❌ Memory system not available')),
+      )
+    ),
     Effect.flatMap(() => Effect.log('')),
     Effect.flatMap(() => Effect.log('🔍 Search System:')),
-    Effect.flatMap(() => searchStatsCommand(projectPath).pipe(
-      Effect.catchAll(() => Effect.log('   ❌ Search system not available'))
-    )),
+    Effect.flatMap(() =>
+      searchStatsCommand(projectPath).pipe(
+        Effect.catchAll(() => Effect.log('   ❌ Search system not available')),
+      )
+    ),
     Effect.flatMap(() => Effect.log('')),
     Effect.flatMap(() => Effect.log('📔 Diary System:')),
-    Effect.flatMap(() => diaryStatsCommand(projectPath).pipe(
-      Effect.catchAll(() => Effect.log('   ❌ Diary system not available'))
-    ))
+    Effect.flatMap(() =>
+      diaryStatsCommand(projectPath).pipe(
+        Effect.catchAll(() => Effect.log('   ❌ Diary system not available')),
+      )
+    ),
   )

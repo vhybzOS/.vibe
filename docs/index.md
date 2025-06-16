@@ -10,14 +10,14 @@ No more config hell. No more repeating yourself. Just a smarter, more consistent
 
 ### Three Pillars of `.vibe`
 
-*   ### 🎯 **Universal Rules**
-    Write rules once. `.vibe` makes them work everywhere. Your project's context is no longer trapped in a single tool.
+- ### 🎯 **Universal Rules**
+  Write rules once. `.vibe` makes them work everywhere. Your project's context is no longer trapped in a single tool.
 
-*   ### 🤖 **Autonomous Engine**
-    The `.vibe` daemon watches your project, discovers new dependencies, and uses AI to generate coding rules for them automatically. You do nothing.
+- ### 🤖 **Autonomous Engine**
+  The `.vibe` daemon watches your project, discovers new dependencies, and uses AI to generate coding rules for them automatically. You do nothing.
 
-*   ### 🧠 **Persistent Memory**
-    Your AI's context and architectural decisions follow you from your laptop to the cloud and back. It's like a photographic memory that syncs across dimensions.
+- ### 🧠 **Persistent Memory**
+  Your AI's context and architectural decisions follow you from your laptop to the cloud and back. It's like a photographic memory that syncs across dimensions.
 
 ---
 

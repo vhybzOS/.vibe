@@ -25,10 +25,10 @@ const runCommand = (commandEffect: () => Effect.Effect<void, Error, never>) => {
             console.error('Error details:', error)
           }
         }),
-        Effect.flatMap(() => Effect.sync(() => Deno.exit(1)))
+        Effect.flatMap(() => Effect.sync(() => Deno.exit(1))),
       )
     ),
-    Effect.runPromise
+    Effect.runPromise,
   ).catch((unexpectedError) => {
     // Handle any errors that escape the Effect system
     console.error('❌ Unexpected error:', unexpectedError)

@@ -13,7 +13,7 @@ const DAEMON_URL = `http://localhost:${DAEMON_PORT}`
  */
 export const daemonCommand = (
   action: 'start' | 'stop' | 'status' | 'restart' | 'help',
-  options: Record<string, unknown>
+  options: Record<string, unknown>,
 ) =>
   pipe(
     Effect.log(`🔧 Daemon ${action}...`),
@@ -32,7 +32,7 @@ export const daemonCommand = (
         default:
           return Effect.fail(new Error(`Unknown daemon action: ${action}`))
       }
-    })
+    }),
   )
 
 /**
@@ -48,7 +48,7 @@ const checkDaemonStatus = () =>
         }
         return await response.json()
       },
-      catch: () => null
+      catch: () => null,
     }),
     Effect.flatMap((status) => {
       if (status) {
@@ -56,15 +56,15 @@ const checkDaemonStatus = () =>
           Effect.log('✅ Daemon is running'),
           Effect.flatMap(() => Effect.log(`   Port: ${status.port || DAEMON_PORT}`)),
           Effect.flatMap(() => Effect.log(`   PID: ${status.pid || 'unknown'}`)),
-          Effect.flatMap(() => Effect.log(`   Started: ${status.startedAt || 'unknown'}`))
+          Effect.flatMap(() => Effect.log(`   Started: ${status.startedAt || 'unknown'}`)),
         )
       } else {
         return pipe(
           Effect.log('❌ Daemon is not running'),
-          Effect.flatMap(() => Effect.log('   Start with: vibe daemon start'))
+          Effect.flatMap(() => Effect.log('   Start with: vibe daemon start')),
         )
       }
-    })
+    }),
   )
 
 /**
@@ -75,11 +75,11 @@ const stopDaemon = () =>
     Effect.tryPromise({
       try: async () => {
         const response = await fetch(`${DAEMON_URL}/shutdown`, {
-          method: 'POST'
+          method: 'POST',
         })
         return response.ok
       },
-      catch: () => false
+      catch: () => false,
     }),
     Effect.flatMap((stopped) => {
       if (stopped) {
@@ -87,10 +87,10 @@ const stopDaemon = () =>
       } else {
         return pipe(
           Effect.log('⚠️  Could not stop daemon'),
-          Effect.flatMap(() => Effect.log('   It may not be running or may have stopped already'))
+          Effect.flatMap(() => Effect.log('   It may not be running or may have stopped already')),
         )
       }
-    })
+    }),
   )
 
 /**
@@ -101,14 +101,14 @@ const startDaemon = () =>
     Effect.log('🚀 Starting daemon...'),
     Effect.flatMap(() => Effect.log('   Use: deno task daemon')),
     Effect.flatMap(() => Effect.log('   Or: ./vibe-daemon')),
-    Effect.flatMap(() => 
+    Effect.flatMap(() =>
       Effect.tryPromise({
         try: async () => {
           // Check if already running
           const response = await fetch(`${DAEMON_URL}/status`)
           return response.ok
         },
-        catch: () => false
+        catch: () => false,
       })
     ),
     Effect.flatMap((isRunning) => {
@@ -117,10 +117,10 @@ const startDaemon = () =>
       } else {
         return pipe(
           Effect.log('💡 Start the daemon manually:'),
-          Effect.flatMap(() => Effect.log('   deno task daemon'))
+          Effect.flatMap(() => Effect.log('   deno task daemon')),
         )
       }
-    })
+    }),
   )
 
 /**
@@ -131,7 +131,7 @@ const restartDaemon = () =>
     Effect.log('🔄 Restarting daemon...'),
     Effect.flatMap(() => stopDaemon()),
     Effect.flatMap(() => Effect.sleep('1 second')),
-    Effect.flatMap(() => startDaemon())
+    Effect.flatMap(() => startDaemon()),
   )
 
 /**
@@ -150,5 +150,5 @@ const showDaemonHelp = () =>
     Effect.flatMap(() => Effect.log('')),
     Effect.flatMap(() => Effect.log('💡 Manual daemon commands:')),
     Effect.flatMap(() => Effect.log('   deno task daemon     - Start daemon directly')),
-    Effect.flatMap(() => Effect.log('   ./vibe-daemon        - Start compiled daemon'))
+    Effect.flatMap(() => Effect.log('   ./vibe-daemon        - Start compiled daemon')),
   )

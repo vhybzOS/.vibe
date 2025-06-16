@@ -5,11 +5,11 @@
 
 // Re-export manifest parsing functionality
 export {
-  discoverManifests,
   consolidateDependencies,
+  type DetectedDependency,
+  discoverManifests,
   globalManifestRegistry,
   type ManifestParseResult,
-  type DetectedDependency,
 } from './manifests/index.ts'
 
 // Re-export base types for external use

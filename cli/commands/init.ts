@@ -7,7 +7,7 @@ import { readTextFile } from '../../lib/effects.ts'
 
 export const initCommand = (
   projectPath: string,
-  options: { force?: boolean; mcp?: boolean }
+  options: { force?: boolean; mcp?: boolean },
 ) =>
   pipe(
     checkExistingVibe(projectPath, options.force || false),
@@ -20,7 +20,7 @@ export const initCommand = (
     Effect.tap(() => Effect.log('🔍 Starting automatic background discovery of dependencies...')),
     Effect.flatMap(() => startBackgroundDiscovery(projectPath)),
     Effect.tap(() => Effect.log('📚 Run `vibe status` to see progress.')),
-    Effect.tap(() => Effect.log('🚀 Run `vibe daemon` to start the daemon if not running'))
+    Effect.tap(() => Effect.log('🚀 Run `vibe daemon` to start the daemon if not running')),
   )
 
 const checkExistingVibe = (projectPath: string, force: boolean) =>
@@ -29,12 +29,12 @@ const checkExistingVibe = (projectPath: string, force: boolean) =>
       try: () => Deno.stat(resolve(projectPath, '.vibe')),
       catch: () => new Error('No existing .vibe directory'),
     }),
-    Effect.flatMap(() => 
-      force 
+    Effect.flatMap(() =>
+      force
         ? Effect.log('🔄 Overwriting existing .vibe directory...')
         : Effect.fail(new Error('.vibe directory already exists. Use --force to overwrite.'))
     ),
-    Effect.catchAll(() => Effect.succeed(undefined)) // No existing directory is fine
+    Effect.catchAll(() => Effect.succeed(undefined)), // No existing directory is fine
   )
 
 const createVibeDirectory = (projectPath: string) =>
@@ -43,47 +43,48 @@ const createVibeDirectory = (projectPath: string) =>
       try: () => Deno.mkdir(resolve(projectPath, '.vibe'), { recursive: true }),
       catch: () => new Error('Failed to create .vibe directory'),
     }),
-    Effect.tap(() => Effect.log('📁 Created .vibe directory'))
+    Effect.tap(() => Effect.log('📁 Created .vibe directory')),
   )
 
 const detectAndImportExistingConfigs = (projectPath: string) =>
   pipe(
     detectAITools(projectPath),
-    Effect.tap(tools => 
-      tools.length > 0 
-        ? Effect.log(`🔍 Detected ${tools.length} AI tool(s): ${tools.map(t => t.tool).join(', ')}`)
+    Effect.tap((tools) =>
+      tools.length > 0
+        ? Effect.log(
+          `🔍 Detected ${tools.length} AI tool(s): ${tools.map((t) => t.tool).join(', ')}`,
+        )
         : Effect.log('ℹ️  No existing AI tool configurations detected')
     ),
-    Effect.flatMap(tools => 
+    Effect.flatMap((tools) =>
       Effect.all(
-        tools.map(tool => 
-          importExistingToolConfig(projectPath, tool.tool)
-        )
+        tools.map((tool) => importExistingToolConfig(projectPath, tool.tool)),
       )
     ),
-    Effect.map(imported => imported.filter(Boolean))
+    Effect.map((imported) => imported.filter(Boolean)),
   )
 
 const importExistingToolConfig = (projectPath: string, tool: string) =>
   pipe(
     // Future: Import existing tool-specific configurations
     Effect.succeed(null),
-    Effect.catchAll(() => Effect.succeed(null))
+    Effect.catchAll(() => Effect.succeed(null)),
   )
 
 const createDefaultConfig = (projectPath: string) =>
   pipe(
     Effect.sync(() => generateDefaultConfig(projectPath)),
-    Effect.flatMap(config => 
+    Effect.flatMap((config) =>
       Effect.tryPromise({
-        try: () => Deno.writeTextFile(
-          resolve(projectPath, '.vibe', 'config.json'),
-          JSON.stringify(config, null, 2)
-        ),
+        try: () =>
+          Deno.writeTextFile(
+            resolve(projectPath, '.vibe', 'config.json'),
+            JSON.stringify(config, null, 2),
+          ),
         catch: () => new Error('Failed to write config file'),
       })
     ),
-    Effect.tap(() => Effect.log('⚙️  Created default configuration'))
+    Effect.tap(() => Effect.log('⚙️  Created default configuration')),
   )
 
 const createInitialDirectories = (projectPath: string) =>
@@ -95,7 +96,7 @@ const createInitialDirectories = (projectPath: string) =>
       createDirectory(projectPath, '.vibe/diary'),
       createDirectory(projectPath, '.vibe/dependencies'),
     ]),
-    Effect.tap(() => Effect.log('📂 Created directory structure'))
+    Effect.tap(() => Effect.log('📂 Created directory structure')),
   )
 
 const createDirectory = (projectPath: string, dirPath: string) =>
@@ -106,32 +107,37 @@ const createDirectory = (projectPath: string, dirPath: string) =>
 
 const bootstrapProjectSecrets = (projectPath: string) => {
   const ENV_MAPPING: Record<string, 'llm' | 'github'> = {
-    'OPENAI_API_KEY': 'llm', 'ANTHROPIC_API_KEY': 'llm', 'GOOGLE_API_KEY': 'llm', 'COHERE_API_KEY': 'llm',
-    'GITHUB_TOKEN': 'github'
-  };
+    'OPENAI_API_KEY': 'llm',
+    'ANTHROPIC_API_KEY': 'llm',
+    'GOOGLE_API_KEY': 'llm',
+    'COHERE_API_KEY': 'llm',
+    'GITHUB_TOKEN': 'github',
+  }
 
   return pipe(
     readTextFile(resolve(projectPath, '.env')),
-    Effect.map(content => {
-      const secretsToSet: Effect.Effect<void, Error, never>[] = [];
+    Effect.map((content) => {
+      const secretsToSet: Effect.Effect<void, Error, never>[] = []
       for (const line of content.split('\n')) {
-        if (!line.trim() || line.startsWith('#') || !line.includes('=')) continue;
-        const [key, ...valueParts] = line.split('=');
-        if (!key) continue;
-        const value = valueParts.join('=').trim().replace(/^['"]|['"]$/g, '');
+        if (!line.trim() || line.startsWith('#') || !line.includes('=')) continue
+        const [key, ...valueParts] = line.split('=')
+        if (!key) continue
+        const value = valueParts.join('=').trim().replace(/^['"]|['"]$/g, '')
         if (ENV_MAPPING[key] === 'llm' && value) {
-          secretsToSet.push(setSecretAndInferProvider(value, projectPath));
+          secretsToSet.push(setSecretAndInferProvider(value, projectPath))
         } else if (ENV_MAPPING[key] === 'github' && value) {
-          secretsToSet.push(setSecret('github', value, projectPath));
+          secretsToSet.push(setSecret('github', value, projectPath))
         }
       }
-      return secretsToSet;
+      return secretsToSet
     }),
-    Effect.flatMap(effects => Effect.all(effects, { discard: true, concurrency: 'unbounded' })),
-    Effect.tap(() => Effect.log('✨ Bootstrapped secrets from project .env file into ./.vibe/secrets.json')),
-    Effect.catchAll(() => Effect.succeed(void 0)) // Gracefully ignore if .env doesn't exist or fails to parse
-  );
-};
+    Effect.flatMap((effects) => Effect.all(effects, { discard: true, concurrency: 'unbounded' })),
+    Effect.tap(() =>
+      Effect.log('✨ Bootstrapped secrets from project .env file into ./.vibe/secrets.json')
+    ),
+    Effect.catchAll(() => Effect.succeed(void 0)), // Gracefully ignore if .env doesn't exist or fails to parse
+  )
+}
 
 const startBackgroundDiscovery = (projectPath: string) =>
   Effect.tryPromise({
@@ -142,17 +148,17 @@ const startBackgroundDiscovery = (projectPath: string) =>
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectPath }),
         signal: AbortSignal.timeout(2000), // Short timeout, daemon will continue regardless
-      }).catch(err => {
+      }).catch((err) => {
         // Silently ignore errors (e.g., daemon not running).
         // The user can always run `vibe discover` manually.
         if (Deno.env.get('VIBE_DEBUG')) {
-            console.warn(`Could not start background discovery: ${err.message}`);
+          console.warn(`Could not start background discovery: ${err.message}`)
         }
-      });
-      return;
+      })
+      return
     },
     catch: () => new Error('Failed to dispatch background discovery request.'),
-  });
+  })
 
 const generateDefaultConfig = (projectPath: string): VibeConfig => ({
   project: {

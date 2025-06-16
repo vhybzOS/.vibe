@@ -5,6 +5,9 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
+import { loadMemories } from '../../memory/index.ts'
+import { getTimeline } from '../../diary/index.ts'
+import { loadRules } from '../../rules/index.ts'
 
 /**
  * Export command that exports .vibe data to AgentFile format
@@ -60,29 +63,44 @@ const performExport = (
  * Collect .vibe data
  */
 const collectVibeData = (projectPath: string) =>
-  Effect.sync(() => {
-    // In a real implementation, this would:
-    // - Load all rules from .vibe/rules/
-    // - Load memory entries from .vibe/memory/
-    // - Load diary entries from .vibe/diary/
-    // - Load configuration from .vibe/config.json
-    
-    const projectName = projectPath.split('/').pop() || 'unknown'
-    
-    return {
-      project: {
-        name: projectName,
-        path: projectPath,
-        exportedAt: new Date().toISOString()
-      },
-      rules: [],
-      memory: [],
-      diary: [],
-      config: {
-        version: '1.0.0',
-        tools: []
-      }
-    }
+  pipe(
+    Effect.sync(() => ({
+      projectName: projectPath.split('/').pop() || 'unknown',
+      vibePath: resolve(projectPath, '.vibe')
+    })),
+    Effect.flatMap(({ projectName, vibePath }) =>
+      Effect.all([
+        loadRules(vibePath).pipe(Effect.catchAll(() => Effect.succeed([]))),
+        loadMemories(projectPath).pipe(Effect.catchAll(() => Effect.succeed([]))),
+        getTimeline(projectPath).pipe(Effect.catchAll(() => Effect.succeed([]))),
+        loadConfig(vibePath).pipe(Effect.catchAll(() => Effect.succeed({ version: '1.0.0', tools: [] })))
+      ]).pipe(
+        Effect.map(([rules, memory, diary, config]) => ({
+          project: {
+            name: projectName,
+            path: projectPath,
+            exportedAt: new Date().toISOString()
+          },
+          rules,
+          memory,
+          diary,
+          config
+        }))
+      )
+    )
+  )
+
+/**
+ * Load configuration file
+ */
+const loadConfig = (vibePath: string) =>
+  Effect.tryPromise({
+    try: async () => {
+      const configPath = resolve(vibePath, 'config.json')
+      const content = await Deno.readTextFile(configPath)
+      return JSON.parse(content)
+    },
+    catch: () => ({ version: '1.0.0', tools: [] })
   })
 
 /**
@@ -106,6 +124,14 @@ const formatExportData = (data: any, options: { format?: string }) =>
           agentfile_version: '1.0',
           name: data.project.name,
           memory: data.memory,
+          exported: data.project.exportedAt
+        }
+      
+      case 'diary-only':
+        return {
+          agentfile_version: '1.0',
+          name: data.project.name,
+          diary: data.diary,
           exported: data.project.exportedAt
         }
       

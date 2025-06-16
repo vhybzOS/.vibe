@@ -38,10 +38,17 @@ describe('📔 Diary System', () => {
     testDir = await Deno.makeTempDir({ prefix: 'vibe_diary_test_' })
     diaryPath = resolve(testDir, '.vibe')
     await Deno.mkdir(diaryPath, { recursive: true })
+    
+    // Clear any existing search index to avoid conflicts
+    const { clearIndex } = await import('../../search/index.ts')
+    await Effect.runPromise(clearIndex(testDir))
   })
 
   afterEach(async () => {
     try {
+      // Clear search index before cleanup
+      const { clearIndex } = await import('../../search/index.ts')
+      await Effect.runPromise(clearIndex(testDir))
       await Deno.remove(testDir, { recursive: true })
     } catch {
       // Ignore cleanup errors
@@ -187,7 +194,7 @@ describe('📔 Diary System', () => {
 
     it('should search by title and content', async () => {
       const results = await Effect.runPromise(searchDiary(testDir, {
-        query: 'Effect-TS',
+        query: 'async handling',
         limit: 10
       }))
       
@@ -198,6 +205,7 @@ describe('📔 Diary System', () => {
 
     it('should filter by category', async () => {
       const results = await Effect.runPromise(searchDiary(testDir, {
+        query: 'decision',
         category: 'architecture',
         limit: 10
       }))
@@ -209,6 +217,7 @@ describe('📔 Diary System', () => {
 
     it('should filter by tags', async () => {
       const results = await Effect.runPromise(searchDiary(testDir, {
+        query: 'decision',
         tags: ['migration'],
         limit: 10
       }))
@@ -224,6 +233,7 @@ describe('📔 Diary System', () => {
       const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
       
       const results = await Effect.runPromise(searchDiary(testDir, {
+        query: 'decision',
         dateRange: {
           from: oneHourAgo.toISOString(),
           to: now.toISOString()

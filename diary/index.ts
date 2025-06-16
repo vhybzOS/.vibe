@@ -132,9 +132,15 @@ export const searchDiary = (
     }),
     Effect.flatMap(response => 
       pipe(
-        Effect.all(
-          response.results.map(result => 
-            loadEntryFromId(vibePath, result.document.id)
+        // Filter results by relevance score first - lower threshold for filter-only searches
+        Effect.sync(() => response.results.filter(result => 
+          query.query ? result.score >= 0.5 : result.score >= 0.1
+        )),
+        Effect.flatMap(filteredResults =>
+          Effect.all(
+            filteredResults.map(result => 
+              loadEntryFromId(vibePath, result.document.id)
+            )
           )
         ),
         Effect.map(entries => entries.filter((entry): entry is DiaryEntry => entry !== null))
@@ -444,11 +450,13 @@ const analyzeConversationForDecision = (conversationData: ConversationData): Dia
   const decisionPatterns = [
     /should we/i,
     /decided to/i,
-    /migration to/i,
+    /migration/i,
+    /migrate/i,
     /switch to/i,
     /use.*instead/i,
     /better to/i,
-    /recommend/i
+    /recommend/i,
+    /yes.*effect-ts/i
   ]
   
   const hasDecisionPattern = decisionPatterns.some(pattern => 

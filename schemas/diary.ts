@@ -75,6 +75,20 @@ export const DiaryEntrySchema = z.object({
 })
 
 /**
+ * Schema for diary search queries
+ */
+export const DiarySearchQuerySchema = z.object({
+  query: z.string().optional(),
+  category: z.enum(DIARY_CATEGORIES).optional(),
+  tags: z.array(z.string()).optional(),
+  dateRange: z.object({
+    from: z.string(),
+    to: z.string(),
+  }).optional(),
+  limit: z.number().default(10),
+})
+
+/**
  * TypeScript types derived from schemas
  */
 export type Alternative = z.output<typeof AlternativeSchema>
@@ -82,3 +96,4 @@ export type Problem = z.output<typeof ProblemSchema>
 export type Decision = z.output<typeof DecisionSchema>
 export type Impact = z.output<typeof ImpactSchema>
 export type DiaryEntry = z.output<typeof DiaryEntrySchema>
+export type DiarySearchQuery = z.output<typeof DiarySearchQuerySchema>

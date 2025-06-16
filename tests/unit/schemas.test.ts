@@ -177,63 +177,26 @@ describe('📋 Schema Unit Tests', () => {
       const diaryEntry = {
         id: crypto.randomUUID(),
         timestamp: '2024-01-01T00:00:00.000Z',
-        context: {
-          sessionId: crypto.randomUUID(),
-          participants: ['user', 'assistant'],
-          topic: 'architecture',
-          tool: 'cursor',
-          projectPath: '/test/project',
-        },
+        title: 'Migration to Effect-TS',
+        category: 'architecture',
+        tags: ['effect-ts', 'migration'],
         problem: {
-          description: 'How to structure components',
-          domain: 'architecture',
-          complexity: 'moderate',
-          urgency: 'medium',
-          scope: 'component',
-        },
-        exploration: {
-          options: [{
-            name: 'Folder structure',
-            description: 'Organize by folders',
-            pros: ['Clear separation'],
-            cons: ['More nesting'],
-          }],
-          considerations: ['Maintainability'],
-          constraints: ['Team preferences'],
-          assumptions: ['TypeScript usage'],
+          description: 'Need better async error handling',
+          context: 'Current Promise-based code is hard to compose',
+          constraints: ['Must maintain backward compatibility']
         },
         decision: {
-          chosen: 'Folder structure',
-          rationale: 'Better organization',
-          confidence: 'high',
-          reversibility: 'easy',
-          impact: {
-            scope: 'local',
-            timeframe: 'short-term',
-            risk: 'low',
-          },
+          chosen: 'Migrate to Effect-TS for all async operations',
+          rationale: 'Effect-TS provides better error handling',
+          alternatives: [
+            { option: 'Stay with Promises', reason: 'Simpler but lacks composability' }
+          ]
         },
-        implementation: {
-          notes: 'Start with components folder',
-          followUpActions: ['Create folder structure'],
-          risks: ['Initial setup time'],
-          successCriteria: ['Clear organization'],
-          dependencies: [],
-        },
-        relationships: {
-          relatedDecisions: [],
-          supersedes: [],
-          influences: [],
-          influencedBy: [],
-        },
-        metadata: {
-          tags: ['architecture', 'components'],
-          source: 'conversation',
-          extractionConfidence: 0.9,
-          lastUpdated: '2024-01-01T00:00:00.000Z',
-          archived: false,
-          starred: false,
-        },
+        impact: {
+          benefits: ['Better error handling'],
+          risks: ['Learning curve for team'],
+          migrationNotes: 'Start with core modules'
+        }
       }
 
       const result = DiaryEntrySchema.safeParse(diaryEntry)
@@ -435,11 +398,10 @@ describe('📋 Schema Unit Tests', () => {
       assert(toolResult.success, 'Tool type should be valid in AIToolConfig')
       
       // Should be valid in DiaryEntrySchema context
-      const contextConfig = { tool: toolType }
-      const contextResult = DiaryEntrySchema
-        .pick({ context: true })
-        .safeParse({ context: { ...contextConfig, sessionId: 'test', participants: [], topic: 'test' } })
-      assert(contextResult.success, 'Tool type should be valid in DiaryEntry context')
+      const categoryResult = DiaryEntrySchema
+        .pick({ category: true })
+        .safeParse({ category: 'architecture' })
+      assert(categoryResult.success, 'Category should be valid in DiaryEntry context')
     })
 
     it('📊 should handle z.output types correctly', () => {

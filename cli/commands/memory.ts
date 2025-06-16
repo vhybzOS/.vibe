@@ -78,17 +78,17 @@ export const searchMemoryCommand = (
   pipe(
     Effect.log(`🔍 Searching memories for: "${query}"`),
     Effect.flatMap(() => {
-      const searchQuery = {
+      const searchQuery = MemoryQuerySchema.parse({
         query,
-        type: options.type || [],
-        tags: options.tags || [],
-        tool: options.tool || [],
-        importance: options.importance || [],
-        timeRange: options.timeRange || {},
+        type: options.type,
+        tags: options.tags,
+        tool: options.tool,
+        importance: options.importance,
+        timeRange: options.timeRange,
         limit: options.limit || 10,
         threshold: options.threshold || 0.1,
         includeArchived: false
-      }
+      })
       
       return searchMemory(projectPath, searchQuery)
     }),
@@ -129,7 +129,7 @@ export const getMemoryCommand = (
       if (!memory) {
         return pipe(
           Effect.log(`❌ Memory not found: ${memoryId}`),
-          Effect.fail(new Error('Memory not found'))
+          Effect.flatMap(() => Effect.fail(new Error('Memory not found')))
         )
       }
       
@@ -228,7 +228,7 @@ export const deleteMemoryCommand = (
         return pipe(
           Effect.log('⚠️  Are you sure? This cannot be undone.'),
           Effect.log('   Use --force flag to confirm deletion.'),
-          Effect.fail(new Error('Deletion cancelled - use --force flag'))
+          Effect.flatMap(() => Effect.fail(new Error('Deletion cancelled - use --force flag')))
         )
       }
       
@@ -240,7 +240,7 @@ export const deleteMemoryCommand = (
       } else {
         return pipe(
           Effect.log('❌ Memory not found or could not be deleted'),
-          Effect.fail(new Error('Memory deletion failed'))
+          Effect.flatMap(() => Effect.fail(new Error('Memory deletion failed')))
         )
       }
     })

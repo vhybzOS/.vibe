@@ -118,6 +118,7 @@ const bootstrapProjectSecrets = (projectPath: string) => {
       for (const line of content.split('\n')) {
         if (!line.trim() || line.startsWith('#') || !line.includes('=')) continue;
         const [key, ...valueParts] = line.split('=');
+        if (!key) continue;
         const value = valueParts.join('=').trim().replace(/^['"]|['"]$/g, '');
         if (ENV_MAPPING[key] === 'llm' && value) {
           secretsToSet.push(setSecretAndInferProvider(value, projectPath));
@@ -210,5 +211,13 @@ const generateDefaultConfig = (projectPath: string): VibeConfig => ({
     dependencies: 'dependencies',
     config: 'config',
   },
-  integrations: {},
+  integrations: {
+    cursor: { enabled: false, syncStrategy: 'merge' },
+    windsurf: { enabled: false, syncStrategy: 'merge' },
+    claude: { enabled: false, syncStrategy: 'merge' },
+    copilot: { enabled: false, syncStrategy: 'merge' },
+    codeium: { enabled: false, syncStrategy: 'merge' },
+    cody: { enabled: false, syncStrategy: 'merge' },
+    tabnine: { enabled: false, syncStrategy: 'merge' },
+  },
 })

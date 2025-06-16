@@ -1,6 +1,6 @@
 import { z } from 'zod/v4'
 import { UniversalRuleSchema } from './universal-rule.ts'
-import { DiaryEntrySchema } from './diary-entry.ts'
+import { DiaryEntrySchema } from './diary.ts'
 import { DependencyDocSchema } from './dependency-doc.ts'
 import { MemorySchema } from './memory.ts'
 

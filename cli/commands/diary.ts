@@ -17,7 +17,7 @@ import {
   type TimelineRange,
   type DiaryEntryUpdate
 } from '../../diary/index.ts'
-import { type DiaryCategory, DIARY_CATEGORIES } from '../../schemas/diary.ts'
+import { type DiaryCategory, DIARY_CATEGORIES, DiarySearchQuerySchema } from '../../schemas/diary.ts'
 
 /**
  * Add diary entry command - creates new architectural decision entry
@@ -97,9 +97,9 @@ export const searchDiaryCommand = (
     Effect.log(`🔍 Searching diary for: "${query}"`),
     Effect.flatMap(() => {
       const searchQuery: DiarySearchQuery = {
-        query,
-        category: options.category as DiaryCategory,
-        tags: options.tags || undefined,
+        query: query || undefined,
+        category: options.category,
+        tags: options.tags,
         dateRange: (options.since || options.until) ? {
           from: options.since || new Date(0).toISOString(),
           to: options.until || new Date().toISOString()

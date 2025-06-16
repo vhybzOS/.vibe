@@ -1,5 +1,5 @@
 export * from './universal-rule.ts'
-export * from './diary-entry.ts'
+export * from './diary.ts'
 export * from './dependency-doc.ts'
 export * from './ai-tool-config.ts'
 export * from './agent-file.ts'

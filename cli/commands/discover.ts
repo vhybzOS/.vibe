@@ -27,7 +27,7 @@ export const discoverCommand = (
       pipe(
         Effect.log('❌ Discovery failed:'),
         Effect.flatMap(() => Effect.log(`   ${error instanceof Error ? error.message : 'Unknown error'}`)),
-        Effect.fail(error)
+        Effect.flatMap(() => Effect.fail(error))
       )
     )
   )

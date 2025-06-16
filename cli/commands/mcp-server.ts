@@ -1,7 +1,7 @@
 import { Effect, pipe } from 'effect'
 
 export const mcpServerCommand = (
-  _options: { port: string; host: string }
+  options: { port: string; host: string }
 ) =>
   pipe(
     Effect.log('🚀 Starting .vibe MCP server...'),
@@ -35,13 +35,9 @@ export const mcpServerCommand = (
     Effect.flatMap(() => waitForever())
   )
 
-const startMcpServer = async (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    // Import and start the MCP server
-    import('../../mcp-server/index.js')
-      .then(() => resolve())
-      .catch(reject)
-  })
+const startMcpServer = async () => {
+  // Import and start the MCP server
+  await import('../../mcp-server/index.js')
 }
 
 const waitForever = () =>

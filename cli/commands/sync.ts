@@ -120,8 +120,8 @@ const performToolSync = (
  * Sync a single tool
  */
 const syncSingleTool = (
-  tool: any,
-  rules: any[],
+  tool: { type: string; name: string; configPath?: string },
+  rules: Array<{ id: string; description: string; enabled: boolean }>,
   options: { dryRun?: boolean; force?: boolean }
 ) =>
   Effect.sync(() => {
@@ -153,7 +153,7 @@ const syncSingleTool = (
  * Show sync results
  */
 const showSyncResults = (
-  results: any[],
+  results: Array<{ tool: string; status: string; changes?: number }>,
   options: { dryRun?: boolean; force?: boolean }
 ) =>
   pipe(

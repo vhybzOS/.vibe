@@ -154,7 +154,7 @@ const formatExportData = (data: { rules?: Array<{ id: string; description: strin
  * Write export file
  */
 const writeExportFile = (
-  data: any,
+  data: { rules?: unknown[]; memory?: unknown[]; diary?: unknown[]; config?: unknown },
   projectPath: string,
   options: { output?: string }
 ) =>
@@ -172,7 +172,7 @@ const writeExportFile = (
 /**
  * Show export results
  */
-const showExportResults = (outputPath: string, options: any) =>
+const showExportResults = (outputPath: string, options: { format?: string }) =>
   pipe(
     Effect.log(''),
     Effect.flatMap(() => Effect.log('📊 Export Results:')),

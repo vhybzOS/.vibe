@@ -30,7 +30,7 @@ const DUMMY_DISCOVERY_RESPONSE = {
     status: 'running',
 };
 
-const handler = async (req: Request): Promise<Response> => {
+const handler = (req: Request): Response => {
   const url = new URL(req.url);
   latestRequest.pathname = url.pathname;
   latestRequest.method = req.method;

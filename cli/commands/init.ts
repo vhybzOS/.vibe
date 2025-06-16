@@ -64,7 +64,7 @@ const detectAndImportExistingConfigs = (projectPath: string) =>
     Effect.map(imported => imported.filter(Boolean))
   )
 
-const importExistingToolConfig = (_projectPath: string, _tool: string) =>
+const importExistingToolConfig = (projectPath: string, tool: string) =>
   pipe(
     // Try to find and import existing config files
     Effect.succeed(null), // Simplified - would actually import real configs
@@ -113,7 +113,7 @@ const bootstrapProjectSecrets = (projectPath: string) => {
   return pipe(
     readTextFile(resolve(projectPath, '.env')),
     Effect.map(content => {
-      const secretsToSet: Effect.Effect<void, Error | any>[] = [];
+      const secretsToSet: Effect.Effect<void, Error, never>[] = [];
       for (const line of content.split('\n')) {
         if (!line.trim() || line.startsWith('#') || !line.includes('=')) continue;
         const [key, ...valueParts] = line.split('=');

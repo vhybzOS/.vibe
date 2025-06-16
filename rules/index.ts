@@ -90,7 +90,7 @@ const analyzeProjectPatterns = (projectPath: string) =>
 /**
  * Simplified codebase structure analysis
  */
-const analyzeCodebaseStructure = (_projectPath: string) => {
+const analyzeCodebaseStructure = (projectPath: string) => {
   // In a real implementation, this would use AST analysis
   return {
     languages: ['typescript', 'javascript'],

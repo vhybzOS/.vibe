@@ -152,7 +152,7 @@ const showGenerationResults = (rules: Array<{ id: string; description: string; t
 /**
  * Display generated rules
  */
-const showGeneratedRules = (rules: any[]) =>
+const showGeneratedRules = (rules: Array<{ id: string; description: string; type: string }>) =>
   pipe(
     Effect.all(rules.map((rule, index) =>
       pipe(

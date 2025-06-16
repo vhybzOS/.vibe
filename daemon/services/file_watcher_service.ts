@@ -66,6 +66,16 @@ export interface WatcherEvent {
 }
 
 /**
+ * Starts a file watcher with the given configuration
+ */
+export const startFileWatcher = (config: WatcherConfig) =>
+  pipe(
+    Effect.sync(() => new FileWatcherService(config)),
+    Effect.flatMap(watcher => watcher.start()),
+    Effect.tap(() => Effect.log(`✅ File watcher started for ${config.projectPath}`))
+  )
+
+/**
  * File watcher service (placeholder implementation)
  * In a full implementation, this would use chokidar or similar
  */

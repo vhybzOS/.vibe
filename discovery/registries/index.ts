@@ -4,23 +4,26 @@
  */
 
 import { Effect, pipe } from 'effect'
-import { VibeError } from '../../lib/effects.ts'
+import type { VibeError } from '../../lib/errors.ts'
 import {
   RegistryFetcherRegistry,
   RegistryFetchResult,
   PackageMetadata,
   DiscoveredRule,
-  globalRegistryFetcher,
+  registerFetcher,
+  getFetcherForPackage,
+  createRegistryFetcherRegistry,
 } from './base.ts'
 import { NpmRegistryFetcher } from './npm.ts'
 import type { DetectedDependency } from '../manifests/index.ts'
 
-// Auto-register all fetchers
-globalRegistryFetcher.register(new NpmRegistryFetcher())
+// Create and configure the global registry
+let globalRegistryFetcher = createRegistryFetcherRegistry()
+globalRegistryFetcher = registerFetcher(globalRegistryFetcher, new NpmRegistryFetcher())
 
 // TODO: Add more fetchers as needed
-// globalRegistryFetcher.register(new PypiRegistryFetcher())
-// globalRegistryFetcher.register(new CargoRegistryFetcher())
+// globalRegistryFetcher = registerFetcher(globalRegistryFetcher, new PypiRegistryFetcher())
+// globalRegistryFetcher = registerFetcher(globalRegistryFetcher, new CargoRegistryFetcher())
 
 /**
  * Fetches metadata and discovers rules for a single dependency
@@ -31,7 +34,7 @@ export const discoverDependencyRules = (dependency: DetectedDependency) =>
     Effect.flatMap(() => {
       // Determine package type from dependency source
       const packageType = determinePackageType(dependency)
-      const fetcher = globalRegistryFetcher.getFetcherForPackage(dependency.name, packageType)
+      const fetcher = getFetcherForPackage(globalRegistryFetcher, dependency.name, packageType)
       
       if (!fetcher) {
         return Effect.succeed({

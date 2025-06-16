@@ -1,227 +1,340 @@
 /**
- * Diary management system for architectural decisions
- * Stores and retrieves decision diary entries with semantic search
+ * Diary System - Clean, functional implementation using Effect-TS
+ * Captures and searches architectural decisions and project evolution
  */
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { DiaryEntry, DiaryEntrySchema } from '../schemas/diary.ts'
-import { initializeSearch, insertDocument, searchDocuments, SearchDocument } from '../search/index.ts'
-import { readJSONFile, writeJSONFile, listFiles, readTextFile, writeTextFile } from '../lib/fs.ts'
-import { logWithContext, VibeError } from '../lib/effects.ts'
+import { 
+  DiaryEntry, 
+  DiaryEntrySchema,
+  type Problem,
+  type Decision,
+  type Impact,
+  type DiaryCategory,
+  DIARY_CATEGORIES
+} from '../schemas/diary.ts'
+import { 
+  initializeSearch, 
+  insertDocument, 
+  searchDocuments, 
+  type SearchDocument 
+} from '../search/index.ts'
+import { createFileSystemError, createParseError, type VibeError } from '../lib/errors.ts'
 
 /**
- * Search query for diary entries
+ * Interface for diary entry creation input
  */
-export interface DiarySearchQuery {
-  query: string
-  tags?: string[]
-  category?: string
-  dateRange?: {
-    from?: string
-    to?: string
-  }
-  limit?: number
-  offset?: number
-  threshold?: number
+export interface DiaryEntryInput {
+  title: string
+  category: DiaryCategory
+  tags: string[]
+  problem: Problem
+  decision: Decision
+  impact: Impact
 }
 
 /**
- * Stores a diary entry with automatic indexing
+ * Interface for diary entry updates
  */
-export const storeDiaryEntry = (
+export interface DiaryEntryUpdate {
+  title?: string
+  category?: DiaryCategory
+  tags?: string[]
+  problem?: Partial<Problem>
+  decision?: Partial<Decision>
+  impact?: Partial<Impact>
+}
+
+/**
+ * Interface for diary search query
+ */
+export interface DiarySearchQuery {
+  query?: string
+  category?: DiaryCategory
+  tags?: string[]
+  dateRange?: {
+    from: string
+    to: string
+  }
+  limit: number
+}
+
+/**
+ * Interface for timeline date range
+ */
+export interface TimelineRange {
+  from: string
+  to: string
+}
+
+/**
+ * Interface for conversation data for auto-capture
+ */
+export interface ConversationData {
+  sessionId: string
+  tool: string
+  messages: Array<{
+    role: 'user' | 'assistant'
+    content: string
+  }>
+  timestamp: string
+  projectPath: string
+}
+
+/**
+ * Creates a new diary entry with complete structure
+ */
+export const createEntry = (
   vibePath: string,
-  entry: Omit<DiaryEntry, 'id' | 'timestamp'>
+  entryInput: DiaryEntryInput
 ) =>
   pipe(
-    Effect.sync(() => createDiaryEntry(entry)),
-    Effect.flatMap(diaryEntry => 
+    Effect.sync(() => createDiaryEntry(entryInput, vibePath)),
+    Effect.flatMap(entry => 
       pipe(
-        saveDiaryToFile(vibePath, diaryEntry),
-        Effect.flatMap(() => indexDiaryEntry(vibePath, diaryEntry)),
-        Effect.flatMap(() => updateMainDiaryFile(vibePath, diaryEntry)),
-        Effect.map(() => diaryEntry)
+        validateDiaryEntry(entry),
+        Effect.flatMap(() => saveEntryToFile(vibePath, entry)),
+        Effect.flatMap(() => indexDiaryEntry(vibePath, entry)),
+        Effect.map(() => entry)
       )
-    ),
-    Effect.map(entry => ({
-      id: entry.id,
-      success: true,
-      timestamp: entry.timestamp,
-    })),
-    Effect.tap(() => logWithContext('Diary', 'Diary entry stored and indexed'))
+    )
   )
 
 /**
- * Searches diary entries using semantic search
+ * Searches diary entries using the search system
  */
 export const searchDiary = (
   vibePath: string,
   query: DiarySearchQuery
 ) =>
   pipe(
-    initializeSearch(resolve(vibePath, '..')),
+    initializeSearch(vibePath),
     Effect.flatMap(() => {
+      // Convert DiarySearchQuery to SearchQuery format
       const searchQuery = {
-        term: query.query,
+        term: query.query || '',
         filters: {
           doc_type: 'diary' as const,
-          tags: query.tags?.length ? query.tags : undefined,
+          tags: query.tags && query.tags.length > 0 ? query.tags : undefined,
           date_range: query.dateRange ? {
-            start: query.dateRange.from ? new Date(query.dateRange.from).getTime() : undefined,
-            end: query.dateRange.to ? new Date(query.dateRange.to).getTime() : undefined,
+            start: new Date(query.dateRange.from).getTime(),
+            end: new Date(query.dateRange.to).getTime(),
           } : undefined,
-          category: query.category,
+          category: query.category || undefined,
         },
-        mode: 'hybrid' as const,
-        limit: query.limit || 10,
-        offset: query.offset || 0,
+        mode: 'keyword' as const,
+        limit: query.limit || 20,
+        offset: 0,
       }
       
       return searchDocuments(searchQuery)
     }),
-    Effect.map(response => 
-      response.results
-        .filter(result => result.score >= (query.threshold || 0.1))
-        .map(result => convertDocumentToDiaryEntry(result.document))
-    ),
-    Effect.tap(results => logWithContext('Diary', `Found ${results.length} matching diary entries`))
+    Effect.flatMap(response => 
+      pipe(
+        Effect.all(
+          response.results.map(result => 
+            loadEntryFromId(vibePath, result.document.id)
+          )
+        ),
+        Effect.map(entries => entries.filter((entry): entry is DiaryEntry => entry !== null))
+      )
+    )
   )
 
 /**
- * Loads all diary entries from files
+ * Gets timeline entries in chronological order
  */
-export const loadDiaryEntries = (vibePath: string) =>
+export const getTimeline = (
+  vibePath: string,
+  dateRange?: TimelineRange
+) =>
   pipe(
-    listFiles(resolve(vibePath, 'diary', 'entries'), entry => entry.name.endsWith('.json')),
-    Effect.flatMap(entryFiles => 
-      Effect.all(entryFiles.map(loadSingleDiaryEntry))
-    ),
-    Effect.map(entries => entries.filter((entry): entry is DiaryEntry => entry !== null)),
-    Effect.tap(entries => logWithContext('Diary', `Loaded ${entries.length} diary entries from files`)),
-    Effect.catchAll(() => Effect.succeed([] as DiaryEntry[]))
-  )
-
-/**
- * Gets the main diary file content
- */
-export const getMainDiary = (vibePath: string) =>
-  pipe(
-    readTextFile(resolve(vibePath, 'diary', 'DIARY.txt')),
-    Effect.catchAll(() => Effect.succeed('# Architectural Decision Diary\n\nNo entries yet.\n'))
-  )
-
-/**
- * Creates a diary entry with metadata
- */
-const createDiaryEntry = (entry: Omit<DiaryEntry, 'id' | 'timestamp'>): DiaryEntry => {
-  const now = new Date().toISOString()
-  
-  return {
-    id: crypto.randomUUID(),
-    timestamp: now,
-    ...entry,
-  }
-}
-
-/**
- * Saves diary entry to individual JSON file
- */
-const saveDiaryToFile = (vibePath: string, entry: DiaryEntry) =>
-  pipe(
-    Effect.sync(() => {
-      const fileName = `${entry.timestamp.split('T')[0]}-${entry.id.slice(0, 8)}.json`
-      return resolve(vibePath, 'diary', 'entries', fileName)
-    }),
-    Effect.flatMap(filePath => writeJSONFile(filePath, entry))
-  )
-
-/**
- * Updates the main DIARY.txt file with the new entry
- */
-const updateMainDiaryFile = (vibePath: string, entry: DiaryEntry) =>
-  pipe(
-    getMainDiary(vibePath),
-    Effect.flatMap(currentContent => {
-      const dateStr = new Date(entry.timestamp).toLocaleDateString()
-      const timeStr = new Date(entry.timestamp).toLocaleTimeString()
+    loadAllEntries(vibePath),
+    Effect.map(entries => {
+      let filteredEntries = entries
       
-      const newEntry = `
-## ${entry.title} (${dateStr} at ${timeStr})
-
-**Category:** ${entry.category}
-**Tags:** ${entry.tags.join(', ')}
-
-### Problem
-${entry.problem.description}
-
-**Context:**
-${entry.problem.context}
-
-**Constraints:**
-${entry.problem.constraints.map(c => `- ${c}`).join('\n')}
-
-### Decision
-**Chosen Solution:** ${entry.decision.chosen}
-
-**Rationale:**
-${entry.decision.rationale}
-
-**Alternatives Considered:**
-${entry.decision.alternatives.map(alt => `- **${alt.option}**: ${alt.reason}`).join('\n')}
-
-### Impact
-**Benefits:**
-${entry.impact.benefits.map(b => `- ${b}`).join('\n')}
-
-**Risks:**
-${entry.impact.risks.map(r => `- ${r}`).join('\n')}
-
-**Migration Notes:**
-${entry.impact.migrationNotes || 'No migration required'}
-
----
-`
-      
-      // Insert at the top, after the header
-      const lines = currentContent.split('\n')
-      const headerEnd = lines.findIndex(line => line.startsWith('##') || line.startsWith('No entries yet'))
-      
-      if (headerEnd === -1) {
-        // No existing entries, add after header
-        const insertPoint = lines.findIndex(line => line.includes('No entries yet'))
-        if (insertPoint !== -1) {
-          lines.splice(insertPoint, 1, newEntry.trim())
-        } else {
-          lines.push(newEntry.trim())
-        }
-      } else {
-        // Insert at the beginning of entries
-        lines.splice(headerEnd, 0, newEntry.trim())
+      // Apply date range filter if provided
+      if (dateRange) {
+        const fromTime = new Date(dateRange.from).getTime()
+        const toTime = new Date(dateRange.to).getTime()
+        
+        filteredEntries = entries.filter(entry => {
+          const entryTime = new Date(entry.timestamp).getTime()
+          return entryTime >= fromTime && entryTime <= toTime
+        })
       }
       
-      return writeTextFile(resolve(vibePath, 'diary', 'DIARY.txt'), lines.join('\n'))
+      // Sort by timestamp (newest first)
+      return filteredEntries.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      )
     })
   )
 
 /**
- * Indexes diary entry in search database with rich content
+ * Updates an existing diary entry
+ */
+export const updateEntry = (
+  vibePath: string,
+  id: string,
+  updates: DiaryEntryUpdate
+) =>
+  pipe(
+    loadEntryFromId(vibePath, id),
+    Effect.flatMap(entry => {
+      if (!entry) {
+        return Effect.fail(createFileSystemError(
+          new Error('Entry not found'), 
+          `${vibePath}/.vibe/diary/${id}.json`, 
+          'Diary entry not found'
+        ))
+      }
+      
+      const updatedEntry: DiaryEntry = {
+        ...entry,
+        ...updates,
+        problem: updates.problem ? { ...entry.problem, ...updates.problem } : entry.problem,
+        decision: updates.decision ? { ...entry.decision, ...updates.decision } : entry.decision,
+        impact: updates.impact ? { ...entry.impact, ...updates.impact } : entry.impact,
+        timestamp: new Date().toISOString(), // Update timestamp
+      }
+      
+      return pipe(
+        validateDiaryEntry(updatedEntry),
+        Effect.flatMap(() => saveEntryToFile(vibePath, updatedEntry)),
+        Effect.flatMap(() => indexDiaryEntry(vibePath, updatedEntry)),
+        Effect.map(() => updatedEntry)
+      )
+    })
+  )
+
+/**
+ * Deletes a diary entry
+ */
+export const deleteEntry = (
+  vibePath: string,
+  id: string
+) =>
+  pipe(
+    Effect.tryPromise({
+      try: async () => {
+        const entryPath = resolve(vibePath, '.vibe', 'diary', `${id}.json`)
+        await Deno.remove(entryPath)
+        return true
+      },
+      catch: () => false
+    }),
+    Effect.catchAll(() => Effect.succeed(false))
+  )
+
+/**
+ * Auto-captures decision from conversation data
+ */
+export const autoCapture = (
+  vibePath: string,
+  conversationData: ConversationData
+) =>
+  pipe(
+    Effect.sync(() => analyzeConversationForDecision(conversationData)),
+    Effect.flatMap(analysisResult => {
+      if (!analysisResult) {
+        return Effect.succeed(null)
+      }
+      
+      return createEntry(vibePath, analysisResult)
+    })
+  )
+
+/**
+ * Exports diary entries in specified format
+ */
+export const exportDiary = (
+  vibePath: string,
+  format: 'markdown' | 'json'
+) =>
+  pipe(
+    loadAllEntries(vibePath),
+    Effect.map(entries => {
+      if (format === 'json') {
+        return JSON.stringify(entries, null, 2)
+      }
+      
+      return exportToMarkdown(entries)
+    })
+  )
+
+// ==================== Helper Functions ====================
+
+/**
+ * Creates a complete diary entry with all required fields
+ */
+const createDiaryEntry = (
+  entryInput: DiaryEntryInput,
+  vibePath: string
+): DiaryEntry => {
+  const now = new Date().toISOString()
+  const entryId = crypto.randomUUID()
+  
+  return {
+    id: entryId,
+    title: entryInput.title,
+    category: entryInput.category,
+    tags: entryInput.tags,
+    timestamp: now,
+    problem: entryInput.problem,
+    decision: entryInput.decision,
+    impact: entryInput.impact
+  }
+}
+
+/**
+ * Validates diary entry using schema
+ */
+const validateDiaryEntry = (entry: DiaryEntry) =>
+  Effect.try({
+    try: () => DiaryEntrySchema.parse(entry),
+    catch: (error) => createParseError(error, 'diary-entry', 'Invalid diary entry schema')
+  })
+
+/**
+ * Saves diary entry to JSON file
+ */
+const saveEntryToFile = (vibePath: string, entry: DiaryEntry) =>
+  pipe(
+    Effect.tryPromise({
+      try: async () => {
+        const diaryDir = resolve(vibePath, '.vibe', 'diary')
+        await Deno.mkdir(diaryDir, { recursive: true })
+        
+        const filePath = resolve(diaryDir, `${entry.id}.json`)
+        await Deno.writeTextFile(filePath, JSON.stringify(entry, null, 2))
+        return filePath
+      },
+      catch: (error) => createFileSystemError(error, vibePath, 'Failed to save diary entry')
+    })
+  )
+
+/**
+ * Indexes diary entry in the search system
  */
 const indexDiaryEntry = (vibePath: string, entry: DiaryEntry) =>
   pipe(
-    initializeSearch(resolve(vibePath, '..')),
+    initializeSearch(vibePath),
     Effect.flatMap(() => {
-      // Create rich, searchable content combining all entry fields
       const searchableContent = [
         `Title: ${entry.title}`,
+        `Category: ${entry.category}`,
         `Problem: ${entry.problem.description}`,
         `Context: ${entry.problem.context}`,
-        `Constraints: ${entry.problem.constraints.join('. ')}`,
         `Decision: ${entry.decision.chosen}`,
         `Rationale: ${entry.decision.rationale}`,
-        `Alternatives: ${entry.decision.alternatives.map(alt => `${alt.option} - ${alt.reason}`).join('. ')}`,
-        `Benefits: ${entry.impact.benefits.join('. ')}`,
-        `Risks: ${entry.impact.risks.join('. ')}`,
-        `Migration: ${entry.impact.migrationNotes || 'No migration required'}`,
+        `Benefits: ${entry.impact.benefits.join(', ')}`,
+        `Risks: ${entry.impact.risks.join(', ')}`,
+        `Tags: ${entry.tags.join(', ')}`,
+        `Constraints: ${entry.problem.constraints.join(', ')}`,
+        ...(entry.decision.alternatives.map(alt => `Alternative: ${alt.option} - ${alt.reason}`)),
+        ...(entry.impact.migrationNotes ? [`Migration: ${entry.impact.migrationNotes}`] : [])
       ].join('\n\n')
       
       const document: SearchDocument = {
@@ -231,9 +344,9 @@ const indexDiaryEntry = (vibePath: string, entry: DiaryEntry) =>
         content: searchableContent,
         tags: entry.tags,
         metadata: {
-          project_path: resolve(vibePath, '..'),
+          project_path: vibePath,
           source: 'diary',
-          priority: 'high', // Architectural decisions are high priority
+          priority: 'medium', // Default priority for diary entries
           category: entry.category,
           title: entry.title,
         },
@@ -244,54 +357,343 @@ const indexDiaryEntry = (vibePath: string, entry: DiaryEntry) =>
   )
 
 /**
- * Loads a single diary entry file
+ * Loads a single diary entry by ID
  */
-const loadSingleDiaryEntry = (filePath: string) =>
+const loadEntryFromId = (vibePath: string, id: string) =>
   pipe(
-    readJSONFile<unknown>(filePath),
+    Effect.tryPromise({
+      try: async () => {
+        const filePath = resolve(vibePath, '.vibe', 'diary', `${id}.json`)
+        const content = await Deno.readTextFile(filePath)
+        return JSON.parse(content)
+      },
+      catch: (error) => createFileSystemError(error, `${vibePath}/.vibe/diary/${id}.json`, 'Failed to load diary entry')
+    }),
     Effect.flatMap(data => 
       Effect.try({
         try: () => DiaryEntrySchema.parse(data),
-        catch: (error) => new VibeError(`Invalid diary schema in ${filePath}: ${error}`, 'SCHEMA_ERROR'),
+        catch: (error) => createParseError(error, `${id}.json`, 'Invalid diary entry schema')
       })
     ),
-    Effect.catchAll(error => {
-      logWithContext('Diary', `Failed to load ${filePath}: ${error.message}`)
-      return Effect.succeed(null)
-    })
+    Effect.catchAll(() => Effect.succeed(null))
   )
 
 /**
- * Converts search document back to diary entry
+ * Loads all diary entries from storage
  */
-const convertDocumentToDiaryEntry = (document: SearchDocument): DiaryEntry => {
-  // This is a simplified conversion - in practice, we'd need to store more structured metadata
-  const lines = document.content.split('\n\n')
+const loadAllEntries = (vibePath: string) =>
+  pipe(
+    Effect.tryPromise({
+      try: async () => {
+        const diaryDir = resolve(vibePath, '.vibe', 'diary')
+        const files = []
+        try {
+          for await (const entry of Deno.readDir(diaryDir)) {
+            if (entry.isFile && entry.name.endsWith('.json')) {
+              files.push(resolve(diaryDir, entry.name))
+            }
+          }
+        } catch {
+          return [] // Directory doesn't exist
+        }
+        return files
+      },
+      catch: () => []
+    }),
+    Effect.flatMap(files => 
+      Effect.all(
+        files.map(loadSingleEntryFile),
+        { concurrency: 10 }
+      )
+    ),
+    Effect.map(entries => entries.filter((entry): entry is DiaryEntry => entry !== null))
+  )
+
+/**
+ * Loads a single diary entry file with error handling
+ */
+const loadSingleEntryFile = (filePath: string) =>
+  pipe(
+    Effect.tryPromise({
+      try: async () => {
+        const content = await Deno.readTextFile(filePath)
+        return JSON.parse(content)
+      },
+      catch: () => null
+    }),
+    Effect.flatMap(data => {
+      if (!data) return Effect.succeed(null)
+      
+      return Effect.try({
+        try: () => DiaryEntrySchema.parse(data),
+        catch: () => null
+      })
+    }),
+    Effect.catchAll(() => Effect.succeed(null))
+  )
+
+/**
+ * Analyzes conversation for decision patterns
+ */
+const analyzeConversationForDecision = (conversationData: ConversationData): DiaryEntryInput | null => {
+  const conversationText = conversationData.messages
+    .map(msg => `${msg.role}: ${msg.content}`)
+    .join('\n\n')
   
-  // Extract basic information from the searchable content
-  const title = document.metadata.title || 'Recovered Decision'
-  const category = document.metadata.category || 'general'
+  // Simple decision detection patterns
+  const decisionPatterns = [
+    /should we/i,
+    /decided to/i,
+    /migration to/i,
+    /switch to/i,
+    /use.*instead/i,
+    /better to/i,
+    /recommend/i
+  ]
+  
+  const hasDecisionPattern = decisionPatterns.some(pattern => 
+    pattern.test(conversationText)
+  )
+  
+  if (!hasDecisionPattern) {
+    return null
+  }
+  
+  // Auto-detect category based on content
+  const category = detectCategory(conversationText)
+  
+  // Extract key concepts for title
+  const title = extractDecisionTitle(conversationText)
+  
+  // Extract tags from content
+  const tags = extractTags(conversationText)
   
   return {
-    id: document.id,
-    timestamp: new Date(document.timestamp).toISOString(),
     title,
     category,
-    tags: document.tags,
+    tags,
     problem: {
-      description: lines.find(l => l.startsWith('Problem:'))?.slice(9) || 'Recovered from search index',
-      context: lines.find(l => l.startsWith('Context:'))?.slice(9) || 'Unknown context',
-      constraints: [],
+      description: extractProblemDescription(conversationText),
+      context: `Auto-captured from ${conversationData.tool} conversation`,
+      constraints: []
     },
     decision: {
-      chosen: lines.find(l => l.startsWith('Decision:'))?.slice(10) || 'Unknown decision',
-      rationale: lines.find(l => l.startsWith('Rationale:'))?.slice(11) || 'Unknown rationale',
-      alternatives: [],
+      chosen: extractDecision(conversationText),
+      rationale: extractRationale(conversationText),
+      alternatives: []
     },
     impact: {
-      benefits: [],
-      risks: [],
-      migrationNotes: lines.find(l => l.startsWith('Migration:'))?.slice(11) || null,
-    },
+      benefits: extractBenefits(conversationText),
+      risks: extractRisks(conversationText),
+      migrationNotes: null
+    }
   }
+}
+
+/**
+ * Detects category from conversation content
+ */
+const detectCategory = (content: string): DiaryCategory => {
+  const text = content.toLowerCase()
+  
+  if (text.includes('architect') || text.includes('design pattern')) return 'architecture'
+  if (text.includes('design') || text.includes('interface')) return 'design'
+  if (text.includes('technology') || text.includes('library') || text.includes('framework')) return 'technology'
+  if (text.includes('process') || text.includes('workflow')) return 'process'
+  
+  return 'technology' // Default fallback
+}
+
+/**
+ * Extracts decision title from conversation
+ */
+const extractDecisionTitle = (content: string): string => {
+  const text = content.toLowerCase()
+  
+  // Look for common decision patterns
+  const patterns = [
+    /migration to ([^.!?]+)/i,
+    /switch to ([^.!?]+)/i,
+    /use ([^.!?]+)/i,
+    /decided to ([^.!?]+)/i
+  ]
+  
+  for (const pattern of patterns) {
+    const match = content.match(pattern)
+    if (match && match[1]) {
+      return `Decision: ${match[1].trim()}`
+    }
+  }
+  
+  return 'Auto-captured Decision'
+}
+
+/**
+ * Extracts tags from conversation content
+ */
+const extractTags = (content: string): string[] => {
+  const text = content.toLowerCase()
+  const tags = []
+  
+  const techPatterns = [
+    'effect-ts', 'react', 'typescript', 'javascript', 'async', 'await',
+    'migration', 'testing', 'performance', 'security', 'api', 'database'
+  ]
+  
+  for (const tech of techPatterns) {
+    if (text.includes(tech)) {
+      tags.push(tech)
+    }
+  }
+  
+  return tags.slice(0, 5) // Limit to 5 tags
+}
+
+/**
+ * Extracts problem description from conversation
+ */
+const extractProblemDescription = (content: string): string => {
+  const lines = content.split('\n')
+  const userMessages = lines.filter(line => line.startsWith('user:'))
+  
+  if (userMessages.length > 0) {
+    const firstMessage = userMessages[0]
+    if (firstMessage) {
+      return firstMessage.replace('user:', '').trim().slice(0, 200)
+    }
+  }
+  
+  return 'Problem extracted from conversation'
+}
+
+/**
+ * Extracts decision from conversation
+ */
+const extractDecision = (content: string): string => {
+  const assistantMessages = content.split('\n')
+    .filter(line => line.startsWith('assistant:'))
+  
+  if (assistantMessages.length > 0) {
+    const firstMessage = assistantMessages[0]
+    if (firstMessage) {
+      const firstResponse = firstMessage.replace('assistant:', '').trim()
+      return firstResponse.slice(0, 100) + (firstResponse.length > 100 ? '...' : '')
+    }
+  }
+  
+  return 'Decision captured from conversation'
+}
+
+/**
+ * Extracts rationale from conversation
+ */
+const extractRationale = (content: string): string => {
+  const text = content.toLowerCase()
+  
+  if (text.includes('because')) {
+    const becauseMatch = content.match(/because ([^.!?]+)/i)
+    if (becauseMatch && becauseMatch[1]) {
+      return becauseMatch[1].trim()
+    }
+  }
+  
+  return 'Rationale from conversation analysis'
+}
+
+/**
+ * Extracts benefits from conversation
+ */
+const extractBenefits = (content: string): string[] => {
+  const text = content.toLowerCase()
+  const benefits = []
+  
+  if (text.includes('better')) benefits.push('Better approach')
+  if (text.includes('performance')) benefits.push('Performance improvement')
+  if (text.includes('type safety')) benefits.push('Type safety')
+  if (text.includes('composable')) benefits.push('Better composability')
+  
+  return benefits.slice(0, 3)
+}
+
+/**
+ * Extracts risks from conversation
+ */
+const extractRisks = (content: string): string[] => {
+  const text = content.toLowerCase()
+  const risks = []
+  
+  if (text.includes('learning curve')) risks.push('Learning curve')
+  if (text.includes('breaking change')) risks.push('Breaking changes')
+  if (text.includes('migration')) risks.push('Migration complexity')
+  
+  return risks.slice(0, 3)
+}
+
+/**
+ * Exports diary entries to markdown format
+ */
+const exportToMarkdown = (entries: DiaryEntry[]): string => {
+  const sortedEntries = entries.sort((a, b) => 
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  )
+  
+  let markdown = '# Decision Diary\n\n'
+  markdown += `Generated on ${new Date().toISOString()}\n\n`
+  
+  for (const entry of sortedEntries) {
+    markdown += `## ${entry.title}\n\n`
+    markdown += `**Category**: ${entry.category}  \n`
+    markdown += `**Date**: ${new Date(entry.timestamp).toLocaleDateString()}  \n`
+    markdown += `**Tags**: ${entry.tags.join(', ')}\n\n`
+    
+    markdown += `### Problem\n\n`
+    markdown += `${entry.problem.description}\n\n`
+    markdown += `**Context**: ${entry.problem.context}\n\n`
+    
+    if (entry.problem.constraints.length > 0) {
+      markdown += `**Constraints**:\n`
+      for (const constraint of entry.problem.constraints) {
+        markdown += `- ${constraint}\n`
+      }
+      markdown += `\n`
+    }
+    
+    markdown += `### Decision\n\n`
+    markdown += `**Chosen**: ${entry.decision.chosen}\n\n`
+    markdown += `**Rationale**: ${entry.decision.rationale}\n\n`
+    
+    if (entry.decision.alternatives.length > 0) {
+      markdown += `**Alternatives Considered**:\n`
+      for (const alt of entry.decision.alternatives) {
+        markdown += `- **${alt.option}**: ${alt.reason}\n`
+      }
+      markdown += `\n`
+    }
+    
+    markdown += `### Impact\n\n`
+    
+    if (entry.impact.benefits.length > 0) {
+      markdown += `**Benefits**:\n`
+      for (const benefit of entry.impact.benefits) {
+        markdown += `- ${benefit}\n`
+      }
+      markdown += `\n`
+    }
+    
+    if (entry.impact.risks.length > 0) {
+      markdown += `**Risks**:\n`
+      for (const risk of entry.impact.risks) {
+        markdown += `- ${risk}\n`
+      }
+      markdown += `\n`
+    }
+    
+    if (entry.impact.migrationNotes) {
+      markdown += `**Migration Notes**: ${entry.impact.migrationNotes}\n\n`
+    }
+    
+    markdown += `---\n\n`
+  }
+  
+  return markdown
 }

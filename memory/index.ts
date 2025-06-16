@@ -102,16 +102,16 @@ export const searchMemory = (
           response.results.map(result => 
             pipe(
               loadMemoryFromId(vibePath, result.document.id),
-              Effect.map(memory => ({
-                memory: memory!,
+              Effect.map(memory => memory ? ({
+                memory,
                 score: result.score,
                 matchedFields: ['content'], // Simple implementation
                 context: result.document.content.slice(0, 200)
-              } as MemorySearchResult))
+              } as MemorySearchResult) : null)
             )
           )
         ),
-        Effect.map(results => results.filter(r => r.memory !== null))
+        Effect.map(results => results.filter((r): r is MemorySearchResult => r !== null))
       )
     ),
     Effect.map(results => 

@@ -41,29 +41,6 @@ export const ImpactSchema = z.object({
 })
 
 /**
- * Complete diary entry schema
- */
-export const DiaryEntrySchema = z.object({
-  id: z.string(),
-  timestamp: z.string(),
-  title: z.string(),
-  category: z.string(),
-  tags: z.array(z.string()),
-  problem: ProblemSchema,
-  decision: DecisionSchema,
-  impact: ImpactSchema,
-})
-
-/**
- * TypeScript types derived from schemas
- */
-export type Alternative = z.output<typeof AlternativeSchema>
-export type Problem = z.output<typeof ProblemSchema>
-export type Decision = z.output<typeof DecisionSchema>
-export type Impact = z.output<typeof ImpactSchema>
-export type DiaryEntry = z.output<typeof DiaryEntrySchema>
-
-/**
  * Common diary categories
  */
 export const DIARY_CATEGORIES = [
@@ -82,3 +59,26 @@ export const DIARY_CATEGORIES = [
 ] as const
 
 export type DiaryCategory = typeof DIARY_CATEGORIES[number]
+
+/**
+ * Complete diary entry schema
+ */
+export const DiaryEntrySchema = z.object({
+  id: z.string(),
+  timestamp: z.string(),
+  title: z.string(),
+  category: z.enum(DIARY_CATEGORIES),
+  tags: z.array(z.string()),
+  problem: ProblemSchema,
+  decision: DecisionSchema,
+  impact: ImpactSchema,
+})
+
+/**
+ * TypeScript types derived from schemas
+ */
+export type Alternative = z.output<typeof AlternativeSchema>
+export type Problem = z.output<typeof ProblemSchema>
+export type Decision = z.output<typeof DecisionSchema>
+export type Impact = z.output<typeof ImpactSchema>
+export type DiaryEntry = z.output<typeof DiaryEntrySchema>

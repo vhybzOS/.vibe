@@ -36,10 +36,21 @@ describe('🧠 Memory System', () => {
     testDir = await Deno.makeTempDir({ prefix: 'vibe_memory_test_' })
     memoryPath = resolve(testDir, '.vibe')
     await Deno.mkdir(memoryPath, { recursive: true })
+    
+    // Clear search index at start of each test
+    try {
+      const { clearIndex } = await import('../../search/index.ts')
+      await Effect.runPromise(clearIndex(testDir))
+    } catch {
+      // Ignore if index doesn't exist yet
+    }
   })
 
   afterEach(async () => {
     try {
+      // Clear search index to prevent cross-test pollution
+      const { clearIndex } = await import('../../search/index.ts')
+      await Effect.runPromise(clearIndex(testDir))
       await Deno.remove(testDir, { recursive: true })
     } catch {
       // Ignore cleanup errors
@@ -170,11 +181,12 @@ describe('🧠 Memory System', () => {
         tool: [],
         importance: [],
         limit: 10,
-        threshold: 0.1,
+        threshold: 0.5,
         includeArchived: false
       }
 
       const results = await Effect.runPromise(searchMemory(testDir, query))
+      
       
       assert(results.length >= 2, 'Should find at least 2 Effect-TS related memories')
       for (const result of results) {
@@ -207,16 +219,18 @@ describe('🧠 Memory System', () => {
 
     it('should filter by tags', async () => {
       const query: MemoryQuery = {
+        query: 'about', // Broad search term to match all documents
         type: [],
         tags: ['react'],
         tool: [],
         importance: [],
         limit: 10,
-        threshold: 0.7,
+        threshold: 0.1, // Lower threshold since we're filtering, not searching
         includeArchived: false
       }
 
       const results = await Effect.runPromise(searchMemory(testDir, query))
+      
       
       assertEquals(results.length, 1)
       assert(results[0], 'Should have first result')
@@ -225,12 +239,13 @@ describe('🧠 Memory System', () => {
 
     it('should filter by importance level', async () => {
       const query: MemoryQuery = {
+        query: '', // Empty query to search all documents
         type: [],
         tags: [],
         tool: [],
         importance: ['high'],
         limit: 10,
-        threshold: 0.7,
+        threshold: 0.1, // Lower threshold since we're filtering, not searching
         includeArchived: false
       }
 
@@ -247,6 +262,7 @@ describe('🧠 Memory System', () => {
       const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
       
       const query: MemoryQuery = {
+        query: '', // Empty query to search all documents
         type: [],
         tags: [],
         tool: [],
@@ -256,7 +272,7 @@ describe('🧠 Memory System', () => {
           to: now.toISOString()
         },
         limit: 10,
-        threshold: 0.7,
+        threshold: 0.1, // Lower threshold since we're filtering, not searching
         includeArchived: false
       }
 

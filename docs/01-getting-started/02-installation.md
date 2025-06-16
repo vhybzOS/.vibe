@@ -22,7 +22,7 @@ vibe-daemon --version
 
 ### Manual Installation
 
-If you prefer not to use a script, you can download the latest binaries directly from our [GitHub Releases page](https://github.com/vhybzos/vibe/releases/latest).
+If you prefer not to use a script, you can download the latest binaries directly from our [GitHub Releases page](https://github.com/vhybzos/.vibe/releases/latest).
 
 1.  Download the appropriate `.zip` file for your operating system (e.g., `vibe-macos-aarch64.zip`).
 2.  Unzip the file.

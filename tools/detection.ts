@@ -5,15 +5,14 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { match } from 'ts-pattern'
-import { fileExists, findFiles } from '../lib/fs.ts'
+import { fileExists } from '../lib/fs.ts'
 import { logWithContext } from '../lib/effects.ts'
 import { createFileSystemError, type VibeError } from '../lib/errors.ts'
 import { 
   AIToolConfig, 
   AIToolType, 
   DetectedTool, 
-  ToolDetectionPattern 
+  // ToolDetectionPattern // For future use
 } from '../schemas/ai-tool-config.ts'
 
 type ConfigFileInfo = {

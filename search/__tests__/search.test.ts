@@ -3,13 +3,12 @@
  * Testing the search functionality before implementation
  */
 
-import { assertEquals, assertExists, assert } from '@std/assert'
+import { assertEquals, assert } from '@std/assert'
 import { describe, it, beforeEach, afterEach } from '@std/testing/bdd'
 import { resolve } from '@std/path'
 import { Effect } from 'effect'
 
-// Import schemas (to be implemented)
-import { SearchDocumentSchema, SearchQuerySchema, SearchResultSchema } from '../../schemas/search.ts'
+// Schema imports removed - using direct functions
 
 // Import functions to be implemented
 import {

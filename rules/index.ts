@@ -7,8 +7,8 @@ import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
 import { UniversalRule, UniversalRuleSchema } from '../schemas/universal-rule.ts'
 import { readJSONFile, writeJSONFile, listFiles } from '../lib/fs.ts'
-import { parseJSON, logWithContext } from '../lib/effects.ts'
-import { createParseError, type VibeError } from '../lib/errors.ts'
+import { logWithContext } from '../lib/effects.ts'
+import { createParseError } from '../lib/errors.ts'
 
 /**
  * Loads all rules from the .vibe/rules directory
@@ -67,7 +67,7 @@ export const generateRulesFromProject = (
     analyzeProjectPatterns(projectPath),
     Effect.map(patterns => 
       patterns
-        .filter((pattern: any) => pattern.confidence >= options.threshold)
+        .filter((pattern: { confidence: number }) => pattern.confidence >= options.threshold)
         .map(createRuleFromPattern)
     ),
     Effect.tap(rules => 
@@ -90,7 +90,7 @@ const analyzeProjectPatterns = (projectPath: string) =>
 /**
  * Simplified codebase structure analysis
  */
-const analyzeCodebaseStructure = async (projectPath: string) => {
+const analyzeCodebaseStructure = (_projectPath: string) => {
   // In a real implementation, this would use AST analysis
   return {
     languages: ['typescript', 'javascript'],
@@ -115,8 +115,8 @@ const analyzeCodebaseStructure = async (projectPath: string) => {
 /**
  * Extracts patterns with metadata
  */
-const extractPatterns = (structure: any) =>
-  structure.patterns.map((pattern: any) => ({
+const extractPatterns = (structure: { patterns: Array<{ type: string; description: string; confidence: number; examples: string[] }> }) =>
+  structure.patterns.map((pattern) => ({
     ...pattern,
     id: crypto.randomUUID(),
     timestamp: new Date().toISOString(),
@@ -125,7 +125,7 @@ const extractPatterns = (structure: any) =>
 /**
  * Creates a Universal Rule from a detected pattern
  */
-const createRuleFromPattern = (pattern: any): UniversalRule => ({
+const createRuleFromPattern = (pattern: { type: string; description: string; confidence: number; examples: string[] }): UniversalRule => ({
   id: crypto.randomUUID(),
   metadata: {
     name: `Auto-generated: ${pattern.description}`,

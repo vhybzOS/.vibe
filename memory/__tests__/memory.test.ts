@@ -9,14 +9,7 @@ import { resolve } from '@std/path'
 import { Effect } from 'effect'
 
 // Import schemas
-import {
-  MemorySchema,
-  MemoryQuerySchema,
-  MemorySearchResultSchema,
-  type Memory,
-  type MemoryQuery,
-  type MemorySearchResult
-} from '../../schemas/memory.ts'
+import { type MemoryQuery } from '../../schemas/memory.ts'
 
 // Import functions to be implemented/rewritten
 import {
@@ -509,10 +502,10 @@ describe('🧠 Memory System', () => {
     it('should validate memory content and metadata', async () => {
       try {
         const invalidMetadata = {
-          type: 'invalid-type' as any,
+          type: 'invalid-type' as 'knowledge',
           source: { timestamp: 'invalid-date' },
           tags: ['test'],
-          importance: 'super-high' as any,
+          importance: 'super-high' as 'medium',
           projectPath: testDir
         }
         

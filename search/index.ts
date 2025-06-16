@@ -5,7 +5,7 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { createFileSystemError, createParseError, type VibeError } from '../lib/errors.ts'
+import { createFileSystemError } from '../lib/errors.ts'
 import type { SearchDocument, SearchQuery, SearchResponse, SearchResult } from '../schemas/search.ts'
 
 // Re-export types for external use

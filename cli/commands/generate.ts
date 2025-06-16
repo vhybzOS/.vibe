@@ -105,9 +105,9 @@ const analyzeProject = (
 /**
  * Generate rules from analysis
  */
-const generateRulesFromAnalysis = (analysis: any) =>
+const generateRulesFromAnalysis = (analysis: { patterns: Array<{ name: string; description: string; confidence: number; type: string; examples: string[] }> }) =>
   Effect.sync(() => {
-    const rules = analysis.patterns.map((pattern: any) => ({
+    const rules = analysis.patterns.map((pattern) => ({
       id: crypto.randomUUID(),
       name: pattern.name,
       description: pattern.description,

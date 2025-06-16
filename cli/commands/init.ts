@@ -1,7 +1,6 @@
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
 import { detectAITools } from '../../tools/index.ts'
-// import { saveRule } from '../../rules/index.ts' // Future feature
 import { VibeConfig } from '../../schemas/project.ts'
 import { setSecret, setSecretAndInferProvider } from '../../daemon/services/secrets_service.ts'
 import { readTextFile } from '../../lib/effects.ts'

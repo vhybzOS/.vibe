@@ -13,7 +13,7 @@ export interface TestDaemon {
 
 // A record to store the latest request for inspection in tests
 export const latestRequest = {
-  body: null as any,
+  body: null as string | null,
   pathname: '' as string,
   method: '' as string,
 };

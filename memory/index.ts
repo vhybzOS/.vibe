@@ -10,7 +10,6 @@ import {
   MemoryQuery, 
   MemorySearchResult,
   MemorySchema,
-  MemoryQuerySchema,
   type MemoryContent,
   type MemoryMetadata 
 } from '../schemas/memory.ts'
@@ -20,7 +19,7 @@ import {
   searchDocuments, 
   type SearchDocument 
 } from '../search/index.ts'
-import { createFileSystemError, createParseError, type VibeError } from '../lib/errors.ts'
+import { createFileSystemError, createParseError } from '../lib/errors.ts'
 
 /**
  * Interface for memory storage input metadata

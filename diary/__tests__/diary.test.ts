@@ -9,15 +9,7 @@ import { resolve } from '@std/path'
 import { Effect } from 'effect'
 
 // Import schemas
-import {
-  DiaryEntrySchema,
-  type DiaryEntry,
-  type Problem,
-  type Decision,
-  type Impact,
-  type DiaryCategory,
-  DIARY_CATEGORIES
-} from '../../schemas/diary.ts'
+import { type DiaryCategory } from '../../schemas/diary.ts'
 
 // Import functions to be implemented/rewritten
 import {

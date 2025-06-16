@@ -11,8 +11,7 @@ import { createFileSystemError, type VibeError } from '../lib/errors.ts'
 import { 
   AIToolConfig, 
   AIToolType, 
-  DetectedTool, 
-  // ToolDetectionPattern // For future use
+  DetectedTool
 } from '../schemas/ai-tool-config.ts'
 
 type ConfigFileInfo = {

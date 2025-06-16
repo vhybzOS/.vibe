@@ -2,7 +2,7 @@
  * Master test helper for running CLI commands in an isolated environment.
  * Manages a temporary directory and a mock API server for predictable test results.
  */
-import { Effect, pipe } from 'effect';
+import { Effect } from 'effect';
 import { resolve } from '@std/path';
 import { initCommand } from '../../cli/commands/init.ts';
 import { statusCommand } from '../../cli/commands/status.ts';
@@ -10,8 +10,8 @@ import { discoverCommand } from '../../cli/commands/discover.ts';
 
 // Represents the state of our mock daemon API
 interface MockApiState {
-  secrets: Record<string, any>;
-  discoverySessions: Map<string, any>;
+  secrets: Record<string, string>;
+  discoverySessions: Map<string, { status: string; lastActivity: string }>;
 }
 
 /**

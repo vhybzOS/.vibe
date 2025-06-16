@@ -57,9 +57,9 @@ export interface DiscoveryConfig {
  * Event emitter for real-time updates
  */
 export class DiscoveryEventEmitter {
-  private listeners = new Map<string, Array<(event: any) => void>>()
+  private listeners = new Map<string, Array<(event: { type: string; data: unknown }) => void>>()
   
-  emit(eventType: string, data: any): void {
+  emit(eventType: string, data: unknown): void {
     const listeners = this.listeners.get(eventType) || []
     listeners.forEach(listener => {
       try {

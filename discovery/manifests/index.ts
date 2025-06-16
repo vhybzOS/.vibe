@@ -16,7 +16,7 @@ import {
 import { npmManifestParser } from './npm.ts'
 
 // Create global registry with all parsers registered
-let globalManifestRegistry = registerParser(
+const globalManifestRegistry = registerParser(
   { parsers: new Map() },
   npmManifestParser
 )

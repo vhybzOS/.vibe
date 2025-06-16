@@ -5,6 +5,7 @@
  */
 
 import { Effect, pipe } from 'effect'
+import { z } from 'zod/v4'
 import { 
   getSecretsStatus, 
   setSecretAndInferProvider,
@@ -530,7 +531,7 @@ export class VibeDaemon {
       const searchQuery: SearchQuery = {
         term,
         filters: {
-          doc_type: type?.[0] as any,
+          doc_type: type?.[0] ? z.enum(['memory', 'diary', 'rule', 'dependency']).parse(type[0]) : undefined,
           tags,
           date_range: undefined,
           priority: undefined,

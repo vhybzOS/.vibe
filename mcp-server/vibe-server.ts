@@ -8,6 +8,8 @@ import { z } from 'zod/v4'
 import { detectAITools } from '../tools/index.ts'
 import { loadRules } from '../rules/index.ts'
 import { UniversalRule } from '../schemas/universal-rule.ts'
+import { MemoryTypeSchema } from '../schemas/memory.ts'
+import { DIARY_CATEGORIES } from '../schemas/diary.ts'
 import { 
   storeMemory, 
   searchMemory, 
@@ -294,7 +296,23 @@ export class VibeServer {
     
     const params = schema.parse(args)
     
-    const result: any = {
+    interface StatusResult {
+      project: {
+        path: string
+        vibePath: string
+        timestamp: string
+      }
+      rules?: {
+        total: number
+        items: UniversalRule[]
+      }
+      tools?: {
+        detected: Awaited<ReturnType<typeof detectAITools>>
+        active: Awaited<ReturnType<typeof detectAITools>>
+      }
+    }
+    
+    const result: StatusResult = {
       project: {
         path: this.projectPath,
         vibePath: this.vibePath,
@@ -566,7 +584,7 @@ export class VibeServer {
     
     try {
       const metadata: MemoryMetadataInput = {
-        type: params.type as any,
+        type: MemoryTypeSchema.parse(params.type),
         source: {
           tool: 'mcp',
           sessionId: crypto.randomUUID(),
@@ -574,7 +592,7 @@ export class VibeServer {
           location: this.projectPath
         },
         tags: params.tags,
-        importance: params.importance as any,
+        importance: z.enum(['low', 'medium', 'high', 'critical']).parse(params.importance),
         projectPath: this.projectPath,
         relatedFiles: [],
         associatedRules: []
@@ -651,7 +669,7 @@ export class VibeServer {
       const searchQuery = {
         term: params.query,
         filters: {
-          doc_type: params.type?.[0] as any,
+          doc_type: params.type?.[0] ? z.enum(['memory', 'diary', 'rule', 'dependency']).parse(params.type[0]) : undefined,
           tags: undefined,
           date_range: undefined,
           priority: undefined,
@@ -694,7 +712,7 @@ export class VibeServer {
     try {
       const searchQuery = {
         query: params.query,
-        category: params.category as any,
+        category: z.enum(DIARY_CATEGORIES).parse(params.category),
         tags: params.tags,
         dateRange: undefined,
         limit: params.limit
@@ -739,7 +757,7 @@ export class VibeServer {
     try {
       const diaryEntry: DiaryEntryInput = {
         title: params.title,
-        category: params.category as any,
+        category: z.enum(DIARY_CATEGORIES).parse(params.category),
         tags: params.tags,
         problem: {
           description: params.problem.description,

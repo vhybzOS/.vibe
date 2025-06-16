@@ -485,13 +485,14 @@ describe('📔 Diary System', () => {
       try {
         const invalidEntry = {
           title: '', // Invalid: empty title
-          category: 'invalid-category' as any, // Invalid: not in enum
+          category: 'invalid-category' as never, // Invalid: not in enum
           tags: ['test'],
           problem: { description: 'Test', context: 'Test', constraints: [] },
           decision: { chosen: 'Test', rationale: 'Test', alternatives: [] },
           impact: { benefits: [], risks: [], migrationNotes: null }
         }
         
+        // deno-lint-ignore no-explicit-any
         await Effect.runPromise(createEntry(testDir, invalidEntry as any))
         assert(false, 'Should have thrown validation error')
       } catch (error) {

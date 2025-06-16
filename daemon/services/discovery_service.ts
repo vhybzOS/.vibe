@@ -54,12 +54,25 @@ export interface DiscoveryConfig {
 }
 
 /**
+ * Discovery event data types
+ */
+export type DiscoveryEventData = 
+  | { sessionId: string; projectPath: string } // discovery:started
+  | { sessionId: string; manifests: number } // discovery:manifests
+  | { sessionId: string; dependencies: number } // discovery:dependencies
+  | { sessionId: string; rules: number; enhanced: boolean } // discovery:rules
+  | { sessionId: string; convertedRules: number } // discovery:converted
+  | { sessionId: string; results: DiscoverySession['results'] } // discovery:completed
+  | { sessionId: string; progress: DiscoverySession['progress'] } // discovery:progress
+  | { sessionId: string; error: string } // discovery:error
+
+/**
  * Event emitter for real-time updates
  */
 export class DiscoveryEventEmitter {
-  private listeners = new Map<string, Array<(event: { type: string; data: unknown }) => void>>()
+  private listeners = new Map<string, Array<(event: DiscoveryEventData) => void>>()
   
-  emit(eventType: string, data: unknown): void {
+  emit(eventType: string, data: DiscoveryEventData): void {
     const listeners = this.listeners.get(eventType) || []
     listeners.forEach(listener => {
       try {
@@ -70,14 +83,14 @@ export class DiscoveryEventEmitter {
     })
   }
   
-  on(eventType: string, listener: (event: any) => void): void {
+  on(eventType: string, listener: (event: DiscoveryEventData) => void): void {
     if (!this.listeners.has(eventType)) {
       this.listeners.set(eventType, [])
     }
     this.listeners.get(eventType)!.push(listener)
   }
   
-  off(eventType: string, listener: (event: any) => void): void {
+  off(eventType: string, listener: (event: DiscoveryEventData) => void): void {
     const listeners = this.listeners.get(eventType) || []
     const index = listeners.indexOf(listener)
     if (index >= 0) {
@@ -168,7 +181,7 @@ export class DiscoveryService {
   /**
    * Subscribe to discovery events
    */
-  subscribe = (eventType: string, listener: (event: any) => void) =>
+  subscribe = (eventType: string, listener: (event: DiscoveryEventData) => void) =>
     Effect.sync(() => {
       this.eventEmitter.on(eventType, listener)
       return () => this.eventEmitter.off(eventType, listener)

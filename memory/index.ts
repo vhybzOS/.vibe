@@ -86,7 +86,7 @@ export const searchMemory = (
             start: query.timeRange.from ? new Date(query.timeRange.from).getTime() : undefined,
             end: query.timeRange.to ? new Date(query.timeRange.to).getTime() : undefined,
           } : undefined,
-          priority: query.importance.length > 0 ? query.importance[0] as any : undefined,
+          priority: query.importance.length > 0 ? query.importance[0] : undefined,
         },
         mode: 'keyword' as const,
         limit: query.limit || 20,

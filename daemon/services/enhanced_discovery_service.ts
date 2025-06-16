@@ -11,6 +11,29 @@ import { google } from '@ai-sdk/google'
 import { cohere } from '@ai-sdk/cohere'
 import { z } from 'zod/v4'
 import { resolve } from '@std/path'
+
+/**
+ * GitHub API response types
+ */
+interface GitHubFileItem {
+  type: 'file' | 'dir'
+  name: string
+  download_url?: string
+  content?: string
+}
+
+interface GitHubContentResponse {
+  content?: string
+  encoding?: string
+}
+
+interface DiscoveryResult {
+  success: boolean
+  rules: DiscoveredRule[]
+  metadata?: PackageMetadata
+  method: 'repository' | 'homepage' | 'inference'
+  source?: string
+}
 import { VibeError, ensureDir, writeTextFile } from '../../lib/effects.ts'
 import { createNetworkError } from '../../lib/errors.ts'
 import {
@@ -224,17 +247,17 @@ const checkRepositoryForRules = (githubRepo: string, token: string, metadata: Pa
 /**
  * Parses .vibe directory contents from GitHub API response
  */
-const parseVibeDirectory = (githubRepo: string, token: string, vibeDir: any, metadata: PackageMetadata) =>
+const parseVibeDirectory = (githubRepo: string, token: string, vibeDir: GitHubFileItem[], metadata: PackageMetadata) =>
   pipe(
     Effect.sync(() => {
       if (!Array.isArray(vibeDir)) return []
       return vibeDir.filter(
-        (item: any) => item.type === 'file' && item.name.endsWith('.json') && item.download_url
+        (item) => item.type === 'file' && item.name.endsWith('.json') && item.download_url
       )
     }),
     Effect.flatMap(jsonFiles =>
       Effect.all(
-        jsonFiles.map((file: any) =>
+        jsonFiles.map((file) =>
           pipe(
             makeHttpRequest(file.download_url, {}), // download_url is unauthenticated
             Effect.flatMap(content =>
@@ -256,7 +279,7 @@ const parseVibeDirectory = (githubRepo: string, token: string, vibeDir: any, met
 /**
  * Parses .cursorrules file content from GitHub API response
  */
-const parseCursorrules = (githubRepo: string, token: string, cursorrules: any, metadata: PackageMetadata) =>
+const parseCursorrules = (githubRepo: string, token: string, cursorrules: GitHubContentResponse, metadata: PackageMetadata) =>
   pipe(
     Effect.succeed(cursorrules?.content),
     Effect.flatMap(base64Content => {
@@ -326,7 +349,7 @@ const createLlmsTxtRule = (metadata: PackageMetadata, content: string, url: stri
  * Performs AI inference to generate rules, trying available providers in sequence.
  */
 const performInference = (metadata: PackageMetadata, projectPath: string) => {
-  const tryProvider = (provider: SecretProvider, modelGenerator: (key: string) => any, modelName: string) =>
+  const tryProvider = (provider: SecretProvider, modelGenerator: (key: string) => ReturnType<typeof openai> | ReturnType<typeof anthropic> | ReturnType<typeof google>, modelName: string) =>
     pipe(
       getSecret(provider, projectPath),
       Effect.flatMap(apiKey => {
@@ -360,7 +383,7 @@ const performInference = (metadata: PackageMetadata, projectPath: string) => {
     Effect.catchAll(() =>
       Effect.succeed({
         method: 'inference' as const,
-        provider: 'none' as any,
+        provider: 'none' as SecretProvider,
         model: 'none',
         rules: [],
         success: false,
@@ -380,7 +403,7 @@ const fetchReadmeContent = (metadata: PackageMetadata) =>
       if (!githubRepo) return Effect.succeed('')
       return pipe(
         makeHttpRequest(`https://api.github.com/repos/${githubRepo}/readme`),
-        Effect.map((response: any) => (response.content ? atob(response.content) : '')),
+        Effect.map((response: GitHubContentResponse) => (response.content ? atob(response.content) : '')),
         Effect.catchAll(() => Effect.succeed(''))
       )
     })
@@ -393,7 +416,7 @@ const generateRulesWithAI = (
   metadata: PackageMetadata,
   readmeContent: string,
   apiKey: string,
-  model: any,
+  model: ReturnType<typeof openai> | ReturnType<typeof anthropic> | ReturnType<typeof google>,
   modelName: string,
   provider: SecretProvider
 ) =>
@@ -523,7 +546,7 @@ export const enhancedDiscoverRules = (metadata: PackageMetadata, projectPath: st
         discoverFromRepository(metadata, projectPath),
         discoverFromHomepage(metadata)
     ])),
-    Effect.flatMap(([repoResult, homepageResult]: [any, any]) => {
+    Effect.flatMap(([repoResult, homepageResult]: [DiscoveryResult, DiscoveryResult]) => {
       const directRules = [...repoResult.rules, ...homepageResult.rules]
       const anyDirectSuccess = repoResult.success || homepageResult.success
 
@@ -546,7 +569,7 @@ export const enhancedDiscoverRules = (metadata: PackageMetadata, projectPath: st
         }))
       )
     }),
-    Effect.tap((result: any) =>
+    Effect.tap((result: { method: string; results: DiscoveryResult[]; rules: DiscoveredRule[] }) =>
       Effect.log(
         `📋 Enhanced discovery for ${metadata.name}: ${result.rules.length} rules found via ${result.method}`
       )

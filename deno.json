@@ -69,7 +69,7 @@
   "lint": {
     "rules": {
       "tags": ["recommended"],
-      "exclude": ["no-unused-vars", "require-await", "no-explicit-any"]
+      "exclude": ["no-unused-vars", "require-await"]
     }
   },
   "exclude": [

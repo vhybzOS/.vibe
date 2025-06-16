@@ -2,16 +2,16 @@ name: Build and Test
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
 
 env:
-  DENO_VERSION: "v2.3.6"
+  DENO_VERSION: 'v2.3.6'
 
 jobs:
   build:
-    name: "Build & Test on ${{ matrix.os }}"
+    name: 'Build & Test on ${{ matrix.os }}'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

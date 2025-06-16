@@ -11,19 +11,18 @@ import { daemonCommand } from './commands/daemon.ts'
 
 /**
  * Centralized error handler for all CLI commands
- * Ensures consistent error handling using Effect-TS patterns
- * 
- * @param commandEffect - Function that returns an Effect program
+ * Handles any Effect type and converts errors to process exit
  */
-const runCommand = (commandEffect: () => Effect.Effect<void, Error>) => {
+const runCommand = (commandEffect: () => Effect.Effect<any, any, any>) => {
   pipe(
     commandEffect(),
-    Effect.catchAll((error) =>
+    Effect.catchAll((error: any) =>
       pipe(
         Effect.sync(() => {
-          console.error('❌ Command failed:', error.message)
+          const message = error?.message || String(error)
+          console.error('❌ Command failed:', message)
           if (Deno.env.get('VIBE_DEBUG')) {
-            console.error('Stack trace:', error.stack)
+            console.error('Error details:', error)
           }
         }),
         Effect.flatMap(() => Effect.sync(() => Deno.exit(1)))
@@ -121,15 +120,16 @@ daemonCmd
     runCommand(() => daemonCommand('restart', {}))
   })
 
-// For backward compatibility, show help when daemon is called without subcommand
 daemonCmd
+  .command('help')
+  .description('Show daemon help')
   .action(() => {
     runCommand(() => daemonCommand('help', {}))
   })
 
 program
   .command('status')
-  .description('Show .vibe status and detected tools')
+  .description('Show project .vibe status')
   .action(() => {
     runCommand(async () => {
       const { statusCommand } = await import('./commands/status.ts')

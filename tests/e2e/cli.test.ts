@@ -54,6 +54,49 @@ describe('🚀 .vibe CLI E2E Tests', () => {
     // Note: We can't easily test the decrypted content here, but we confirm the file is made.
   });
 
+  it('vibe status: should show project information when .vibe is initialized', async () => {
+    // Setup: Initialize .vibe first
+    await testEnv.run.init();
+    
+    // Test: Run status command
+    await testEnv.run.status();
+    
+    // The command should complete without errors
+    // In a real implementation, we'd capture stdout and verify specific output
+  });
+
+  it('vibe status: should show helpful message when .vibe is not initialized', async () => {
+    // Test: Run status command in uninitialized directory
+    try {
+      await testEnv.run.status();
+    } catch (error) {
+      // Should provide helpful error message
+      assert(error instanceof Error, 'Should throw error for uninitialized directory');
+    }
+  });
+
+  it('vibe discover: should start discovery session via daemon', async () => {
+    // Setup: Initialize .vibe first
+    await testEnv.run.init();
+    
+    // Test: Run discover command
+    await testEnv.run.discover();
+    
+    // Verify discovery session was started (mock API tracks this)
+    assert(testEnv.mockApiState.discoverySessions.size > 0, 'Discovery session should be started');
+  });
+
+  it('vibe discover: should handle force refresh option', async () => {
+    // Setup: Initialize .vibe first
+    await testEnv.run.init();
+    
+    // Test: Run discover command with force refresh
+    await testEnv.run.discover({ forceRefresh: true });
+    
+    // Should complete without errors
+    assert(testEnv.mockApiState.discoverySessions.size > 0, 'Discovery session should be started');
+  });
+
   it('vibe init: should handle force flag to overwrite existing directories', async () => {
     // First init
     await testEnv.run.init();

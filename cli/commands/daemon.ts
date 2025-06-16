@@ -13,7 +13,7 @@ const DAEMON_URL = `http://localhost:${DAEMON_PORT}`
  */
 export const daemonCommand = (
   action: 'start' | 'stop' | 'status' | 'restart' | 'help',
-  options: Record<string, any>
+  _options: Record<string, unknown>
 ) =>
   pipe(
     Effect.log(`🔧 Daemon ${action}...`),

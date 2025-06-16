@@ -7,7 +7,7 @@
 
 import { Command } from 'commander'
 import { Effect, pipe } from 'effect'
-import { resolve } from '@std/path'
+// Path utilities available when needed
 
 // Command modules
 import { initCommand } from './cli/commands/init.ts'
@@ -22,7 +22,7 @@ import { discoverCommand } from './cli/commands/discover.ts'
 /**
  * Centralized error handler for all CLI commands
  */
-const runCommand = (commandEffect: () => Effect.Effect<void, Error>) => {
+const runCommand = (commandEffect: () => Effect.Effect<void, Error, never>) => {
   pipe(
     commandEffect(),
     Effect.catchAll((error) =>

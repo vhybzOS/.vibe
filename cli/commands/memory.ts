@@ -4,7 +4,6 @@
  */
 
 import { Effect, pipe } from 'effect'
-import { resolve } from '@std/path'
 import { 
   storeMemory, 
   searchMemory, 
@@ -34,15 +33,15 @@ export const addMemoryCommand = (
     Effect.log('💾 Adding memory entry...'),
     Effect.flatMap(() => {
       const metadata: MemoryMetadataInput = {
-        type: (options.type as any) || 'knowledge',
+        type: (options.type as 'knowledge' | 'conversation' | 'decision' | 'insight' | 'pattern') || 'knowledge',
         source: {
-          tool: (options.source as any) || undefined,
+          tool: (options.source as 'cursor' | 'windsurf' | 'claude' | 'copilot') || undefined,
           sessionId: options.sessionId || crypto.randomUUID(),
           timestamp: new Date().toISOString(),
           location: projectPath
         },
         tags: options.tags || [],
-        importance: (options.importance as any) || 'medium',
+        importance: (options.importance as 'low' | 'medium' | 'high') || 'medium',
         projectPath,
         relatedFiles: options.relatedFiles || [],
         associatedRules: []

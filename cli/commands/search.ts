@@ -29,9 +29,9 @@ export const globalSearchCommand = (
       const searchQuery = {
         term: query,
         filters: {
-          doc_type: options.type?.[0] as any,
+          doc_type: options.type?.[0] as 'memory' | 'diary' | 'rule' | 'dependency' | undefined,
           tags: options.tags,
-          priority: options.priority as any,
+          priority: options.priority as 'low' | 'medium' | 'high' | undefined,
           category: options.category,
           date_range: options.since ? {
             start: new Date(options.since).getTime(),

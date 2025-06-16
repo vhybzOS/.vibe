@@ -1,8 +1,7 @@
 import { Effect, pipe } from 'effect'
-import { resolve } from '@std/path'
 
 export const mcpServerCommand = (
-  options: { port: string; host: string }
+  _options: { port: string; host: string }
 ) =>
   pipe(
     Effect.log('🚀 Starting .vibe MCP server...'),

@@ -13,10 +13,10 @@ import { daemonCommand } from './commands/daemon.ts'
  * Centralized error handler for all CLI commands
  * Handles any Effect type and converts errors to process exit
  */
-const runCommand = (commandEffect: () => Effect.Effect<any, any, any>) => {
+const runCommand = (commandEffect: () => Effect.Effect<void, Error, never>) => {
   pipe(
     commandEffect(),
-    Effect.catchAll((error: any) =>
+    Effect.catchAll((error: Error) =>
       pipe(
         Effect.sync(() => {
           const message = error?.message || String(error)

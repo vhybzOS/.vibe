@@ -4,7 +4,6 @@
  */
 
 import { Effect, pipe } from 'effect'
-import { resolve } from '@std/path'
 import { 
   createEntry, 
   searchDiary, 
@@ -17,7 +16,7 @@ import {
   type TimelineRange,
   type DiaryEntryUpdate
 } from '../../diary/index.ts'
-import { type DiaryCategory, DIARY_CATEGORIES, DiarySearchQuerySchema } from '../../schemas/diary.ts'
+import { type DiaryCategory, DIARY_CATEGORIES } from '../../schemas/diary.ts'
 
 /**
  * Add diary entry command - creates new architectural decision entry

@@ -36,7 +36,7 @@ jobs:
             ${{ runner.os }}-deno-
 
       - name: 📥 Verify lock file and cache dependencies
-        run: deno cache --locked cli.ts daemon.ts
+        run: deno cache --frozen cli.ts daemon.ts
 
       - name: 🔬 Lint and Format Check
         run: |

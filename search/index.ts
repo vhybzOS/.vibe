@@ -490,3 +490,131 @@ const saveIndexToDisk = (projectPath: string) =>
     },
     catch: (error) => createFileSystemError(error, `${projectPath}/.vibe/search.index`, 'Failed to save search index')
   })
+
+/**
+ * CONSOLIDATED SEARCH UTILITIES - Previously duplicated across memory/diary modules
+ */
+
+/**
+ * Create search document for memory entries
+ * Consolidates: memory/index.ts (indexMemoryEntry)
+ */
+export const createMemorySearchDocument = (memory: {
+  metadata: { id: string; type: string; source: { tool?: string }; tags: string[]; importance: string }
+  content: { title: string; summary: string; content: string; keywords: string[] }
+  relationships: { topics: string[] }
+  lifecycle: { created: string }
+}, vibePath: string): SearchDocument => ({
+  id: memory.metadata.id,
+  doc_type: 'memory',
+  timestamp: new Date(memory.lifecycle.created).getTime(),
+  content: [
+    `Title: ${memory.content.title}`,
+    `Summary: ${memory.content.summary}`,
+    `Content: ${memory.content.content}`,
+    `Keywords: ${memory.content.keywords.join(', ')}`,
+    `Type: ${memory.metadata.type}`,
+    `Source: ${memory.metadata.source.tool || 'unknown'}`,
+    `Tags: ${memory.metadata.tags.join(', ')}`,
+    `Topics: ${memory.relationships.topics.join(', ')}`
+  ].join('\\n\\n'),
+  tags: memory.metadata.tags,
+  metadata: {
+    project_path: vibePath,
+    source: memory.metadata.source.tool || 'unknown',
+    priority: memory.metadata.importance === 'critical' ? 'high' : memory.metadata.importance,
+    category: memory.metadata.type,
+    title: memory.content.title,
+  },
+})
+
+/**
+ * Create search document for diary entries
+ * Consolidates: diary/index.ts (indexDiaryEntry)
+ */
+export const createDiarySearchDocument = (entry: {
+  id: string
+  title: string
+  category: string
+  tags: string[]
+  timestamp: string
+  problem: { description: string; context: string }
+  decision: { chosen: string; rationale: string }
+  impact: { benefits: string[]; risks: string[] }
+}, vibePath: string): SearchDocument => ({
+  id: entry.id,
+  doc_type: 'diary',
+  timestamp: new Date(entry.timestamp).getTime(),
+  content: [
+    `Title: ${entry.title}`,
+    `Category: ${entry.category}`,
+    `Problem: ${entry.problem.description}`,
+    `Context: ${entry.problem.context}`,
+    `Decision: ${entry.decision.chosen}`,
+    `Rationale: ${entry.decision.rationale}`,
+    `Benefits: ${entry.impact.benefits.join(', ')}`,
+    `Risks: ${entry.impact.risks.join(', ')}`,
+    `Tags: ${entry.tags.join(', ')}`
+  ].join('\\n\\n'),
+  tags: entry.tags,
+  metadata: {
+    project_path: vibePath,
+    category: entry.category,
+    title: entry.title,
+    timestamp: entry.timestamp,
+  },
+})
+
+/**
+ * Convert memory query to search query format
+ * Consolidates: memory/index.ts (searchMemory query conversion)
+ */
+export const convertMemoryQueryToSearch = (query: {
+  query?: string
+  tags: string[]
+  timeRange?: { from?: string; to?: string }
+  importance: string[]
+  limit?: number
+  type: string[]
+  tool: string[]
+}): SearchQuery => ({
+  term: query.query || '',
+  filters: {
+    doc_type: 'memory' as const,
+    tags: query.tags.length > 0 ? query.tags : undefined,
+    date_range: query.timeRange ? {
+      start: query.timeRange.from ? new Date(query.timeRange.from).getTime() : undefined,
+      end: query.timeRange.to ? new Date(query.timeRange.to).getTime() : undefined,
+    } : undefined,
+    priority: query.importance.length > 0 ? query.importance[0] as 'low' | 'medium' | 'high' : undefined,
+  },
+  mode: 'keyword' as const,
+  limit: query.limit || 20,
+  offset: 0,
+})
+
+/**
+ * Convert diary query to search query format 
+ * Consolidates: diary/index.ts (searchEntries query conversion)
+ */
+export const convertDiaryQueryToSearch = (query: {
+  query?: string
+  category?: string
+  tags?: string[]
+  dateRange?: { from?: string; to?: string }
+  limit?: number
+}): SearchQuery => ({
+  term: query.query || '',
+  filters: {
+    doc_type: 'diary' as const,
+    tags: query.tags,
+    date_range: query.dateRange ? {
+      start: query.dateRange.from ? new Date(query.dateRange.from).getTime() : undefined,
+      end: query.dateRange.to ? new Date(query.dateRange.to).getTime() : undefined,
+    } : undefined,
+    category: query.category,
+  },
+  mode: 'keyword' as const,
+  limit: query.limit || 20,
+  offset: 0,
+})

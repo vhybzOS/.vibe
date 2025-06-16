@@ -6,7 +6,8 @@
 import { Effect, pipe } from 'effect'
 import { resolve, dirname } from '@std/path'
 import { readTextFile, writeTextFile, ensureDir, readDir, parseJSON } from './effects.ts'
-import { createFileSystemError, type FileSystemError } from './errors.ts'
+import { createFileSystemError, createConfigurationError, type FileSystemError } from './errors.ts'
+import { z } from 'zod/v4'
 
 /**
  * Checks if a file exists
@@ -150,4 +151,126 @@ export const remove = (path: string, recursive: boolean = false) =>
       }
       return Effect.fail(error)
     })
+  )
+
+/**
+ * CONSOLIDATED PATTERNS - Previously duplicated across modules
+ */
+
+/**
+ * Loads and validates configuration with schema
+ * Consolidates: memory/index.ts, diary/index.ts, daemon/services/secrets_service.ts
+ */
+export const loadConfig = <T>(
+  configPath: string, 
+  schema: z.ZodSchema<T>, 
+  defaultValue: T
+) =>
+  pipe(
+    fileExists(configPath),
+    Effect.flatMap(exists => 
+      exists 
+        ? pipe(
+            readJSONFile<unknown>(configPath),
+            Effect.flatMap(data => 
+              Effect.try({
+                try: () => schema.parse(data),
+                catch: (error) => createConfigurationError(error, `Invalid config at ${configPath}`)
+              })
+            )
+          )
+        : Effect.succeed(defaultValue)
+    )
+  )
+
+/**
+ * Validates .vibe directory existence
+ * Consolidates: CLI commands (export.ts, status.ts, sync.ts, etc.)
+ */
+export const ensureVibeDirectory = (projectPath: string) =>
+  pipe(
+    Effect.sync(() => resolve(projectPath, '.vibe')),
+    Effect.flatMap(vibePath =>
+      pipe(
+        Effect.tryPromise({
+          try: async () => {
+            const stat = await Deno.stat(vibePath)
+            return stat.isDirectory
+          },
+          catch: () => false
+        }),
+        Effect.flatMap(exists =>
+          exists 
+            ? Effect.succeed(vibePath)
+            : Effect.fail(createFileSystemError(
+                new Error('.vibe directory not found'), 
+                vibePath, 
+                '.vibe not initialized. Run `vibe init` first.'
+              ))
+        )
+      )
+    )
+  )
+
+/**
+ * Loads JSON with schema validation and error recovery
+ * Consolidates: memory/index.ts (loadMemoryFromId), diary/index.ts (loadEntryFromId)
+ */
+export const loadSchemaValidatedJSON = <T>(
+  filePath: string, 
+  schema: z.ZodSchema<T>
+) =>
+  pipe(
+    readJSONFile<unknown>(filePath),
+    Effect.flatMap(data =>
+      Effect.try({
+        try: () => schema.parse(data),
+        catch: (error) => createConfigurationError(error, `Invalid schema in ${filePath}`)
+      })
+    )
+  )
+
+/**
+ * Saves data to JSON file with directory creation
+ * Consolidates: memory/index.ts (saveMemoryToFile), diary/index.ts (saveEntryToFile)
+ */
+export const saveJSONWithBackup = <T>(
+  filePath: string, 
+  data: T, 
+  createBackupFlag = false
+) =>
+  pipe(
+    createBackupFlag ? createBackup(filePath) : Effect.succeed(null),
+    Effect.flatMap(() => writeJSONFile(filePath, data))
+  )
+
+/**
+ * Lists all JSON files in a directory
+ * Consolidates: memory/index.ts (loadMemories), diary/index.ts (loadEntries)
+ */
+export const listJSONFiles = (dirPath: string) =>
+  listFiles(dirPath, entry => entry.name.endsWith('.json'))
+
+/**
+ * Loads all JSON files from directory with schema validation
+ * Consolidates: memory/index.ts (loadMemories), diary/index.ts (loadEntries)
+ */
+export const loadAllJSONFiles = <T>(
+  dirPath: string,
+  schema: z.ZodSchema<T>
+) =>
+  pipe(
+    listJSONFiles(dirPath),
+    Effect.flatMap(filePaths =>
+      Effect.all(
+        filePaths.map(filePath =>
+          pipe(
+            loadSchemaValidatedJSON(filePath, schema),
+            Effect.catchAll(() => Effect.succeed(null))
+          )
+        ),
+        { concurrency: 10 }
+      )
+    ),
+    Effect.map(results => results.filter((item): item is T => item !== null))
   )

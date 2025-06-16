@@ -66,8 +66,8 @@ const detectAndImportExistingConfigs = (projectPath: string) =>
 
 const importExistingToolConfig = (projectPath: string, tool: string) =>
   pipe(
-    // Try to find and import existing config files
-    Effect.succeed(null), // Simplified - would actually import real configs
+    // Future: Import existing tool-specific configurations
+    Effect.succeed(null),
     Effect.catchAll(() => Effect.succeed(null))
   )
 

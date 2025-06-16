@@ -65,11 +65,7 @@ const analyzeProject = (
   Effect.sync(() => {
     const threshold = parseFloat(options.threshold || '0.8')
     
-    // Simplified project analysis - in a real implementation this would:
-    // - Parse ASTs for common patterns
-    // - Analyze file structure and naming conventions  
-    // - Detect frameworks and libraries
-    // - Identify coding patterns and styles
+    // Future: Advanced pattern analysis with AST parsing and framework detection
     
     const commonPatterns = [
       {

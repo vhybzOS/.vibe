@@ -1,5 +1,6 @@
 import { Effect, pipe } from 'effect'
 import { z } from 'zod/v4'
+import { loadConfig, saveJSONWithBackup } from '../../lib/fs.ts'
 
 export const DaemonConfigSchema = z.object({
   daemon: z.object({
@@ -35,45 +36,10 @@ export type DaemonConfig = z.output<typeof DaemonConfigSchema>
 const CONFIG_PATH = '~/.config/vibe/daemon.json'
 
 export const loadDaemonConfig = () =>
-  pipe(
-    Effect.tryPromise({
-      try: () => Deno.readTextFile(expandPath(CONFIG_PATH)),
-      catch: () => new Error('Config file not found'),
-    }),
-    Effect.flatMap(content => 
-      Effect.try({
-        try: () => JSON.parse(content),
-        catch: () => new Error('Invalid JSON in config file'),
-      })
-    ),
-    Effect.flatMap(data => 
-      Effect.try({
-        try: () => DaemonConfigSchema.parse(data),
-        catch: (error) => new Error(`Invalid config schema: ${error}`),
-      })
-    )
-  )
+  loadConfig(expandPath(CONFIG_PATH), DaemonConfigSchema, getDefaultConfig())
 
 export const saveDaemonConfig = (config: DaemonConfig) =>
-  pipe(
-    Effect.tryPromise({
-      try: async () => {
-        const configDir = expandPath('~/.config/vibe')
-        await Deno.mkdir(configDir, { recursive: true })
-        return configDir
-      },
-      catch: () => new Error('Failed to create config directory'),
-    }),
-    Effect.flatMap(() => 
-      Effect.tryPromise({
-        try: () => Deno.writeTextFile(
-          expandPath(CONFIG_PATH),
-          JSON.stringify(config, null, 2)
-        ),
-        catch: () => new Error('Failed to write config file'),
-      })
-    )
-  )
+  saveJSONWithBackup(expandPath(CONFIG_PATH), config)
 
 export const getDefaultConfig = (): DaemonConfig => 
   DaemonConfigSchema.parse({})

@@ -13,6 +13,7 @@ import {
   type MemoryMetadataInput 
 } from '../../memory/index.ts'
 import { MemoryQuerySchema } from '../../schemas/memory.ts'
+import { createCliError } from '../../lib/errors.ts'
 
 /**
  * Add memory command - stores new memory entry
@@ -128,7 +129,7 @@ export const getMemoryCommand = (
       if (!memory) {
         return pipe(
           Effect.log(`❌ Memory not found: ${memoryId}`),
-          Effect.flatMap(() => Effect.fail(new Error('Memory not found')))
+          Effect.flatMap(() => Effect.fail(createCliError(new Error('Memory not found'), 'Memory not found', 'get-memory')))
         )
       }
       
@@ -227,7 +228,7 @@ export const deleteMemoryCommand = (
         return pipe(
           Effect.log('⚠️  Are you sure? This cannot be undone.'),
           Effect.flatMap(() => Effect.log('   Use --force flag to confirm deletion.')),
-          Effect.flatMap(() => Effect.fail(new Error('Deletion cancelled - use --force flag')))
+          Effect.flatMap(() => Effect.fail(createCliError(new Error('Deletion cancelled'), 'Deletion cancelled - use --force flag', 'delete-memory')))
         )
       }
       
@@ -239,7 +240,7 @@ export const deleteMemoryCommand = (
       } else {
         return pipe(
           Effect.log('❌ Memory not found or could not be deleted'),
-          Effect.flatMap(() => Effect.fail(new Error('Memory deletion failed')))
+          Effect.flatMap(() => Effect.fail(createCliError(new Error('Memory deletion failed'), 'Memory deletion failed', 'delete-memory')))
         )
       }
     })

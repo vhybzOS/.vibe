@@ -17,9 +17,12 @@ import {
   initializeSearch, 
   insertDocument, 
   searchDocuments, 
+  createMemorySearchDocument,
+  convertMemoryQueryToSearch,
   type SearchDocument 
 } from '../search/index.ts'
 import { createFileSystemError, createParseError } from '../lib/errors.ts'
+import { saveJSONWithBackup, loadSchemaValidatedJSON, loadAllJSONFiles } from '../lib/fs.ts'
 
 /**
  * Interface for memory storage input metadata
@@ -76,23 +79,7 @@ export const searchMemory = (
   pipe(
     initializeSearch(vibePath),
     Effect.flatMap(() => {
-      // Convert MemoryQuery to SearchQuery format
-      const searchQuery = {
-        term: query.query || '',
-        filters: {
-          doc_type: 'memory' as const,
-          tags: query.tags.length > 0 ? query.tags : undefined,
-          date_range: query.timeRange ? {
-            start: query.timeRange.from ? new Date(query.timeRange.from).getTime() : undefined,
-            end: query.timeRange.to ? new Date(query.timeRange.to).getTime() : undefined,
-          } : undefined,
-          priority: query.importance.length > 0 ? query.importance[0] : undefined,
-        },
-        mode: 'keyword' as const,
-        limit: query.limit || 20,
-        offset: 0,
-      }
-      
+      const searchQuery = convertMemoryQueryToSearch(query)
       return searchDocuments(searchQuery)
     }),
     Effect.flatMap(response => 
@@ -181,34 +168,12 @@ export const updateMemoryAccess = (
   )
 
 /**
- * Loads all memory entries from storage
+ * Loads all memory entries from storage using consolidated utility
  */
 export const loadMemories = (vibePath: string) =>
   pipe(
-    Effect.tryPromise({
-      try: async () => {
-        const memoryDir = resolve(vibePath, '.vibe', 'memory')
-        const files = []
-        try {
-          for await (const entry of Deno.readDir(memoryDir)) {
-            if (entry.isFile && entry.name.endsWith('.json')) {
-              files.push(resolve(memoryDir, entry.name))
-            }
-          }
-        } catch {
-          return [] // Directory doesn't exist
-        }
-        return files
-      },
-      catch: () => []
-    }),
-    Effect.flatMap(files => 
-      Effect.all(
-        files.map(loadSingleMemoryFile),
-        { concurrency: 10 }
-      )
-    ),
-    Effect.map(memories => memories.filter((memory): memory is Memory => memory !== null))
+    Effect.sync(() => resolve(vibePath, '.vibe', 'memory')),
+    Effect.flatMap(memoryDir => loadAllJSONFiles(memoryDir, MemorySchema))
   )
 
 // ==================== Helper Functions ====================
@@ -272,21 +237,12 @@ const createMemoryEntry = (
 }
 
 /**
- * Saves memory to JSON file
+ * Saves memory to JSON file using consolidated utility
  */
 const saveMemoryToFile = (vibePath: string, memory: Memory) =>
   pipe(
-    Effect.tryPromise({
-      try: async () => {
-        const memoryDir = resolve(vibePath, '.vibe', 'memory')
-        await Deno.mkdir(memoryDir, { recursive: true })
-        
-        const filePath = resolve(memoryDir, `${memory.metadata.id}.json`)
-        await Deno.writeTextFile(filePath, JSON.stringify(memory, null, 2))
-        return filePath
-      },
-      catch: (error) => createFileSystemError(error, vibePath, 'Failed to save memory file')
-    })
+    Effect.sync(() => resolve(vibePath, '.vibe', 'memory', `${memory.metadata.id}.json`)),
+    Effect.flatMap(filePath => saveJSONWithBackup(filePath, memory))
   )
 
 /**
@@ -296,78 +252,18 @@ const indexMemoryEntry = (vibePath: string, memory: Memory) =>
   pipe(
     initializeSearch(vibePath),
     Effect.flatMap(() => {
-      const searchableContent = [
-        `Title: ${memory.content.title}`,
-        `Summary: ${memory.content.summary}`,
-        `Content: ${memory.content.content}`,
-        `Keywords: ${memory.content.keywords.join(', ')}`,
-        `Type: ${memory.metadata.type}`,
-        `Source: ${memory.metadata.source.tool || 'unknown'}`,
-        `Tags: ${memory.metadata.tags.join(', ')}`,
-        `Topics: ${memory.relationships.topics.join(', ')}`
-      ].join('\\n\\n')
-      
-      const document: SearchDocument = {
-        id: memory.metadata.id,
-        doc_type: 'memory',
-        timestamp: new Date(memory.lifecycle.created).getTime(),
-        content: searchableContent,
-        tags: memory.metadata.tags,
-        metadata: {
-          project_path: vibePath,
-          source: memory.metadata.source.tool || 'unknown',
-          priority: memory.metadata.importance === 'critical' ? 'high' : memory.metadata.importance,
-          category: memory.metadata.type,
-          title: memory.content.title,
-        },
-      }
-      
+      const document = createMemorySearchDocument(memory, vibePath)
       return insertDocument(document)
     })
   )
 
 /**
- * Loads a single memory by ID
+ * Loads a single memory by ID using consolidated utility
  */
 const loadMemoryFromId = (vibePath: string, id: string) =>
   pipe(
-    Effect.tryPromise({
-      try: async () => {
-        const filePath = resolve(vibePath, '.vibe', 'memory', `${id}.json`)
-        const content = await Deno.readTextFile(filePath)
-        return JSON.parse(content)
-      },
-      catch: (error) => createFileSystemError(error, `${vibePath}/.vibe/memory/${id}.json`, 'Failed to load memory')
-    }),
-    Effect.flatMap(data => 
-      Effect.try({
-        try: () => MemorySchema.parse(data),
-        catch: (error) => createParseError(error, `${id}.json`, 'Invalid memory schema')
-      })
-    )
-  )
-
-/**
- * Loads a single memory file with error handling
- */
-const loadSingleMemoryFile = (filePath: string) =>
-  pipe(
-    Effect.tryPromise({
-      try: async () => {
-        const content = await Deno.readTextFile(filePath)
-        return JSON.parse(content)
-      },
-      catch: () => null
-    }),
-    Effect.flatMap(data => {
-      if (!data) return Effect.succeed(null)
-      
-      return Effect.try({
-        try: () => MemorySchema.parse(data),
-        catch: () => null
-      })
-    }),
-    Effect.catchAll(() => Effect.succeed(null))
+    Effect.sync(() => resolve(vibePath, '.vibe', 'memory', `${id}.json`)),
+    Effect.flatMap(filePath => loadSchemaValidatedJSON(filePath, MemorySchema))
   )
 
 /**

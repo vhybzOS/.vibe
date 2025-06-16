@@ -21,10 +21,7 @@ const globalManifestRegistry = registerParser(
   npmManifestParser
 )
 
-// TODO: Add more parsers as needed
-// globalManifestRegistry.register(new PythonManifestParser())
-// globalManifestRegistry.register(new CargoManifestParser())
-// globalManifestRegistry.register(new ComposerManifestParser())
+// Additional parsers can be added here when needed
 
 /**
  * Discovers and parses all manifest files in a project directory

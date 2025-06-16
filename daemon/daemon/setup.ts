@@ -1,17 +1,8 @@
 import { Effect, pipe } from 'effect'
-import { resolve } from '@std/path'
+import { ensureVibeDirectory } from '../../lib/fs.ts'
 
-export const ensureVibeDirectory = (projectPath: string) =>
-  pipe(
-    Effect.tryPromise({
-      try: async () => {
-        const vibePath = resolve(projectPath, '.vibe')
-        await Deno.mkdir(vibePath, { recursive: true })
-        return vibePath
-      },
-      catch: () => new Error(`Failed to ensure .vibe directory in ${projectPath}`),
-    })
-  )
+// Re-export for compatibility
+export { ensureVibeDirectory }
 
 export const createSystemdService = (daemonPath: string) =>
   Effect.sync(() => {

@@ -6,6 +6,7 @@
 
 import { Effect, pipe } from 'effect'
 import { z } from 'zod/v4'
+import { createDaemonError } from '../lib/errors.ts'
 import { 
   getSecretsStatus, 
   setSecretAndInferProvider,
@@ -137,7 +138,7 @@ export class VibeDaemon {
           
           return this.httpServer
         },
-        catch: (error) => new Error(`Failed to start HTTP server: ${error}`),
+        catch: (error) => createDaemonError(error, 'Failed to start HTTP server', 'http-server'),
       }),
       Effect.tap(() => Effect.log(`🌐 HTTP server running on http://localhost:${this.state.port}`))
     )

@@ -4,7 +4,7 @@
  */
 
 /**
- * File system error, tagged with `_tag: 'FileSystemError'`
+ * File system error, tagged with `tag: 'FileSystemError'`
  */
 export interface FileSystemError {
   readonly _tag: 'FileSystemError'
@@ -79,6 +79,36 @@ export interface TimeoutError {
 }
 
 /**
+ * Daemon service error, tagged with `_tag: 'DaemonError'`
+ */
+export interface DaemonError {
+  readonly _tag: 'DaemonError'
+  readonly error: unknown
+  readonly message: string
+  readonly component: string
+}
+
+/**
+ * MCP protocol error, tagged with `_tag: 'McpError'`
+ */
+export interface McpError {
+  readonly _tag: 'McpError'
+  readonly error: unknown
+  readonly message: string
+  readonly operation: string
+}
+
+/**
+ * CLI command error, tagged with `_tag: 'CliError'`
+ */
+export interface CliError {
+  readonly _tag: 'CliError'
+  readonly error: unknown
+  readonly message: string
+  readonly command: string
+}
+
+/**
  * Union of all possible application-level errors
  * This allows for exhaustive, type-safe error handling
  */
@@ -91,6 +121,9 @@ export type VibeError =
   | DiscoveryError 
   | VersionError 
   | TimeoutError
+  | DaemonError
+  | McpError
+  | CliError
 
 /**
  * Helper functions to create errors in a functional way
@@ -171,4 +204,37 @@ export const createTimeoutError = (
   _tag: 'TimeoutError',
   timeoutMs,
   message,
+})
+
+export const createDaemonError = (
+  error: unknown,
+  message: string,
+  component: string
+): DaemonError => ({
+  _tag: 'DaemonError',
+  error,
+  message,
+  component,
+})
+
+export const createMcpError = (
+  error: unknown,
+  message: string,
+  operation: string
+): McpError => ({
+  _tag: 'McpError',
+  error,
+  message,
+  operation,
+})
+
+export const createCliError = (
+  error: unknown,
+  message: string,
+  command: string
+): CliError => ({
+  _tag: 'CliError',
+  error,
+  message,
+  command,
 })

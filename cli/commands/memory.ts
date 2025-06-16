@@ -34,7 +34,7 @@ export const addMemoryCommand = (
     Effect.log('💾 Adding memory entry...'),
     Effect.flatMap(() => {
       const metadata: MemoryMetadataInput = {
-        type: (options.type as 'knowledge' | 'conversation' | 'decision' | 'insight' | 'pattern') ||
+        type: (options.type as 'knowledge' | 'conversation' | 'decision' | 'context' | 'preference' | 'pattern') ||
           'knowledge',
         source: {
           tool: (options.source as 'cursor' | 'windsurf' | 'claude' | 'copilot') || undefined,

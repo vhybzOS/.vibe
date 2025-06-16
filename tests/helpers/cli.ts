@@ -10,8 +10,8 @@ import { discoverCommand } from '../../cli/commands/discover.ts'
 
 // Represents the state of our mock daemon API
 interface MockApiState {
-  secrets: Record<string, string>
-  discoverySessions: Map<string, { status: string; lastActivity: string }>
+  secrets: Record<string, Record<string, boolean>>
+  discoverySessions: Map<string, { projectPath: string; status: string; lastActivity: string }>
 }
 
 /**
@@ -32,7 +32,7 @@ const createMockApiServer = (state: MockApiState) => {
       const body = await req.text()
       const { projectPath } = JSON.parse(body)
       const sessionId = `test-session-${crypto.randomUUID()}`
-      state.discoverySessions.set(sessionId, { projectPath, status: 'running' })
+      state.discoverySessions.set(sessionId, { projectPath, status: 'running', lastActivity: new Date().toISOString() })
       return new Response(JSON.stringify({ success: true, sessionId }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },

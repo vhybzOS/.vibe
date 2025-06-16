@@ -5,8 +5,10 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { detectAITools } from '../../tools/index.ts'
+import { detectAITools, TOOL_CONFIGS } from '../../tools/index.ts'
+import { type DetectedTool } from '../../schemas/ai-tool-config.ts'
 import { loadRules } from '../../rules/index.ts'
+import { type UniversalRule } from '../../schemas/universal-rule.ts'
 import { memoryStatsCommand } from './memory.ts'
 import { searchStatsCommand } from './search.ts'
 import { diaryStatsCommand } from './diary.ts'
@@ -164,17 +166,19 @@ const checkDirectory = (path: string) =>
 /**
  * Display tools information
  */
-const showTools = (
-  tools: Array<{ type: string; name: string; version?: string; configPath?: string }>,
-) =>
+const showTools = (tools: DetectedTool[]) =>
   tools.length === 0
     ? Effect.log('   No AI tools detected')
-    : Effect.all(tools.map((tool) => Effect.log(`   ✅ ${tool.name} (${tool.type})`)))
+    : Effect.all(tools.map((tool) => {
+      const name = TOOL_CONFIGS[tool.tool]?.name || tool.tool
+      const status = tool.status === 'active' ? '✅' : tool.status === 'inactive' ? '⚠️' : '❌'
+      return Effect.log(`   ${status} ${name} (${tool.tool}) - ${Math.round(tool.confidence * 100)}%`)
+    }))
 
 /**
  * Display rules information
  */
-const showRules = (rules: Array<{ id: string; description: string; enabled: boolean }>) =>
+const showRules = (rules: UniversalRule[]) =>
   pipe(
     Effect.log(`   📊 Total: ${rules.length}`),
     Effect.flatMap(() => {
@@ -186,7 +190,13 @@ const showRules = (rules: Array<{ id: string; description: string; enabled: bool
 /**
  * Display health information
  */
-const showHealth = (health: { status: string; uptime?: number; errors?: string[] }) =>
+const showHealth = (health: {
+  configExists: boolean
+  secretsExists: boolean
+  rulesExists: boolean
+  memoryExists: boolean
+  diaryExists: boolean
+}) =>
   pipe(
     Effect.log(`   ⚙️  Configuration: ${health.configExists ? '✅ OK' : '❌ Missing'}`),
     Effect.flatMap(() =>

@@ -129,6 +129,7 @@ describe('🚀 .vibe CLI E2E Tests', () => {
     // Check if our mock API received the discovery start request
     assertEquals(testEnv.mockApiState.discoverySessions.size, 1)
     const session = [...testEnv.mockApiState.discoverySessions.values()][0]
+    assertExists(session)
     assertEquals(session.projectPath, testEnv.testDir)
     assertEquals(session.status, 'running')
   })

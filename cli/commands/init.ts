@@ -4,6 +4,7 @@ import { detectAITools } from '../../tools/index.ts'
 import { VibeConfig } from '../../schemas/project.ts'
 import { setSecret, setSecretAndInferProvider } from '../../daemon/services/secrets_service.ts'
 import { readTextFile } from '../../lib/effects.ts'
+import { type FileSystemError } from '../../lib/errors.ts'
 
 export const initCommand = (
   projectPath: string,
@@ -117,7 +118,7 @@ const bootstrapProjectSecrets = (projectPath: string) => {
   return pipe(
     readTextFile(resolve(projectPath, '.env')),
     Effect.map((content) => {
-      const secretsToSet: Effect.Effect<void, Error, never>[] = []
+      const secretsToSet: Effect.Effect<void, Error | FileSystemError, never>[] = []
       for (const line of content.split('\n')) {
         if (!line.trim() || line.startsWith('#') || !line.includes('=')) continue
         const [key, ...valueParts] = line.split('=')

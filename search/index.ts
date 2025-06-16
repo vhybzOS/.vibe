@@ -524,7 +524,7 @@ export const createMemorySearchDocument = (memory: {
   metadata: {
     id: string
     type: string
-    source: { tool?: string }
+    source: { tool?: string | undefined }
     tags: string[]
     importance: string
   }
@@ -549,7 +549,7 @@ export const createMemorySearchDocument = (memory: {
   metadata: {
     project_path: vibePath,
     source: memory.metadata.source.tool || 'unknown',
-    priority: memory.metadata.importance === 'critical' ? 'high' : memory.metadata.importance,
+    priority: memory.metadata.importance === 'critical' ? 'high' : (memory.metadata.importance as 'low' | 'medium' | 'high'),
     category: memory.metadata.type,
     title: memory.content.title,
   },
@@ -586,9 +586,10 @@ export const createDiarySearchDocument = (entry: {
   tags: entry.tags,
   metadata: {
     project_path: vibePath,
+    source: 'diary',
+    priority: 'medium' as const,
     category: entry.category,
     title: entry.title,
-    timestamp: entry.timestamp,
   },
 })
 
@@ -597,9 +598,9 @@ export const createDiarySearchDocument = (entry: {
  * Consolidates: memory/index.ts (searchMemory query conversion)
  */
 export const convertMemoryQueryToSearch = (query: {
-  query?: string
+  query?: string | undefined
   tags: string[]
-  timeRange?: { from?: string; to?: string }
+  timeRange?: { from?: string | undefined; to?: string | undefined } | undefined
   importance: string[]
   limit?: number
   type: string[]

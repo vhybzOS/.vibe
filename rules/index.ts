@@ -79,15 +79,7 @@ export const generateRulesFromProject = (
  */
 const analyzeProjectPatterns = (projectPath: string) =>
   pipe(
-    Effect.tryPromise({
-      try: () => analyzeCodebaseStructure(projectPath),
-      catch: () =>
-        createParseError(
-          'Failed to analyze project structure',
-          '',
-          'Failed to analyze project structure',
-        ),
-    }),
+    Effect.sync(() => analyzeCodebaseStructure(projectPath)),
     Effect.map((structure) => extractPatterns(structure)),
   )
 

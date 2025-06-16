@@ -260,8 +260,8 @@ describe('⚡ Performance Benchmarks', () => {
       await Promise.all(operations)
 
       // Force garbage collection if available
-      if (typeof (globalThis as { gc?: () => void }).gc === 'function') {
-        ;(globalThis as { gc: () => void }).gc()
+      if (typeof (globalThis as unknown as { gc?: () => void }).gc === 'function') {
+        ;(globalThis as unknown as { gc: () => void }).gc()
       }
 
       const finalMemory = getMemoryUsage()
@@ -286,8 +286,8 @@ describe('⚡ Performance Benchmarks', () => {
         await Effect.runPromise(detectAITools(testProjectPath))
 
         // Force GC if available
-        if (typeof (globalThis as { gc?: () => void }).gc === 'function') {
-          ;(globalThis as { gc: () => void }).gc()
+        if (typeof (globalThis as unknown as { gc?: () => void }).gc === 'function') {
+          ;(globalThis as unknown as { gc: () => void }).gc()
         }
 
         measurements.push(getMemoryUsage())

@@ -8,6 +8,9 @@ import { resolve } from '@std/path'
 import { createFileSystemError, createParseError, type VibeError } from '../lib/errors.ts'
 import type { SearchDocument, SearchQuery, SearchResponse, SearchResult } from '../schemas/search.ts'
 
+// Re-export types for external use
+export type { SearchDocument, SearchQuery, SearchResponse, SearchResult }
+
 /**
  * In-memory search index - simple and fast for the .vibe use case
  */
@@ -220,6 +223,14 @@ export const rebuildIndex = (projectPath: string) =>
     Effect.map(() => void 0)
   )
 
+/**
+ * Clear search index from memory (for testing)
+ */
+export const clearIndex = (projectPath: string) =>
+  Effect.sync(() => {
+    searchIndices.delete(projectPath)
+  })
+
 // ==================== Helper Functions ====================
 
 /**
@@ -324,11 +335,18 @@ const performSearch = (index: SearchIndex, query: SearchQuery): SearchResult[] =
       matchingDocs.set(docId, (matchingDocs.get(docId) || 0) + 1.0)
     })
     
-    // Partial matches
+    // Partial matches - only for compound terms and more restrictive
     for (const [indexTerm, docIds] of index.invertedIndex.entries()) {
-      if (indexTerm.includes(term) && indexTerm !== term) {
+      if (indexTerm !== term && (
+        // Allow partial matches for compound terms (with hyphens)
+        (term.includes('-') && indexTerm.includes(term)) ||
+        // Allow prefix matches for longer terms
+        (term.length >= 4 && indexTerm.startsWith(term)) ||
+        // Allow suffix matches for compound terms
+        (term.includes('-') && term.split('-')[1] !== undefined && indexTerm.endsWith(term.split('-')[1]!))
+      )) {
         docIds.forEach(docId => {
-          matchingDocs.set(docId, (matchingDocs.get(docId) || 0) + 0.5)
+          matchingDocs.set(docId, (matchingDocs.get(docId) || 0) + 0.3) // Lower score for partial matches
         })
       }
     }

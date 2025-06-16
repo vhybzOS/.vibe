@@ -19,7 +19,8 @@ import {
   updateDocument,
   deleteDocument,
   searchDocuments,
-  rebuildIndex
+  rebuildIndex,
+  clearIndex
 } from '../index.ts'
 
 describe('🔍 Search System', () => {
@@ -34,6 +35,9 @@ describe('🔍 Search System', () => {
 
   afterEach(async () => {
     try {
+      // Clear in-memory index first
+      await Effect.runPromise(clearIndex(testDir))
+      // Then remove filesystem
       await Deno.remove(testDir, { recursive: true })
     } catch {
       // Ignore cleanup errors

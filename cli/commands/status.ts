@@ -164,7 +164,7 @@ const checkDirectory = (path: string) =>
 /**
  * Display tools information
  */
-const showTools = (tools: any[]) =>
+const showTools = (tools: Array<{ type: string; name: string; version?: string; configPath?: string }>) =>
   tools.length === 0
     ? Effect.log('   No AI tools detected')
     : Effect.all(tools.map(tool => 
@@ -174,7 +174,7 @@ const showTools = (tools: any[]) =>
 /**
  * Display rules information
  */
-const showRules = (rules: any[]) =>
+const showRules = (rules: Array<{ id: string; description: string; enabled: boolean }>) =>
   pipe(
     Effect.log(`   📊 Total: ${rules.length}`),
     Effect.flatMap(() => {
@@ -186,7 +186,7 @@ const showRules = (rules: any[]) =>
 /**
  * Display health information
  */
-const showHealth = (health: any) =>
+const showHealth = (health: { status: string; uptime?: number; errors?: string[] }) =>
   pipe(
     Effect.log(`   ⚙️  Configuration: ${health.configExists ? '✅ OK' : '❌ Missing'}`),
     Effect.flatMap(() => Effect.log(`   🔐 Secrets: ${health.secretsExists ? '✅ OK' : '⚠️  Not configured'}`)),

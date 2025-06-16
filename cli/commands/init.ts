@@ -1,8 +1,8 @@
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { detectAITools, importToolConfig } from '../../tools/index.ts'
-import { saveRule } from '../../rules/index.ts'
-import { VibeConfig, VibeConfigSchema } from '../../schemas/project.ts'
+import { detectAITools } from '../../tools/index.ts'
+// import { saveRule } from '../../rules/index.ts' // Future feature
+import { VibeConfig } from '../../schemas/project.ts'
 import { setSecret, setSecretAndInferProvider } from '../../daemon/services/secrets_service.ts'
 import { readTextFile } from '../../lib/effects.ts'
 
@@ -65,7 +65,7 @@ const detectAndImportExistingConfigs = (projectPath: string) =>
     Effect.map(imported => imported.filter(Boolean))
   )
 
-const importExistingToolConfig = (projectPath: string, tool: string) =>
+const importExistingToolConfig = (_projectPath: string, _tool: string) =>
   pipe(
     // Try to find and import existing config files
     Effect.succeed(null), // Simplified - would actually import real configs

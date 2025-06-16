@@ -106,7 +106,7 @@ const loadConfig = (vibePath: string) =>
 /**
  * Format data according to export format
  */
-const formatExportData = (data: any, options: { format?: string }) =>
+const formatExportData = (data: unknown, options: { format?: string }) =>
   Effect.sync(() => {
     const format = options.format || 'full'
     

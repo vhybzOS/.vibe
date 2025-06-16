@@ -104,8 +104,8 @@ const getProjectRules = (projectPath: string) =>
  * Perform sync for detected tools
  */
 const performToolSync = (
-  tools: any[],
-  rules: any[],
+  tools: Array<{ type: string; name: string }>,
+  rules: Array<{ id: string; description: string }>,
   options: { dryRun?: boolean; force?: boolean }
 ) =>
   pipe(

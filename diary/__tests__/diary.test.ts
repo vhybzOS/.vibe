@@ -260,7 +260,6 @@ describe('📔 Diary System', () => {
       ]
 
       for (const entry of entries) {
-        const timestamp = new Date(Date.now() + entry.offset * 60 * 60 * 1000).toISOString()
         const entryInput = {
           title: entry.title,
           category: entry.category,

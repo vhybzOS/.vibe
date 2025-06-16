@@ -52,7 +52,7 @@ export const storeMemory = (
   metadata: MemoryMetadataInput
 ) =>
   pipe(
-    Effect.sync(() => createMemoryEntry(content, metadata, vibePath)),
+    Effect.sync(() => createMemoryEntry(content, metadata)),
     Effect.flatMap(memory => 
       pipe(
         saveMemoryToFile(vibePath, memory),
@@ -218,8 +218,7 @@ export const loadMemories = (vibePath: string) =>
  */
 const createMemoryEntry = (
   content: string,
-  metadata: MemoryMetadataInput,
-  vibePath: string
+  metadata: MemoryMetadataInput
 ): Memory => {
   const now = new Date().toISOString()
   const memoryId = crypto.randomUUID()

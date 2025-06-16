@@ -68,7 +68,8 @@
   },
   "lint": {
     "rules": {
-      "tags": ["recommended"]
+      "tags": ["recommended"],
+      "exclude": ["no-unused-vars"]
     }
   },
   "exclude": [

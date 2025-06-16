@@ -44,7 +44,7 @@ describe('🔍 Search System', () => {
 
   describe('🏗️ Index Management', () => {
     it('should initialize search index', async () => {
-      const _result = await Effect.runPromise(initializeSearch(testDir))
+      await Effect.runPromise(initializeSearch(testDir))
       
       // Should create search index files
       const indexExists = await Deno.stat(resolve(searchPath, 'search.index')).then(() => true).catch(() => false)
@@ -73,7 +73,7 @@ describe('🔍 Search System', () => {
       await Effect.runPromise(insertDocument(testDoc))
       
       // Test: Rebuild index
-      const _result = await Effect.runPromise(rebuildIndex(testDir))
+      await Effect.runPromise(rebuildIndex(testDir))
       
       // Verify: Should be able to search after rebuild
       const searchQuery = {

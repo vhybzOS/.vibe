@@ -52,7 +52,7 @@ const performGeneration = (
     Effect.log(`🔍 Analyzing codebase in ${projectPath}`),
     Effect.flatMap(() => analyzeProject(projectPath, options)),
     Effect.flatMap((analysis) => generateRulesFromAnalysis(analysis)),
-    Effect.flatMap((rules) => showGenerationResults(rules, options))
+    Effect.flatMap((rules) => showGenerationResults(rules))
   )
 
 /**
@@ -123,7 +123,7 @@ const generateRulesFromAnalysis = (analysis: { patterns: Array<{ name: string; d
 /**
  * Show generation results
  */
-const showGenerationResults = (rules: any[], options: any) =>
+const showGenerationResults = (rules: Array<{ id: string; description: string; type: string }>) =>
   pipe(
     Effect.log(''),
     Effect.flatMap(() => Effect.log('📊 Rule Generation Results:')),

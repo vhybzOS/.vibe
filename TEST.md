@@ -1,133 +1,149 @@
-# TEST.md - .vibe Testing Architecture & Status
+# LINT.md - .vibe Code Quality & Consolidation Plan
 
-## 🎯 Current Goal: Achieve Green `deno task test` (21 TypeScript Errors → 0)
+## 🎯 Current Goal: Achieve Green `deno task lint` + Codebase Consolidation
 
-### 📊 Test Coverage Status (95.5% Pass Rate)
-- **149/156 tests passing** - Core functionality fully operational
-- **Search System**: 100% (21/21 tests) ✅
-- **Schema Validation**: 100% (18/18 tests) ✅  
-- **Performance**: 100% (14/14 tests) ✅
-- **Memory System**: 95% (21/24 tests) 🟡
-- **Diary System**: 96% (25/27 tests) 🟡
-- **E2E Integration**: 89% (8/9 tests) 🟡
+### 📊 Current Status: 156 Linting Issues Across 62 Files
 
-## 🏗️ Architectural Findings & Learnings
+✅ **TypeScript Compilation**: 0 errors (149/156 tests passing)  
+❌ **Code Quality**: 156 linting violations need fixing  
+🧹 **Technical Debt**: Multiple implementation patterns, unused imports, dead code
 
-### ✅ **Successfully Resolved Issues**
-1. **Search Index Pollution Bug** - Global search index persisted across tests, breaking memory search
-2. **Schema Parser Integration** - CLI commands now use proper Zod v4 schema validation
-3. **Effect-TS Patterns** - Resolved pipe composition and error handling patterns
-4. **Legacy Code Cleanup** - Removed duplicate schema files, consolidated diary schemas
+## 🔍 **Lint Issues Analysis**
 
-### 🔧 **Core System Architecture**
+### **Critical Issues (Must Fix)**
+1. **156 no-explicit-any violations** - Replace `any` with proper types
+2. **42 no-unused-vars violations** - Remove unused imports/variables  
+3. **18 require-await violations** - Remove unnecessary async keywords
+4. **Dead code patterns** - Stub implementations, placeholder functions
 
-#### **Search System** (100% Working)
-- **In-memory search index** with inverted index for fast keyword matching
-- **Document types**: memory, diary, rule, dependency
-- **Filtering**: tags, priority, category, date range, doc_type
-- **Cross-test isolation**: Proper `clearIndex()` cleanup prevents pollution
+### **Issue Categories Breakdown**
 
-#### **Memory System** (95% Working) 
-- **File-based storage**: `.vibe/memory/{id}.json` format
-- **Search integration**: Documents indexed for semantic search
-- **Metadata tracking**: type, source, tags, importance, lifecycle
-- **Remaining issues**: 3 filter tests need empty query → broad query fix
+#### **Category 1: Type Safety (156 any violations)**
+- `cli/commands/*.ts` - Using `any` for option casting
+- `tests/**/*.test.ts` - Using `any` for invalid test data
+- `rules/index.ts` - Pattern analysis using `any`
+- `mcp-server/**/*.ts` - MCP protocol handling with `any`
+- `discovery/**/*.ts` - Registry parsing with `any`
+- `daemon/**/*.ts` - HTTP response handling with `any`
 
-#### **Diary System** (96% Working)
-- **Simple schema**: title, category, tags, problem, decision, impact  
-- **Search integration**: Entries indexed for keyword search
-- **Auto-capture**: Pattern-based decision detection from conversations
-- **Remaining issues**: 2 tests (auto-capture feature incomplete)
+#### **Category 2: Dead Code (42 unused imports)**
+- Schema imports in test files that aren't used
+- Utility functions imported but not called
+- Type imports for documentation only
+- Effect utilities imported but using direct calls
 
-### 🚨 **Current TypeScript Errors (21 Total)**
+#### **Category 3: Async Hygiene (18 require-await)**
+- Stub functions marked async but not implemented
+- Functions that should be sync but marked async
+- Handler functions with no async operations
 
-#### **Category 1: exactOptionalPropertyTypes Issues (8 errors)**
-- `cli/commands/diary.ts:101` - DiaryCategory type casting
-- `cli/commands/search.ts:99,123` - string[] | undefined → string[]
-- `schemas/project.ts:160` - Missing required integration defaults
+## 🏗️ **Consolidation Opportunities**
 
-#### **Category 2: Effect-TS Pipe Composition (1 error)**
-- `cli/commands/memory.ts:230` - Effect.log pipe composition
+### **Duplicate Implementations Found**
+1. **Error Handling**: 3 different error patterns across modules
+2. **File Operations**: 4 different file reading patterns
+3. **Search Integration**: 2 separate search indexing approaches
+4. **Config Loading**: 3 different config parsing methods
+5. **Effect Composition**: Inconsistent pipe vs direct Effect usage
 
-#### **Category 3: Effect Return Type Mismatch (1 error)**
-- `cli/commands/status.ts:25` - Effect<void,boolean,never> → Effect<void,Error,never>
+### **Technical Debt Identified**
+1. **Stub Implementations**: Many placeholder functions with TODO comments
+2. **Test Utilities**: Duplicated test setup code across test files
+3. **Schema Validation**: Redundant schema imports and unused validators
+4. **CLI Patterns**: Inconsistent command structure and error handling
 
-#### **Category 4: Test Script Type Safety (6 errors)**
-- `scripts/test.ts` - error.message, file.split undefined handling
-- `tests/helpers/cli.ts:95` - Effect unknown type handling
+## 📋 **Execution Plan**
 
-#### **Category 5: Performance Test Types (5 errors)**
-- `tests/performance/benchmark.ts` - globalThis.gc, undefined variables
+### **Phase 1: Fix Type Safety (Target: 0 any violations)**
+1. **CLI Commands** - Replace option casting with proper type guards
+2. **Test Files** - Use branded types for invalid test data instead of `any`
+3. **Discovery System** - Create proper registry response types
+4. **MCP Server** - Define proper protocol message types
+5. **Rules Engine** - Add proper pattern analysis types
 
-## 📋 **Action Plan to Achieve Green Tests**
+### **Phase 2: Remove Dead Code (Target: 0 unused imports)**
+1. **Audit unused imports** - Remove all unused schema/type imports
+2. **Remove stub functions** - Delete placeholder implementations
+3. **Consolidate utilities** - Remove redundant helper functions
+4. **Clean test imports** - Keep only actively used test utilities
 
-### **Phase 1: Fix Type Casting & Optional Properties**
-1. Fix DiaryCategory casting with proper type guards
-2. Add proper undefined handling for search command options
-3. Fix project schema integration defaults
-4. Fix Effect pipe composition in memory commands
+### **Phase 3: Async/Await Cleanup (Target: 0 require-await violations)**
+1. **Remove unnecessary async** - Convert sync operations to regular functions
+2. **Fix stub handlers** - Implement or remove placeholder async functions
+3. **Consistent patterns** - Use Effect-TS or native async consistently
 
-### **Phase 2: Fix Test Infrastructure**
-1. Add proper error type handling in test scripts
-2. Fix undefined handling in performance benchmarks  
-3. Add globalThis type declarations for GC
+### **Phase 4: Code Consolidation**
+1. **Unify Error Handling** - Single error pattern using Effect-TS
+2. **Consolidate File Operations** - Single file utility module
+3. **Merge Search Patterns** - Unified search integration interface
+4. **Standardize Config** - Single config loading and validation approach
+5. **Effect Composition** - Consistent pipe-based composition everywhere
 
-### **Phase 3: Comment Out Incomplete Features**
-1. Comment out auto-capture diary test (feature incomplete)
-2. Comment out specific E2E discovery test (daemon not running)
-3. Comment out remaining memory filter tests (need query fixes)
+### **Phase 5: Remove Technical Debt**
+1. **Complete stub implementations** or remove entirely
+2. **Consolidate test utilities** - Single test helper module
+3. **Schema optimization** - Remove redundant validators
+4. **CLI standardization** - Unified command pattern and error handling
 
-### **Phase 4: Validate Green State**
-1. Run `deno task test` to confirm 0 TypeScript errors
-2. Verify all core functionality still works
-3. Document any commented-out tests for future implementation
+## 🧹 **Files Requiring Major Cleanup**
 
-## 🧪 **Test Categories & Status**
+### **High Priority (Many violations)**
+- `rules/index.ts` - 15+ violations, needs type safety overhaul
+- `cli/commands/*.ts` - 40+ violations across command files
+- `discovery/**/*.ts` - 20+ violations, needs proper registry types
+- `mcp-server/**/*.ts` - 25+ violations, needs protocol types
+- `daemon/**/*.ts` - 18+ violations, needs HTTP response types
 
-### **Unit Tests**
-- ✅ Schemas (18/18) - All Zod v4 validation working
-- ✅ Secrets (6/6) - Encryption/decryption functional
-- 🟡 Core (needs E2E fixes)
+### **Medium Priority (Consolidation candidates)**
+- `tests/**/*.test.ts` - Redundant imports, needs cleanup
+- `lib/*.ts` - Multiple utility patterns, needs consolidation
+- `memory/index.ts` - Mixed patterns, needs standardization
+- `search/index.ts` - Duplicate functionality, needs merging
 
-### **Integration Tests**  
-- ✅ Search (21/21) - Full keyword + filter functionality
-- 🟡 Memory (21/24) - Core working, filter edge cases remain
-- 🟡 Diary (25/27) - Core working, auto-capture incomplete
-
-### **End-to-End Tests**
-- 🟡 CLI (8/9) - Init, status, export working; discovery needs daemon
-- ✅ Performance (14/14) - Benchmarks passing
-
-### **Feature Implementation Status**
-
-#### **✅ Fully Implemented**
-- Universal rule management
-- AI tool detection and configuration
-- Memory storage and retrieval
-- Search with semantic filtering
-- Diary entry CRUD operations
-- CLI command interface
-- Daemon HTTP API
-- MCP server integration
-
-#### **🟡 Partially Implemented** 
-- Diary auto-capture (pattern detection works, needs refinement)
-- Memory filter queries (work with broad search terms)
-- Background discovery service (daemon integration pending)
-
-#### **❌ Not Implemented**
-- Advanced conversation analysis for auto-capture
-- Real-time file watching in daemon
-- Cross-project memory sharing
+### **Low Priority (Minor cleanups)**
+- Individual schema files with unused exports
+- Test helper files with redundant utilities
+- Configuration files with dead options
 
 ## 🎯 **Success Criteria**
-- [ ] `deno task test` exits with 0 TypeScript errors
-- [ ] All core functionality tests passing (149+ tests)
-- [ ] No functional regressions from type fixes
-- [ ] Clear documentation of any commented-out incomplete features
 
-## 📝 **Notes for Future Development**
-- Auto-capture needs LLM integration for better conversation analysis
-- Memory system ready for semantic search improvements
-- Search system scalable to 1000+ documents
-- All schemas properly validated with Zod v4 patterns
+### **Primary Goals**
+- [ ] `deno task lint` exits with 0 violations
+- [ ] No `any` types in production code
+- [ ] No unused imports or dead code
+- [ ] Consistent async/await patterns
+
+### **Secondary Goals**  
+- [ ] Single error handling pattern across codebase
+- [ ] Consolidated file operations utility
+- [ ] Unified search integration interface
+- [ ] Standardized CLI command structure
+- [ ] Optimized test utilities
+
+### **Quality Metrics**
+- [ ] <50 total files (down from 62)
+- [ ] <5000 lines of code (significant reduction)
+- [ ] Single implementation pattern per concern
+- [ ] 100% TypeScript strict mode compliance
+
+## 🚀 **Implementation Strategy**
+
+### **Batch Processing Approach**
+1. **Fix by file type** - All CLI commands, then all tests, etc.
+2. **Type-first** - Fix type safety before removing code
+3. **Consolidate incrementally** - Merge similar functions as we go
+4. **Test continuously** - Maintain green tests throughout
+
+### **Consolidation Patterns**
+1. **Extract common utilities** - Create shared modules for repeated code
+2. **Standardize interfaces** - Define consistent function signatures
+3. **Remove abstraction layers** - Eliminate unnecessary indirection
+4. **Optimize imports** - Use barrel exports for clean module boundaries
+
+## 📝 **Notes**
+
+- **Breaking changes acceptable** - Internal refactoring, no external API impact
+- **Aggressive consolidation** - Prefer fewer, more focused modules
+- **Type safety paramount** - No exceptions for `any` usage
+- **Effect-TS consistency** - Use Effect patterns everywhere or nowhere
+- **Documentation debt** - Remove TODO comments and placeholder docs

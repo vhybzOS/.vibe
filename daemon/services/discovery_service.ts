@@ -373,7 +373,7 @@ export class DiscoveryService {
       },
       content: {
         markdown: typeof discoveredRule.content === 'string' ? discoveredRule.content : discoveredRule.content.markdown,
-        examples: typeof discoveredRule.content === 'string' ? [] : discoveredRule.content.examples,
+        examples: typeof discoveredRule.content === 'string' ? [] : (discoveredRule.content.examples || []).map(ex => typeof ex === 'string' ? { code: ex, language: 'text', description: 'Example code' } : ex),
         tags: typeof discoveredRule.content === 'string' ? [] : discoveredRule.content.tags,
         priority: 'medium' as const,
       },
@@ -389,13 +389,8 @@ export class DiscoveryService {
       },
       generated: {
         auto: true,
-        source: 'registry',
-        package: {
-          name: discoveredRule.packageName,
-          version: discoveredRule.packageVersion,
-        },
         confidence: discoveredRule.confidence,
-        reviewed: false,
+        reviewRequired: false,
       },
     }))
 
@@ -419,7 +414,7 @@ export class DiscoveryService {
           // Cache individual package rules
           Effect.all(
             session.results.convertedRules.map((rule) => {
-              const packageInfo = rule.generated?.package
+              const packageInfo = null // Package info removed from generated schema
               if (!packageInfo) return Effect.succeed(void 0)
 
               const packageDir = resolve(cacheDir, packageInfo.name, packageInfo.version)

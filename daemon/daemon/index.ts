@@ -426,7 +426,7 @@ class VibeDaemon {
       Effect.log('    }'),
       Effect.log('  }'),
       Effect.log(''),
-      Effect.log('  Claude Desktop (~/.config/claude/claude_desktop_config.json):'),
+      Effect.log('  Claude Desktop config:'),
       Effect.log('  {'),
       Effect.log('    "mcpServers": {'),
       Effect.log('      "vibe": {'),

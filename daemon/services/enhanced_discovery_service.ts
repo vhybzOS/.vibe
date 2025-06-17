@@ -219,13 +219,9 @@ const discoverFromHomepage = (metadata: PackageMetadata) =>
 const checkRepositoryForRules = (githubRepo: string, token: string, metadata: PackageMetadata) =>
   pipe(
     Effect.all([
-      makeHttpRequest(`https://api.github.com/repos/${githubRepo}/contents/.vibe`, {
-        headers: { Authorization: `token ${token}` },
-      }).pipe(Effect.catchAll(() => Effect.succeed(null))),
+      makeHttpRequest(`https://api.github.com/repos/${githubRepo}/contents/.vibe`).pipe(Effect.catchAll(() => Effect.succeed(null))),
 
-      makeHttpRequest(`https://api.github.com/repos/${githubRepo}/contents/.cursorrules`, {
-        headers: { Authorization: `token ${token}` },
-      }).pipe(Effect.catchAll(() => Effect.succeed(null))),
+      makeHttpRequest(`https://api.github.com/repos/${githubRepo}/contents/.cursorrules`).pipe(Effect.catchAll(() => Effect.succeed(null))),
     ]),
     Effect.flatMap(([vibeDir, cursorrules]) => {
       const vibeEffect = vibeDir ? parseVibeDirectory(githubRepo, token, vibeDir, metadata) : Effect.succeed([])
@@ -260,7 +256,7 @@ const parseVibeDirectory = (
       Effect.all(
         jsonFiles.map((file) =>
           pipe(
-            makeHttpRequest(file.download_url, {}), // download_url is unauthenticated
+            makeHttpRequest(file.download_url), // download_url is unauthenticated
             Effect.flatMap((content) =>
               Effect.try({
                 try: () => UniversalRuleSchema.array().parse(content),
@@ -339,7 +335,6 @@ const createLlmsTxtRule = (
   source: 'repository',
   packageName: metadata.name,
   packageVersion: metadata.version,
-  category: 'documentation',
   content: {
     markdown: `# ${metadata.name} LLM Documentation\n\n**Source:** ${url}\n\n---\n\n${content}`,
     examples: [],

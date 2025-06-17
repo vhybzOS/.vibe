@@ -195,7 +195,7 @@ export const extractGitHubRepo = (url: string): string | null => {
   
   for (const pattern of patterns) {
     const match = url.match(pattern)
-    if (match) {
+    if (match && match[1]) {
       return match[1].replace(/\.git$/, '')
     }
   }

@@ -358,10 +358,10 @@ export class VibeDaemon {
 
       const searchQuery = {
         query,
-        type,
+        type: type.filter(t => ['conversation', 'decision', 'pattern', 'context', 'preference', 'knowledge'].includes(t)) as ('conversation' | 'decision' | 'pattern' | 'context' | 'preference' | 'knowledge')[],
         tags,
-        tool: [],
-        importance: [],
+        tool: [] as ('cursor' | 'windsurf' | 'claude' | 'copilot' | 'codeium' | 'cody' | 'tabnine')[],
+        importance: [] as ('low' | 'medium' | 'high' | 'critical')[],
         timeRange: {},
         limit,
         threshold: 0.1,
@@ -945,7 +945,7 @@ export class VibeDaemon {
         // Set up signal handlers
         const handleSignal = () => {
           console.log('\n🛑 Received shutdown signal')
-          this.shutdown().then(() => resume(Effect.void))
+          this.shutdown().then(() => resume(Effect.succeed(undefined)))
         }
 
         Deno.addSignalListener('SIGINT', handleSignal)

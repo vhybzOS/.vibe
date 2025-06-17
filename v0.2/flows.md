@@ -77,27 +77,27 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant AITool (e.g., Cursor)
-    participant MCP_Server (in Daemon)
+    participant "AITool (e.g., Cursor)"
+    participant "MCP_Server (in Daemon)"
     participant MemoryService
     participant SearchService
     participant FileSystem
 
-    AITool->>MCP_Server (in Daemon): Add Memory Request
-    MCP_Server (in Daemon)->>MemoryService: createMemory(data)
+    "AITool (e.g., Cursor)"->>"MCP_Server (in Daemon)": Add Memory Request
+    "MCP_Server (in Daemon)"->>MemoryService: createMemory(data)
     MemoryService->>FileSystem: Save entry to .vibe/memory/
     MemoryService->>SearchService: indexDocument(memoryEntry)
     SearchService->>SearchService: Update in-memory index
     SearchService-->>MemoryService: Ack
-    MemoryService-->>MCP_Server (in Daemon): Success
-    MCP_Server (in Daemon)-->>AITool (e.g., Cursor): Ack
+    MemoryService-->>"MCP_Server (in Daemon)": Success
+    "MCP_Server (in Daemon)"-->>"AITool (e.g., Cursor)": Ack
 
     participant CLI
-    CLI->>MCP_Server (in Daemon): Search Memory Request
-    MCP_Server (in Daemon)->>SearchService: searchDocuments("query")
+    CLI->>"MCP_Server (in Daemon)": Search Memory Request
+    "MCP_Server (in Daemon)"->>SearchService: searchDocuments("query")
     SearchService->>SearchService: Look up in inverted index
-    SearchService-->>MCP_Server (in Daemon): Return search results
-    MCP_Server (in Daemon)-->>CLI: Display results
+    SearchService-->>"MCP_Server (in Daemon)": Return search results
+    "MCP_Server (in Daemon)"-->>CLI: Display results
 ```
 > Core modules like MemoryService and DiaryService are simplified. They handle saving structured data and then delegate all indexing and retrieval tasks to the centralized SearchService.
 
@@ -108,22 +108,22 @@ sequenceDiagram
 ```mermaid
 graph TD
     subgraph User Interaction
-        User_CLI[User via CLI]
-        User_Dashboard[User via Dashboard]
+        User_CLI["User via CLI"]
+        User_Dashboard["User via Dashboard"]
     end
 
-    subgraph Vibe Daemon
+    subgraph "Vibe Daemon"
         direction LR
-        APIs[HTTP API / SSE]
-        MCP[MCP Server]
+        APIs["HTTP API / SSE"]
+        MCP["MCP Server"]
     end
 
     subgraph External
-        AITools[AI Tools e.g., Cursor]
-        Internet[Internet <br/>(GitHub, NPM)]
+        AITools["AI Tools (e.g., Cursor)"]
+        Internet["Internet <br/>(GitHub, NPM)"]
     end
 
-    FileSystem[.vibe Directory]
+    FileSystem[".vibe Directory"]
 
     User_CLI --> APIs
     User_Dashboard --> APIs
@@ -139,12 +139,12 @@ graph TD
 
 ```mermaid
 graph TD
-    subgraph Entry Points
-        A[HTTP API]
-        B[MCP Server]
+    subgraph "Entry Points"
+        A["HTTP API"]
+        B["MCP Server"]
     end
 
-    subgraph Service Layer
+    subgraph "Service Layer"
         direction TB
         PS[ProjectService]
         DS[DiscoveryService]
@@ -155,14 +155,19 @@ graph TD
         Secrets[SecretsService]
     end
     
-    subgraph Core Lib
-        Lib[lib/ <br/> (fs.ts, errors.ts)]
+    subgraph "Core Lib"
+        Lib["lib/ <br/> (fs.ts, errors.ts)"]
     end
 
-    A --> PS; A --> DS; A --> Secrets; A --> Search
-    B --> Mem; B --> Diary; B --> Search
+    A --> PS
+    A --> DS
+    A --> Secrets
+    A --> Search
+    B --> Mem
+    B --> Diary
+    B --> Search
 
-    DS --> Internet[Internet APIs]
+    DS --> Internet["Internet APIs"]
     
     Mem --> Search
     Diary --> Search

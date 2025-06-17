@@ -11,6 +11,10 @@ import { loadRules } from '../../rules/index.ts'
 import { withVibeDirectory, type CommandFn } from '../base.ts'
 import { loadConfig as loadConfigFromFs } from '../../lib/fs.ts'
 import { createCliError, type VibeError } from '../../lib/errors.ts'
+import { type UniversalRule } from '../../schemas/universal-rule.ts'
+import { type Memory } from '../../schemas/memory.ts'
+import { type DiaryEntry } from '../../schemas/diary.ts'
+import { type VibeConfig } from '../../schemas/project.ts'
 
 /**
  * Core export logic - operates on .vibe directory path
@@ -94,9 +98,11 @@ const loadConfigFile = (vibePath: string) =>
  */
 const formatExportData = (
   data: {
-    rules?: Array<{ id: string; description: string }>
-    memory?: Array<{ id: string; content: string }>
-    diary?: Array<{ id: string; title: string }>
+    project: { name: string; path: string; exportedAt: string }
+    rules: UniversalRule[]
+    memory: Memory[]
+    diary: DiaryEntry[]
+    config: VibeConfig | { version: string; tools: unknown[] }
   },
   options: { format?: string },
 ) =>
@@ -108,7 +114,10 @@ const formatExportData = (
         return {
           agentfile_version: '1.0',
           name: data.project.name,
-          rules: data.rules,
+          rules: data.rules.map(rule => ({
+            id: rule.id,
+            description: rule.metadata.description,
+          })),
           exported: data.project.exportedAt,
         }
 
@@ -116,7 +125,10 @@ const formatExportData = (
         return {
           agentfile_version: '1.0',
           name: data.project.name,
-          memory: data.memory,
+          memory: data.memory.map(memory => ({
+            id: memory.metadata.id,
+            content: memory.content.summary || memory.content.content,
+          })),
           exported: data.project.exportedAt,
         }
 
@@ -124,7 +136,10 @@ const formatExportData = (
         return {
           agentfile_version: '1.0',
           name: data.project.name,
-          diary: data.diary,
+          diary: data.diary.map(entry => ({
+            id: entry.id,
+            title: entry.title,
+          })),
           exported: data.project.exportedAt,
         }
 
@@ -134,9 +149,18 @@ const formatExportData = (
           agentfile_version: '1.0',
           name: data.project.name,
           description: `Exported .vibe configuration for ${data.project.name}`,
-          rules: data.rules,
-          memory: data.memory,
-          diary: data.diary,
+          rules: data.rules.map(rule => ({
+            id: rule.id,
+            description: rule.metadata.description,
+          })),
+          memory: data.memory.map(memory => ({
+            id: memory.metadata.id,
+            content: memory.content.summary || memory.content.content,
+          })),
+          diary: data.diary.map(entry => ({
+            id: entry.id,
+            title: entry.title,
+          })),
           config: data.config,
           exported: data.project.exportedAt,
         }
@@ -147,7 +171,16 @@ const formatExportData = (
  * Write export file
  */
 const writeExportFile = (
-  data: { rules?: unknown[]; memory?: unknown[]; diary?: unknown[]; config?: unknown },
+  data: {
+    agentfile_version: string
+    name: string
+    description?: string
+    rules?: Array<{ id: string; description: string }>
+    memory?: Array<{ id: string; content: string }>
+    diary?: Array<{ id: string; title: string }>
+    config?: VibeConfig | { version: string; tools: unknown[] }
+    exported: string
+  },
   vibePath: string,
   options: { output?: string },
 ) =>

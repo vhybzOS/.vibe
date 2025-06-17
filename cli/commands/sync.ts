@@ -165,7 +165,7 @@ const showSyncResults = (
       )
     ),
     Effect.flatMap(() => {
-      const totalRules = results.reduce((sum, r) => sum + r.rulesCount, 0)
+      const totalRules = results.reduce((sum, r) => sum + (r.changes || 0), 0)
       const action = options.dryRun ? 'would be synced' : 'synced'
       return pipe(
         Effect.log(''),

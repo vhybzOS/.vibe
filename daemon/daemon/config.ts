@@ -26,6 +26,7 @@ export const DaemonConfigSchema = z.object({
   projects: z.object({
     autoDiscover: z.boolean().default(true),
     maxDepth: z.number().min(1).max(10).default(3),
+    maxProjects: z.number().min(1).max(100).default(10),
     ignorePaths: z.array(z.string()).default(['node_modules', '.git', 'dist', 'build']),
     projectScanRoots: z.array(z.string()).default(['~/']),
   }),

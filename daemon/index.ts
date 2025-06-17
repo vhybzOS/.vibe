@@ -243,16 +243,16 @@ export class VibeDaemon {
           // Handle dynamic routes with IDs
           if (path.startsWith('/api/memory/') && path.split('/').length === 4) {
             const memoryId = path.split('/')[3]
-            if (req.method === 'GET') {
+            if (memoryId && req.method === 'GET') {
               return await this.handleMemoryGet(req, url, memoryId)
-            } else if (req.method === 'DELETE') {
+            } else if (memoryId && req.method === 'DELETE') {
               return await this.handleMemoryDelete(req, url, memoryId)
             }
           } else if (path.startsWith('/api/diary/') && path.split('/').length === 4) {
             const diaryId = path.split('/')[3]
-            if (req.method === 'GET') {
+            if (diaryId && req.method === 'GET') {
               return await this.handleDiaryGet(req, url, diaryId)
-            } else if (req.method === 'DELETE') {
+            } else if (diaryId && req.method === 'DELETE') {
               return await this.handleDiaryDelete(req, url, diaryId)
             }
           }

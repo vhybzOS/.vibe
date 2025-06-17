@@ -229,7 +229,7 @@ class VibeDaemon {
   private startMcpServer = () =>
     pipe(
       Effect.log('🔌 Starting MCP server...'),
-      startMcpServer(this.config.mcpServer),
+      Effect.flatMap(() => startMcpServer(this.config.mcpServer)),
       Effect.tap(() => {
         this.state.mcpServer.running = true
         this.state.mcpServer.startedAt = new Date().toISOString()
@@ -350,10 +350,12 @@ class VibeDaemon {
   private startFileWatchers = () =>
     pipe(
       Effect.log('👀 Starting file watchers...'),
-      Effect.all(
-        Array.from(this.state.projects.values()).map((project) => this.startProjectWatcher(project)),
+      Effect.flatMap(() => 
+        Effect.all(
+          Array.from(this.state.projects.values()).map((project) => this.startProjectWatcher(project)),
+        )
       ),
-      Effect.tap(() => Effect.log('✅ All file watchers started')),
+      Effect.flatMap(() => Effect.log('✅ All file watchers started')),
     )
 
   private startProjectWatcher = (project: ProjectState) =>
@@ -369,13 +371,13 @@ class VibeDaemon {
   private setupHealthChecks = () =>
     pipe(
       Effect.log('💚 Setting up health checks...'),
-      Effect.sync(() => {
+      Effect.flatMap(() => Effect.sync(() => {
         // Setup periodic health checks
         setInterval(() => {
           this.performHealthCheck()
         }, 30000) // Every 30 seconds
-      }),
-      Effect.tap(() => Effect.log('✅ Health checks configured')),
+      })),
+      Effect.flatMap(() => Effect.log('✅ Health checks configured')),
     )
 
   private performHealthCheck = () => {
@@ -452,7 +454,7 @@ class VibeDaemon {
   private shutdown = () =>
     pipe(
       Effect.log('🛑 Shutting down daemon...'),
-      Effect.tryPromise({
+      Effect.flatMap(() => Effect.tryPromise({
         try: async () => {
           // Close HTTP server if running
           if (this.httpServer) {
@@ -462,7 +464,7 @@ class VibeDaemon {
           await Deno.remove(this.config.daemon.pidFile).catch(() => {})
         },
         catch: () => new Error('Failed during shutdown'),
-      }),
+      })),
       Effect.tap(() => Effect.log('✅ Daemon stopped')),
       Effect.flatMap(() => Effect.sync(() => Deno.exit(0))),
     )

@@ -2,6 +2,10 @@
  * Configuration Schemas for .vibe
  * 
  * Based on legacy schema patterns with Zod v4
+ * 
+ * @tested_by tests/unit/init-command.test.ts (Schema validation: ProjectConfig, InitOptions, Dependencies)
+ * @tested_by tests/integration/cli-integration.test.ts (Schema integration: cross-component validation)
+ * @tested_by tests/user/real-world-workflow.test.ts (Real-world schema usage with complex projects)
  */
 
 import { z } from 'zod/v4'

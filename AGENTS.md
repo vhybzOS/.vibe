@@ -55,22 +55,75 @@ Always verify changes work at runtime. TypeScript can pass while runtime breaks.
 
 ## 🧪 **TEST-DRIVEN DEVELOPMENT STRATEGY**
 
+### **Test-Implementation Linking (CRITICAL)**
+Every implementation file MUST include test file references in header comments:
+
+```typescript
+/**
+ * Init Command Implementation
+ * 
+ * Creates .vibe directory structure and initializes project configuration
+ * 
+ * @tested_by tests/unit/init-command.test.ts (Core functionality, dependency detection, error handling)
+ * @tested_by tests/integration/cli-integration.test.ts (CLI integration, schema validation)
+ * @tested_by tests/user/real-world-workflow.test.ts (Complete user workflows, both Deno and Node.js)
+ */
+```
+
+**Benefits:**
+- **Instant test discovery** - know exactly which tests cover this code
+- **Test gap identification** - easily spot untested functionality  
+- **Refactoring confidence** - know which tests to run when changing code
+- **Code review efficiency** - reviewers can immediately find relevant tests
+
 ### **Before Modifying Any File**
-1. **Find the test file** - `find . -name "*[filename]*test*"`
+1. **Check header comments** - find linked test files from `@tested_by` annotations
 2. **Read the entire test** - understand expected behavior
 3. **Plan changes** that align with test expectations
 4. **Consider test updates** if architectural understanding evolved
 
 ### **After Modifying Any File**
-1. **Run isolated test** - `deno test path/to/specific.test.ts --allow-all`
-2. **Verify test passes** - fix immediately if broken
+1. **Run linked tests** - use `@tested_by` paths to run specific tests
+2. **Verify tests pass** - fix immediately if broken
 3. **Update test if needed** - reflect new architectural understanding
-4. **Re-run test** - ensure it passes before continuing
+4. **Update `@tested_by` comments** - if you add/remove/move tests
+5. **Re-run tests** - ensure everything passes before continuing
+
+### **Creating New Files Protocol**
+1. **Write tests first** - create test file before implementation
+2. **Add `@tested_by` header** - link to test file(s) in implementation
+3. **Keep bidirectional references** - implementation links to tests, tests reference implementation
+4. **Use test categories appropriately**:
+   - **Unit tests** (`tests/unit/`) - individual functions, pure logic
+   - **Integration tests** (`tests/integration/`) - component interaction
+   - **User tests** (`tests/user/`) - complete workflows, CLI behavior
+
+### **Test Organization & Discovery**
+```bash
+# Quick test discovery for any file
+grep -r "@tested_by" . --include="*.ts" | grep filename.ts
+
+# See all test coverage at a glance
+grep -r "@tested_by" . --include="*.ts" --color=always
+
+# Run tests for specific implementation
+deno task test:unit                    # Fast feedback for development
+deno task test:integration            # Component interaction verification  
+deno task test:user                   # Complete workflow validation
+
+# Find all files missing test coverage
+find . -name "*.ts" -not -path "./tests/*" -not -path "./legacy/*" -exec grep -L "@tested_by" {} \;
+
+# Count test coverage statistics
+echo "Files with tests: $(grep -r "@tested_by" . --include="*.ts" -l | wc -l)"
+echo "Total implementation files: $(find . -name "*.ts" -not -path "./tests/*" -not -path "./legacy/*" | wc -l)"
+```
 
 ### **Quality Gates (Never Skip)**
 - **Type Check**: `deno task check` → 0 errors
 - **Lint Check**: `deno task lint` → 0 violations  
 - **Runtime Tests**: All relevant tests passing
+- **Test Coverage**: Every file has `@tested_by` annotations
 
 ## 📚 **LEGACY CODE REFERENCE GUIDELINES**
 

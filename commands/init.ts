@@ -2,6 +2,10 @@
  * Init Command Implementation
  * 
  * Creates .vibe directory structure and initializes project configuration
+ * 
+ * @tested_by tests/unit/init-command.test.ts (Core functionality, dependency detection, error handling)
+ * @tested_by tests/integration/cli-integration.test.ts (CLI integration, schema validation)  
+ * @tested_by tests/user/real-world-workflow.test.ts (Complete user workflows, both Deno and Node.js)
  */
 
 import { Effect, pipe } from 'effect'

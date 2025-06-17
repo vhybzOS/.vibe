@@ -2,6 +2,10 @@
  * File System Utilities with Effect-TS
  * 
  * Based on legacy/v0.2 Lib namespace patterns - provides composable file operations
+ * 
+ * @tested_by tests/unit/init-command.test.ts (File operations: readTextFile, writeTextFile, fileExists, dirExists)
+ * @tested_by tests/integration/cli-integration.test.ts (Project detection: getProjectName, findProjectRoot, loadJson)
+ * @tested_by tests/user/real-world-workflow.test.ts (Real-world file operations with both package.json and deno.json)
  */
 
 import { Effect, pipe } from 'effect'
@@ -89,15 +93,29 @@ export const getProjectName = (projectPath: string): Effect.Effect<string, VibeE
   pipe(
     fileExists(resolve(projectPath, 'package.json')),
     Effect.flatMap((hasPackageJson) => {
-      if (!hasPackageJson) {
-        // Use directory name as fallback
-        return Effect.succeed(projectPath.split('/').pop() || 'unnamed-project')
+      if (hasPackageJson) {
+        return pipe(
+          loadJson(z.object({ name: z.string().optional() }))(resolve(projectPath, 'package.json')),
+          Effect.map((pkg) => pkg.name || projectPath.split('/').pop() || 'unnamed-project'),
+          Effect.catchAll(() => Effect.succeed(projectPath.split('/').pop() || 'unnamed-project'))
+        )
       }
       
+      // Check for deno.json if no package.json
       return pipe(
-        loadJson(z.object({ name: z.string().optional() }))(resolve(projectPath, 'package.json')),
-        Effect.map((pkg) => pkg.name || projectPath.split('/').pop() || 'unnamed-project'),
-        Effect.catchAll(() => Effect.succeed(projectPath.split('/').pop() || 'unnamed-project'))
+        fileExists(resolve(projectPath, 'deno.json')),
+        Effect.flatMap((hasDenoJson) => {
+          if (!hasDenoJson) {
+            // Use directory name as fallback
+            return Effect.succeed(projectPath.split('/').pop() || 'unnamed-project')
+          }
+          
+          return pipe(
+            loadJson(z.object({ name: z.string().optional() }))(resolve(projectPath, 'deno.json')),
+            Effect.map((deno) => deno.name || projectPath.split('/').pop() || 'unnamed-project'),
+            Effect.catchAll(() => Effect.succeed(projectPath.split('/').pop() || 'unnamed-project'))
+          )
+        })
       )
     })
   )

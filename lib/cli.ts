@@ -2,6 +2,9 @@
  * CLI Utilities and Command Runner
  * 
  * Based on legacy/v0.2 CLI patterns - provides Effect-TS command execution
+ * 
+ * @tested_by tests/integration/cli-integration.test.ts (Command runner integration, error handling)
+ * @tested_by tests/user/real-world-workflow.test.ts (Real CLI execution, success/error logging)
  */
 
 import { Effect, pipe } from 'effect'

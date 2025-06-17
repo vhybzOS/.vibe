@@ -2,6 +2,9 @@
  * Tagged Union Error Types for .vibe
  * 
  * Based on legacy/v0.2 patterns - provides type-safe, composable error handling
+ * 
+ * @tested_by tests/user/real-world-workflow.test.ts (Error handling scenarios, createFileSystemError validation)
+ * @tested_by tests/integration/cli-integration.test.ts (Error formatting and type checking)
  */
 
 export interface FileSystemError {

@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-all
-
-// Main CLI entry point for vibe
-import './cli.ts'
+#!/usr/bin/env bash
+# Vibe CLI wrapper that preserves working directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec deno run --allow-all "$SCRIPT_DIR/cli.ts" "$@"

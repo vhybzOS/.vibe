@@ -19,10 +19,12 @@ import { daemonCommand } from './cli/commands/daemon.ts'
 import { statusCommand } from './cli/commands/status.ts'
 import { discoverCommand } from './cli/commands/discover.ts'
 
+import { type VibeError } from './lib/errors.ts'
+
 /**
  * Centralized error handler for all CLI commands
  */
-const runCommand = (commandEffect: () => Effect.Effect<void, Error, never>) => {
+const runCommand = (commandEffect: () => Effect.Effect<void, Error | VibeError, never>) => {
   pipe(
     commandEffect(),
     Effect.catchAll((error) =>
@@ -30,7 +32,7 @@ const runCommand = (commandEffect: () => Effect.Effect<void, Error, never>) => {
         Effect.sync(() => {
           console.error('❌ Command failed:', error.message)
           if (Deno.env.get('VIBE_DEBUG')) {
-            console.error('Stack trace:', error.stack)
+            console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace available')
           }
         }),
         Effect.flatMap(() => Effect.sync(() => Deno.exit(1))),

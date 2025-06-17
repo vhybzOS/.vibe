@@ -2,8 +2,8 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { createDefaultWatcherConfig, startFileWatcher } from '../utils/file-watcher.ts'
-import { startMcpServer } from '../mcp-server/server.ts'
+import { createDefaultWatcherConfig, startFileWatcher } from '../services/file_watcher_service.ts'
+import { startMcpServer } from '../../mcp-server/server.ts'
 import { DaemonConfig, loadDaemonConfig, saveDaemonConfig } from './config.ts'
 // Signal handlers inlined for consolidation
 import { ensureVibeDirectory } from './setup.ts'

@@ -7,6 +7,7 @@ import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
 import { detectAITools } from '../../tools/index.ts'
 import { loadRules } from '../../rules/index.ts'
+import { createCliError, type VibeError } from '../../lib/errors.ts'
 
 /**
  * Sync command that synchronizes AI tool configurations
@@ -14,7 +15,7 @@ import { loadRules } from '../../rules/index.ts'
 export const syncCommand = (
   projectPath: string,
   options: { dryRun?: boolean; force?: boolean },
-) =>
+): Effect.Effect<void, Error | VibeError, never> =>
   pipe(
     Effect.log('🔄 Syncing AI tool configurations...'),
     Effect.flatMap(() => checkVibeDirectory(projectPath)),
@@ -23,7 +24,7 @@ export const syncCommand = (
         return pipe(
           Effect.log('❌ .vibe not initialized in this directory'),
           Effect.flatMap(() => Effect.log('   Run `vibe init` first')),
-          Effect.flatMap(() => Effect.fail(new Error('.vibe not initialized'))),
+          Effect.flatMap(() => Effect.fail(createCliError(new Error('.vibe not initialized'), '.vibe not initialized', 'sync'))),
         )
       }
       return performSync(projectPath, options)
@@ -40,7 +41,7 @@ const checkVibeDirectory = (projectPath: string) =>
       const stat = await Deno.stat(vibePath)
       return stat.isDirectory
     },
-    catch: () => false,
+    catch: (error) => new Error(`Failed to check .vibe directory: ${error}`),
   })
 
 /**
@@ -49,7 +50,7 @@ const checkVibeDirectory = (projectPath: string) =>
 const performSync = (
   projectPath: string,
   options: { dryRun?: boolean; force?: boolean },
-) =>
+): Effect.Effect<void, Error | VibeError, never> =>
   pipe(
     Effect.all([
       getToolsAndRules(projectPath),

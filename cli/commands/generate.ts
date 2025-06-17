@@ -5,6 +5,7 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
+import { createCliError, type VibeError } from '../../lib/errors.ts'
 
 /**
  * Generate command that creates rules from project analysis
@@ -12,7 +13,7 @@ import { resolve } from '@std/path'
 export const generateCommand = (
   projectPath: string,
   options: { threshold?: string; patterns?: string[] },
-) =>
+): Effect.Effect<void, Error | VibeError, never> =>
   pipe(
     Effect.log('🔬 Analyzing project for rule generation...'),
     Effect.flatMap(() => checkVibeDirectory(projectPath)),
@@ -21,7 +22,7 @@ export const generateCommand = (
         return pipe(
           Effect.log('❌ .vibe not initialized in this directory'),
           Effect.flatMap(() => Effect.log('   Run `vibe init` first')),
-          Effect.flatMap(() => Effect.fail(new Error('.vibe not initialized'))),
+          Effect.flatMap(() => Effect.fail(createCliError(new Error('.vibe not initialized'), '.vibe not initialized', 'generate'))),
         )
       }
       return performGeneration(projectPath, options)
@@ -38,7 +39,7 @@ const checkVibeDirectory = (projectPath: string) =>
       const stat = await Deno.stat(vibePath)
       return stat.isDirectory
     },
-    catch: () => false,
+    catch: (error) => new Error(`Failed to check .vibe directory: ${error}`),
   })
 
 /**
@@ -47,7 +48,7 @@ const checkVibeDirectory = (projectPath: string) =>
 const performGeneration = (
   projectPath: string,
   options: { threshold?: string; patterns?: string[] },
-) =>
+): Effect.Effect<void, Error | VibeError, never> =>
   pipe(
     Effect.log(`🔍 Analyzing codebase in ${projectPath}`),
     Effect.flatMap(() => analyzeProject(projectPath, options)),

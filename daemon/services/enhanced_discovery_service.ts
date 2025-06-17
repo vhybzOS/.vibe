@@ -36,7 +36,7 @@ interface DiscoveryResult {
 }
 import { ensureDir, VibeError, writeTextFile } from '../../lib/effects.ts'
 import { createNetworkError } from '../../lib/errors.ts'
-import { DiscoveredRule, extractGitHubRepo, makeHttpRequest, PackageMetadata } from '../../discovery/registries/base.ts'
+import { DiscoveredRule, extractGitHubRepo, makeHttpRequest, PackageMetadata } from '../../discovery/manifests/base.ts'
 import { UniversalRule, UniversalRuleSchema } from '../../schemas/universal-rule.ts'
 import { getSecret, type SecretProvider } from './secrets_service.ts'
 import { parseToolConfig } from '../../tools/parsers.ts'

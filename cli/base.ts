@@ -5,7 +5,7 @@
 
 import { Effect, pipe } from 'effect'
 import { ensureVibeDirectory } from '../lib/fs.ts'
-import { createCliError } from '../lib/errors.ts'
+import { createCliError, type VibeError } from '../lib/errors.ts'
 
 /**
  * Command function type
@@ -13,7 +13,7 @@ import { createCliError } from '../lib/errors.ts'
 export type CommandFunction<T = unknown, R = unknown> = (
   projectPath: string,
   options: T,
-) => Effect.Effect<R, Error>
+) => Effect.Effect<R, Error | VibeError>
 
 /**
  * Higher-order function that ensures .vibe directory exists before running command

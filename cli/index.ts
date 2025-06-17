@@ -8,15 +8,16 @@ import { generateCommand } from './commands/generate.ts'
 import { exportCommand } from './commands/export.ts'
 import { mcpServerCommand } from './commands/mcp-server.ts'
 import { daemonCommand } from './commands/daemon.ts'
+import { type VibeError } from '../lib/errors.ts'
 
 /**
  * Centralized error handler for all CLI commands
  * Handles any Effect type and converts errors to process exit
  */
-const runCommand = (commandEffect: () => Effect.Effect<void, Error, never>) => {
+const runCommand = (commandEffect: () => Effect.Effect<void, Error | VibeError, never>) => {
   pipe(
     commandEffect(),
-    Effect.catchAll((error: Error) =>
+    Effect.catchAll((error: Error | VibeError) =>
       pipe(
         Effect.sync(() => {
           const message = error?.message || String(error)

@@ -58,24 +58,6 @@ export const readDir = (dirPath: string) =>
   )
 
 /**
- * Safely checks if a file exists
- */
-export const fileExists = (filePath: string) =>
-  pipe(
-    Effect.tryPromise({
-      try: async () => {
-        try {
-          await Deno.stat(filePath)
-          return true
-        } catch {
-          return false
-        }
-      },
-      catch: (error) => createFileSystemError(error, filePath, 'Failed to check file existence'),
-    }),
-  )
-
-/**
  * Safely parses JSON with proper error handling
  */
 export const parseJSON = <T>(content: string, context: string = 'unknown') =>

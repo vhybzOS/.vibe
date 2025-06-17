@@ -45,7 +45,7 @@ export const AIToolConfigSchema = z.object({
     version: z.string().optional(),
     lastSync: z.string().datetime().optional(),
     conflicts: z.array(z.string()).default([]),
-    customizations: z.record(z.string(), z.unknown()).default({}),
+    customizations: z.record(z.string(), z.unknown()).default(() => ({})),
   }),
 })
 

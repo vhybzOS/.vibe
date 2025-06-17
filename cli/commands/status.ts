@@ -77,6 +77,7 @@ const showProjectStatus = (projectPath: string, verbose: boolean) =>
         Effect.flatMap(() => Effect.log('💚 Health:')),
         Effect.flatMap(() => showHealth(healthInfo)),
         Effect.flatMap(() => {
+          const projectPath = vibePath.replace('/.vibe', '')
           if (verbose) {
             return pipe(
               Effect.log(''),

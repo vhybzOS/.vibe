@@ -4,6 +4,7 @@
  */
 
 import { Effect, pipe } from 'effect'
+import { createCliError, type VibeError } from '../../lib/errors.ts'
 
 const DAEMON_PORT = 4242
 const DAEMON_URL = `http://localhost:${DAEMON_PORT}`
@@ -14,7 +15,7 @@ const DAEMON_URL = `http://localhost:${DAEMON_PORT}`
 export const daemonCommand = (
   action: 'start' | 'stop' | 'status' | 'restart' | 'help',
   options: Record<string, unknown>,
-) =>
+): Effect.Effect<void, Error | VibeError, never> =>
   pipe(
     Effect.log(`🔧 Daemon ${action}...`),
     Effect.flatMap(() => {

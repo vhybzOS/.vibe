@@ -8,72 +8,56 @@ import { resolve } from '@std/path'
 import { loadMemories } from '../../memory/index.ts'
 import { getTimeline } from '../../diary/index.ts'
 import { loadRules } from '../../rules/index.ts'
+import { withVibeDirectory, type CommandFn } from '../base.ts'
+import { loadConfig as loadConfigFromFs } from '../../lib/fs.ts'
+import { createCliError, type VibeError } from '../../lib/errors.ts'
+
+/**
+ * Core export logic - operates on .vibe directory path
+ */
+const exportLogic: CommandFn<{ output?: string; format?: string }, void> = 
+  (vibePath, options) =>
+    pipe(
+      Effect.log('📤 Exporting .vibe data...'),
+      Effect.flatMap(() => performExport(vibePath, options))
+    )
 
 /**
  * Export command that exports .vibe data to AgentFile format
  */
-export const exportCommand = (
-  projectPath: string,
-  options: { output?: string; format?: string },
-) =>
-  pipe(
-    Effect.log('📤 Exporting .vibe data...'),
-    Effect.flatMap(() => checkVibeDirectory(projectPath)),
-    Effect.flatMap((vibeExists) => {
-      if (!vibeExists) {
-        return pipe(
-          Effect.log('❌ .vibe not initialized in this directory'),
-          Effect.flatMap(() => Effect.log('   Run `vibe init` first')),
-          Effect.flatMap(() => Effect.fail(new Error('.vibe not initialized'))),
-        )
-      }
-      return performExport(projectPath, options)
-    }),
-  )
+export const exportCommand = withVibeDirectory(exportLogic)
 
-/**
- * Check if .vibe directory exists
- */
-const checkVibeDirectory = (projectPath: string) =>
-  Effect.tryPromise({
-    try: async () => {
-      const vibePath = resolve(projectPath, '.vibe')
-      const stat = await Deno.stat(vibePath)
-      return stat.isDirectory
-    },
-    catch: () => false,
-  })
 
 /**
  * Perform the export operation
  */
 const performExport = (
-  projectPath: string,
+  vibePath: string,
   options: { output?: string; format?: string },
-) =>
+): Effect.Effect<void, Error | VibeError, never> =>
   pipe(
-    Effect.log(`📊 Collecting data from ${projectPath}/.vibe`),
-    Effect.flatMap(() => collectVibeData(projectPath)),
+    Effect.log(`📊 Collecting data from ${vibePath}`),
+    Effect.flatMap(() => collectVibeData(vibePath)),
     Effect.flatMap((data) => formatExportData(data, options)),
-    Effect.flatMap((formattedData) => writeExportFile(formattedData, projectPath, options)),
+    Effect.flatMap((formattedData) => writeExportFile(formattedData, vibePath, options)),
     Effect.flatMap((outputPath) => showExportResults(outputPath, options)),
   )
 
 /**
  * Collect .vibe data
  */
-const collectVibeData = (projectPath: string) =>
+const collectVibeData = (vibePath: string) =>
   pipe(
     Effect.sync(() => ({
-      projectName: projectPath.split('/').pop() || 'unknown',
-      vibePath: resolve(projectPath, '.vibe'),
+      projectName: vibePath.split('/').slice(-2, -1)[0] || 'unknown',
+      projectPath: vibePath.replace('/.vibe', ''),
     })),
-    Effect.flatMap(({ projectName, vibePath }) =>
+    Effect.flatMap(({ projectName, projectPath }) =>
       Effect.all([
         loadRules(vibePath).pipe(Effect.catchAll(() => Effect.succeed([]))),
         loadMemories(projectPath).pipe(Effect.catchAll(() => Effect.succeed([]))),
         getTimeline(projectPath).pipe(Effect.catchAll(() => Effect.succeed([]))),
-        loadConfig(vibePath).pipe(
+        loadConfigFile(vibePath).pipe(
           Effect.catchAll(() => Effect.succeed({ version: '1.0.0', tools: [] })),
         ),
       ]).pipe(
@@ -95,7 +79,7 @@ const collectVibeData = (projectPath: string) =>
 /**
  * Load configuration file
  */
-const loadConfig = (vibePath: string) =>
+const loadConfigFile = (vibePath: string) =>
   Effect.tryPromise({
     try: async () => {
       const configPath = resolve(vibePath, 'config.json')
@@ -164,18 +148,19 @@ const formatExportData = (
  */
 const writeExportFile = (
   data: { rules?: unknown[]; memory?: unknown[]; diary?: unknown[]; config?: unknown },
-  projectPath: string,
+  vibePath: string,
   options: { output?: string },
 ) =>
   Effect.tryPromise({
     try: async () => {
+      const projectPath = vibePath.replace('/.vibe', '')
       const outputPath = options.output || resolve(projectPath, '.vibe.af.json')
       const content = JSON.stringify(data, null, 2)
 
       await Deno.writeTextFile(outputPath, content)
       return outputPath
     },
-    catch: (error) => new Error(`Failed to write export file: ${error}`),
+    catch: (error) => createCliError(new Error(`Failed to write export file: ${error}`), 'Export failed', 'export'),
   })
 
 /**

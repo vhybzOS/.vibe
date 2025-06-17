@@ -43,7 +43,7 @@ export const MemoryContentSchema = z.object({
 
 export const MemoryRelationshipSchema = z.object({
   relatedMemories: z.array(z.string()).default([]), // memory IDs
-  similarity: z.record(z.string(), z.number()).default({}), // memory ID -> similarity score
+  similarity: z.record(z.string(), z.number()).default(() => ({})), // memory ID -> similarity score
   clusters: z.array(z.string()).default([]), // cluster IDs
   topics: z.array(z.string()).default([]),
   conversationThread: z.string().optional(),

@@ -107,7 +107,7 @@ export const AgentFileSchema = z.object({
   integrations: z.object({
     tools: z.array(z.string()), // List of integrated AI tools
     mcpServerUrl: z.string().optional(),
-    syncSettings: z.record(z.string(), z.unknown()).default({}),
+    syncSettings: z.record(z.string(), z.unknown()).default(() => ({})),
   }),
   export: z.object({
     exportedAt: z.string().datetime(),

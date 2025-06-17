@@ -64,7 +64,8 @@
     "indentWidth": 2,
     "semiColons": false,
     "singleQuote": true,
-    "proseWrap": "preserve"
+    "proseWrap": "preserve",
+    "exclude": [".github/"]
   },
   "lint": {
     "rules": {

@@ -1,8 +1,9 @@
 import { Effect, pipe } from 'effect'
+import { createCliError, type VibeError } from '../../lib/errors.ts'
 
 export const mcpServerCommand = (
   options: { port: string; host: string },
-) =>
+): Effect.Effect<void, Error | VibeError, never> =>
   pipe(
     Effect.log('🚀 Starting .vibe MCP server...'),
     Effect.tryPromise({

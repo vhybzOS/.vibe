@@ -4,12 +4,12 @@ import { detectAITools } from '../../tools/index.ts'
 import { VibeConfig } from '../../schemas/project.ts'
 import { setSecret, setSecretAndInferProvider } from '../../daemon/services/secrets_service.ts'
 import { readTextFile } from '../../lib/effects.ts'
-import { type FileSystemError } from '../../lib/errors.ts'
+import { type FileSystemError, createCliError, type VibeError } from '../../lib/errors.ts'
 
 export const initCommand = (
   projectPath: string,
   options: { force?: boolean; mcp?: boolean },
-) =>
+): Effect.Effect<void, Error | VibeError, never> =>
   pipe(
     checkExistingVibe(projectPath, options.force || false),
     Effect.flatMap(() => createVibeDirectory(projectPath)),

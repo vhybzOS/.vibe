@@ -16,6 +16,11 @@ export type CommandFunction<T = unknown, R = unknown> = (
 ) => Effect.Effect<R, Error | VibeError>
 
 /**
+ * Simplified command function type for the new pattern
+ */
+export type CommandFn<O, R> = (projectPath: string, options: O) => Effect.Effect<R, Error | VibeError>
+
+/**
  * Higher-order function that ensures .vibe directory exists before running command
  * Consolidates: export.ts, status.ts, sync.ts, generate.ts, etc.
  */
@@ -74,3 +79,9 @@ export const logWarning = (message: string) => Effect.log(`⚠️  ${message}`)
  * Info message helper for consistent CLI output
  */
 export const logInfo = (message: string) => Effect.log(`ℹ️  ${message}`)
+
+/**
+ * Standard error message formatting for CLI consistency
+ */
+export const formatCliError = (error: Error | VibeError): string =>
+  error._tag ? `[${error._tag}] ${error.message}` : error.message

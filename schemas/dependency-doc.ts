@@ -98,8 +98,8 @@ export const DependencyManifestSchema = z.object({
   ]),
   path: z.string(),
   dependencies: z.record(z.string(), z.string()), // name -> version
-  devDependencies: z.record(z.string(), z.string()).default({}),
-  peerDependencies: z.record(z.string(), z.string()).default({}),
+  devDependencies: z.record(z.string(), z.string()).default(() => ({})),
+  peerDependencies: z.record(z.string(), z.string()).default(() => ({})),
   lastModified: z.string().datetime(),
   hash: z.string(),
 })

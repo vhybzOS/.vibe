@@ -94,6 +94,7 @@ class VibeDaemon {
     projects: {
       autoDiscover: true,
       maxDepth: 3,
+      maxProjects: 10,
       ignorePaths: ['node_modules', '.git', 'dist', 'build'],
       projectScanRoots: ['~/'],
     },
@@ -277,7 +278,6 @@ class VibeDaemon {
 
               for await (
                 const entry of expandGlob(globPattern, {
-                  maxDepth: config.maxDepth,
                   followSymlinks: false,
                   exclude: config.ignorePaths.map((path) => `**/${path}/**`),
                 })

@@ -315,7 +315,7 @@ export class DiscoveryService {
 
               // Use enhanced discovery on the metadata
               return pipe(
-                enhancedDiscoverRules(successful.metadata),
+                enhancedDiscoverRules(successful.metadata, session.projectPath),
                 Effect.map((enhancedResult) => enhancedResult.rules),
                 Effect.tap((rules) => cacheEnhancedResults(successful.metadata, [], session.projectPath)),
                 Effect.catchAll((error) => {
@@ -359,7 +359,7 @@ export class DiscoveryService {
       metadata: {
         name: discoveredRule.name,
         description: discoveredRule.description,
-        source: 'discovery' as const,
+        source: 'auto-generated' as const,
         confidence: discoveredRule.confidence,
         created: discoveredRule.discoveredAt,
         updated: discoveredRule.discoveredAt,
@@ -382,7 +382,7 @@ export class DiscoveryService {
         formats: {},
       },
       application: {
-        mode: 'contextual' as const,
+        mode: 'context' as const,
         conditions: [],
         excludeFiles: [],
         includeFiles: discoveredRule.targeting.files,

@@ -164,3 +164,60 @@ export const normalizePackageName = (name: string): { scope?: string; name: stri
  * Create a default global registry instance
  */
 export const globalManifestRegistry = createManifestParserRegistry()
+
+/**
+ * Package metadata for enhanced discovery
+ */
+export interface PackageMetadata {
+  name: string
+  version: string
+  description?: string
+  repository?: string
+  homepage?: string
+  keywords?: string[]
+  license?: string
+  author?: string
+  dependencies?: Record<string, string>
+}
+
+
+/**
+ * Extract GitHub repository from various URL formats
+ */
+export const extractGitHubRepo = (url: string): string | null => {
+  if (!url) return null
+  
+  const patterns = [
+    /github\.com\/([^\/]+\/[^\/]+)/,
+    /git\+https:\/\/github\.com\/([^\/]+\/[^\/]+)/,
+    /https:\/\/github\.com\/([^\/]+\/[^\/]+)/,
+  ]
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern)
+    if (match) {
+      return match[1].replace(/\.git$/, '')
+    }
+  }
+  
+  return null
+}
+
+/**
+ * Make HTTP request with basic error handling
+ */
+export const makeHttpRequest = (url: string) =>
+  Effect.tryPromise({
+    try: async () => {
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      return response
+    },
+    catch: (error) => createParseError(
+      error,
+      url,
+      `HTTP request failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    )
+  })

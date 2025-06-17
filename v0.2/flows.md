@@ -77,27 +77,27 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant "AITool (e.g., Cursor)"
-    participant "MCP_Server (in Daemon)"
-    participant MemoryService
-    participant SearchService
-    participant FileSystem
-
-    "AITool (e.g., Cursor)"->>"MCP_Server (in Daemon)": Add Memory Request
-    "MCP_Server (in Daemon)"->>MemoryService: createMemory(data)
-    MemoryService->>FileSystem: Save entry to .vibe/memory/
-    MemoryService->>SearchService: indexDocument(memoryEntry)
-    SearchService->>SearchService: Update in-memory index
-    SearchService-->>MemoryService: Ack
-    MemoryService-->>"MCP_Server (in Daemon)": Success
-    "MCP_Server (in Daemon)"-->>"AITool (e.g., Cursor)": Ack
-
+    participant AIT as "AITool (e.g., Cursor)"
+    participant MCP as "MCP_Server (in Daemon)"
+    participant MS as "MemoryService"
+    participant SS as "SearchService"
+    participant FS as "FileSystem"
     participant CLI
-    CLI->>"MCP_Server (in Daemon)": Search Memory Request
-    "MCP_Server (in Daemon)"->>SearchService: searchDocuments("query")
-    SearchService->>SearchService: Look up in inverted index
-    SearchService-->>"MCP_Server (in Daemon)": Return search results
-    "MCP_Server (in Daemon)"-->>CLI: Display results
+
+    AIT->>MCP: Add Memory Request
+    MCP->>MS: createMemory(data)
+    MS->>FS: Save entry to .vibe/memory/
+    MS->>SS: indexDocument(memoryEntry)
+    SS->>SS: Update in-memory index
+    SS-->>MS: Ack
+    MS-->>MCP: Success
+    MCP-->>AIT: Ack
+
+    CLI->>MCP: Search Memory Request
+    MCP->>SS: searchDocuments("query")
+    SS->>SS: Look up in inverted index
+    SS-->>MCP: Return search results
+    MCP-->>CLI: Display results
 ```
 > Core modules like MemoryService and DiaryService are simplified. They handle saving structured data and then delegate all indexing and retrieval tasks to the centralized SearchService.
 

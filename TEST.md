@@ -290,6 +290,89 @@ export const commandName = withVibeDirectory((vibePath, options) =>
 
 ---
 
+## 🔬 **RUNTIME VERIFICATION STRATEGY**
+
+### **Critical Principle: TypeScript Safety ≠ Runtime Correctness**
+
+**Problem**: TypeScript changes (especially schema modifications) can pass type checking but break at runtime. Examples:
+- Zod `.default(() => ({}))` changes could break schema parsing
+- Effect return type changes could cause runtime failures
+- CLI command transformations could break actual command execution
+
+### **Solution: Immediate Runtime Testing After Each Change**
+
+**For every file modified, follow this verification pattern:**
+
+#### **1. Identify the Test File**
+```bash
+# Pattern: Find test file for modified file
+# Example: schemas/memory.ts → find related test
+find . -name "*memory*test*" -o -name "*test*memory*"
+```
+
+#### **2. Run Isolated Test**
+```bash
+# Run only the specific test file in isolation
+deno test path/to/specific.test.ts --allow-all
+
+# Example for schema changes:
+deno test schemas/__tests__/memory.test.ts --allow-all
+deno test tests/unit/schemas.test.ts --allow-all
+```
+
+#### **3. Verify Critical Functionality**
+- **Schema files**: Test parsing, validation, defaults work correctly
+- **CLI commands**: Test actual command execution (not just types)
+- **Effect chains**: Test error handling and success paths
+- **Utility functions**: Test with real data
+
+#### **4. Fix Immediately If Broken**
+- Don't proceed to next file until current file's tests pass
+- Runtime failures take priority over TypeScript errors
+- Fix runtime issues before continuing architectural changes
+
+### **File-by-File Verification Checklist**
+
+**Recently Modified Files Requiring Immediate Testing:**
+
+✅ **Schema Files (CRITICAL - verify .default(() => ({})) changes)**
+- `schemas/ai-tool-config.ts` → Test: `tests/unit/schemas.test.ts`
+- `schemas/agent-file.ts` → Test: `tests/unit/schemas.test.ts`  
+- `schemas/dependency-doc.ts` → Test: `tests/unit/schemas.test.ts`
+- `schemas/memory.ts` → Test: `memory/__tests__/memory.test.ts`
+- `schemas/universal-rule.ts` → Test: `tests/unit/schemas.test.ts`
+
+✅ **CLI Commands (verify withVibeDirectory transformations)**
+- `cli/commands/export.ts` → Test: `tests/e2e/cli.test.ts`
+- `cli/commands/status.ts` → Test: `tests/e2e/cli.test.ts`
+- `cli/commands/discover.ts` → Test: `tests/e2e/cli.test.ts`
+
+### **Runtime Testing Commands**
+
+```bash
+# Schema verification (MOST CRITICAL)
+deno test tests/unit/schemas.test.ts --allow-all
+deno test memory/__tests__/memory.test.ts --allow-all
+
+# CLI command verification  
+deno test tests/e2e/cli.test.ts --allow-all
+
+# Full verification suite
+deno test --allow-all
+```
+
+### **Quality Gate: No Advancement Without Runtime Verification**
+
+**Rule**: After modifying any file for TypeScript/architectural compliance:
+1. ✅ Identify its test file
+2. ✅ Run test in isolation  
+3. ✅ Verify test passes
+4. ✅ Only then proceed to next file
+
+**This prevents "TypeScript works but runtime breaks" scenarios.**
+
+---
+
 ## 🎯 **THE ULTIMATE CODING STANDARDS**
 
 ### **Effect-TS Mastery**

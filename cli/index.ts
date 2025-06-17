@@ -132,10 +132,15 @@ program
   .command('status')
   .description('Show project .vibe status')
   .action(() => {
-    runCommand(async () => {
-      const { statusCommand } = await import('./commands/status.ts')
-      return statusCommand(Deno.cwd())
-    })
+    runCommand(() => 
+      Effect.flatMap(
+        Effect.tryPromise({
+          try: () => import('./commands/status.ts'),
+          catch: (error) => new Error(`Failed to load status command: ${error}`)
+        }),
+        (module) => module.statusCommand(Deno.cwd(), {})
+      )
+    )
   })
 
 program
@@ -143,10 +148,15 @@ program
   .description('Discover and fetch dependency documentation')
   .option('--force-refresh', 'Force refresh of cached documentation')
   .action((options) => {
-    runCommand(async () => {
-      const { discoverCommand } = await import('./commands/discover.ts')
-      return discoverCommand(Deno.cwd(), options)
-    })
+    runCommand(() => 
+      Effect.flatMap(
+        Effect.tryPromise({
+          try: () => import('./commands/discover.ts'),
+          catch: (error) => new Error(`Failed to load discover command: ${error}`)
+        }),
+        (module) => module.discoverCommand(Deno.cwd(), options)
+      )
+    )
   })
 
 // Parse command line arguments and execute

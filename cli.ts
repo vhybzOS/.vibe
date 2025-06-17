@@ -138,7 +138,7 @@ program
   .command('status')
   .description('Show .vibe status and detected tools')
   .action(() => {
-    runCommand(() => statusCommand(Deno.cwd()))
+    runCommand(() => statusCommand(Deno.cwd(), {}))
   })
 
 program

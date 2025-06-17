@@ -12,56 +12,38 @@ import { type UniversalRule } from '../../schemas/universal-rule.ts'
 import { memoryStatsCommand } from './memory.ts'
 import { searchStatsCommand } from './search.ts'
 import { diaryStatsCommand } from './diary.ts'
+import { withVibeDirectory, type CommandFn } from '../base.ts'
+import { createCliError, type VibeError } from '../../lib/errors.ts'
+
+/**
+ * Core status logic - operates on .vibe directory path
+ */
+const statusLogic: CommandFn<{ verbose?: boolean }, void> = 
+  (vibePath, options) =>
+    pipe(
+      Effect.log('📊 .vibe Status Report'),
+      Effect.flatMap(() => Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━')),
+      Effect.flatMap(() => showProjectStatus(vibePath, options.verbose || false)),
+      Effect.catchAll((error) => Effect.fail(createCliError(error, 'Status check failed', 'status')))
+    )
 
 /**
  * Status command that shows comprehensive project information
  */
-export const statusCommand = (
-  projectPath: string,
-  options: { verbose?: boolean } = {},
-) =>
-  pipe(
-    Effect.log('📊 .vibe Status Report'),
-    Effect.flatMap(() => Effect.log('━━━━━━━━━━━━━━━━━━━━━━━━━━')),
-    Effect.flatMap(() => checkVibeDirectory(projectPath)),
-    Effect.flatMap((vibeExists) => {
-      if (!vibeExists) {
-        return pipe(
-          Effect.log('❌ .vibe not initialized in this directory'),
-          Effect.flatMap(() => Effect.log('   Run `vibe init` to get started')),
-          Effect.flatMap(() => Effect.fail(new Error('.vibe not initialized'))),
-        )
-      }
-      return pipe(
-        showProjectStatus(projectPath, options.verbose || false),
-        Effect.catchAll(() => Effect.fail(new Error('Status check failed'))),
-      )
-    }),
-  )
+export const statusCommand = withVibeDirectory(statusLogic)
 
-/**
- * Check if .vibe directory exists
- */
-const checkVibeDirectory = (projectPath: string) =>
-  Effect.tryPromise({
-    try: async () => {
-      const vibePath = resolve(projectPath, '.vibe')
-      const stat = await Deno.stat(vibePath)
-      return stat.isDirectory
-    },
-    catch: () => false,
-  })
 
 /**
  * Show comprehensive project status
  */
-const showProjectStatus = (projectPath: string, verbose: boolean) =>
-  pipe(
+const showProjectStatus = (vibePath: string, verbose: boolean): Effect.Effect<void, Error | VibeError, never> => {
+  const projectPath = vibePath.replace('/.vibe', '')
+  return pipe(
     Effect.all([
       getProjectInfo(projectPath),
       getToolsInfo(projectPath),
-      getRulesInfo(projectPath),
-      getHealthInfo(projectPath),
+      getRulesInfo(vibePath), // Use vibePath directly for rules
+      getHealthInfo(vibePath), // Use vibePath directly for health
     ]),
     Effect.flatMap(([projectInfo, toolsInfo, rulesInfo, healthInfo]) =>
       pipe(
@@ -77,7 +59,6 @@ const showProjectStatus = (projectPath: string, verbose: boolean) =>
         Effect.flatMap(() => Effect.log('💚 Health:')),
         Effect.flatMap(() => showHealth(healthInfo)),
         Effect.flatMap(() => {
-          const projectPath = vibePath.replace('/.vibe', '')
           if (verbose) {
             return pipe(
               Effect.log(''),
@@ -91,6 +72,7 @@ const showProjectStatus = (projectPath: string, verbose: boolean) =>
       )
     ),
   )
+}
 
 /**
  * Get basic project information
@@ -122,14 +104,14 @@ const getRulesInfo = (projectPath: string) =>
 /**
  * Get health information
  */
-const getHealthInfo = (projectPath: string) =>
+const getHealthInfo = (vibePath: string) =>
   pipe(
     Effect.all([
-      checkFile(resolve(projectPath, '.vibe', 'config.json')),
-      checkFile(resolve(projectPath, '.vibe', 'secrets.json')),
-      checkDirectory(resolve(projectPath, '.vibe', 'rules')),
-      checkDirectory(resolve(projectPath, '.vibe', 'memory')),
-      checkDirectory(resolve(projectPath, '.vibe', 'diary')),
+      checkFile(resolve(vibePath, 'config.json')),
+      checkFile(resolve(vibePath, 'secrets.json')),
+      checkDirectory(resolve(vibePath, 'rules')),
+      checkDirectory(resolve(vibePath, 'memory')),
+      checkDirectory(resolve(vibePath, 'diary')),
     ]),
     Effect.map(([configExists, secretsExists, rulesExists, memoryExists, diaryExists]) => ({
       configExists,
@@ -149,8 +131,8 @@ const checkFile = (path: string) =>
       const stat = await Deno.stat(path)
       return stat.isFile
     },
-    catch: () => false,
-  })
+    catch: (error) => createCliError(error, `Failed to check file: ${path}`, 'status'),
+  }).pipe(Effect.catchAll(() => Effect.succeed(false)))
 
 /**
  * Check if directory exists
@@ -161,8 +143,8 @@ const checkDirectory = (path: string) =>
       const stat = await Deno.stat(path)
       return stat.isDirectory
     },
-    catch: () => false,
-  })
+    catch: (error) => createCliError(error, `Failed to check directory: ${path}`, 'status'),
+  }).pipe(Effect.catchAll(() => Effect.succeed(false)))
 
 /**
  * Display tools information

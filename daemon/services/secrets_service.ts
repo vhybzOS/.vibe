@@ -6,7 +6,8 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
-import { ensureDir, fileExists, logWithContext, readTextFile, writeTextFile } from '../../lib/effects.ts'
+import { ensureDir, logWithContext, readTextFile, writeTextFile } from '../../lib/effects.ts'
+import { fileExists } from '../../lib/fs.ts'
 
 /**
  * Supported secret providers

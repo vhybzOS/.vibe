@@ -188,8 +188,10 @@ const getFileSize = (path: string) =>
       const stat = await Deno.stat(path)
       return stat.size
     },
-    catch: () => 0,
-  })
+    catch: (error) => createCliError(error, `Failed to get file size: ${path}`, 'export'),
+  }).pipe(
+    Effect.catchAll(() => Effect.succeed(0)) // Fallback to 0 if file size check fails
+  )
 
 /**
  * Format bytes to human readable

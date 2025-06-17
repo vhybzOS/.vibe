@@ -13,12 +13,12 @@ import { createCliError, type VibeError } from '../lib/errors.ts'
 export type CommandFunction<T = unknown, R = unknown> = (
   projectPath: string,
   options: T,
-) => Effect.Effect<R, Error | VibeError>
+) => Effect.Effect<R, Error | VibeError, never>
 
 /**
  * Simplified command function type for the new pattern
  */
-export type CommandFn<O, R> = (projectPath: string, options: O) => Effect.Effect<R, Error | VibeError>
+export type CommandFn<O, R> = (projectPath: string, options: O) => Effect.Effect<R, Error | VibeError, never>
 
 /**
  * Higher-order function that ensures .vibe directory exists before running command
@@ -30,6 +30,7 @@ export const withVibeDirectory = <T, R>(
 (projectPath: string, options: T) =>
   pipe(
     ensureVibeDirectory(projectPath),
+    Effect.mapError((error) => createCliError(error, '.vibe directory check failed', 'cli')),
     Effect.flatMap((vibePath) =>
       command(vibePath, options).pipe(
         Effect.catchAll((error) => Effect.fail(createCliError(error, `Command failed`, 'cli'))),
@@ -57,13 +58,6 @@ export const withErrorHandling = <T, R>(
     }),
   )
 
-/**
- * Combines vibe directory check and error handling
- * Most CLI commands should use this wrapper
- */
-export const withStandardPrerequisites = <T, R>(
-  command: CommandFunction<T, R>,
-) => withErrorHandling(withVibeDirectory(command))
 
 /**
  * Success message helper for consistent CLI output
@@ -84,4 +78,4 @@ export const logInfo = (message: string) => Effect.log(`ℹ️  ${message}`)
  * Standard error message formatting for CLI consistency
  */
 export const formatCliError = (error: Error | VibeError): string =>
-  error._tag ? `[${error._tag}] ${error.message}` : error.message
+  '_tag' in error ? `[${error._tag}] ${error.message}` : error.message

@@ -5,41 +5,50 @@
 
 import { Effect, pipe } from 'effect'
 import { createCliError, type VibeError } from '../../lib/errors.ts'
+import { type CommandFn } from '../base.ts'
 
 const DAEMON_PORT = 4242
 const DAEMON_URL = `http://localhost:${DAEMON_PORT}`
 
 /**
- * Daemon command that manages daemon lifecycle
+ * Core daemon logic - daemon management doesn't require .vibe directory
+ */
+const daemonLogic: CommandFn<{ action: 'start' | 'stop' | 'status' | 'restart' | 'help' }, void> = 
+  (_projectPath, options) =>
+    pipe(
+      Effect.log(`🔧 Daemon ${options.action}...`),
+      Effect.flatMap(() => {
+        switch (options.action) {
+          case 'status':
+            return checkDaemonStatus()
+          case 'stop':
+            return stopDaemon()
+          case 'start':
+            return startDaemon()
+          case 'restart':
+            return restartDaemon()
+          case 'help':
+            return showDaemonHelp()
+          default:
+            return Effect.fail(new Error(`Unknown daemon action: ${options.action}`))
+        }
+      }),
+      Effect.catchAll((error) => Effect.fail(createCliError(error, 'Daemon operation failed', 'daemon')))
+    )
+
+/**
+ * Daemon command - doesn't use withVibeDirectory since it's global daemon management
  */
 export const daemonCommand = (
   action: 'start' | 'stop' | 'status' | 'restart' | 'help',
-  options: Record<string, unknown>,
+  _options: Record<string, unknown>,
 ): Effect.Effect<void, Error | VibeError, never> =>
-  pipe(
-    Effect.log(`🔧 Daemon ${action}...`),
-    Effect.flatMap(() => {
-      switch (action) {
-        case 'status':
-          return checkDaemonStatus()
-        case 'stop':
-          return stopDaemon()
-        case 'start':
-          return startDaemon()
-        case 'restart':
-          return restartDaemon()
-        case 'help':
-          return showDaemonHelp()
-        default:
-          return Effect.fail(new Error(`Unknown daemon action: ${action}`))
-      }
-    }),
-  )
+  daemonLogic('', { action })
 
 /**
  * Check daemon status
  */
-const checkDaemonStatus = () =>
+const checkDaemonStatus = (): Effect.Effect<void, Error | VibeError, never> =>
   pipe(
     Effect.tryPromise({
       try: async () => {
@@ -49,29 +58,28 @@ const checkDaemonStatus = () =>
         }
         return await response.json()
       },
-      catch: () => null,
+      catch: (error) => new Error(`Failed to check daemon status: ${error}`),
     }),
-    Effect.flatMap((status) => {
-      if (status) {
-        return pipe(
-          Effect.log('✅ Daemon is running'),
-          Effect.flatMap(() => Effect.log(`   Port: ${status.port || DAEMON_PORT}`)),
-          Effect.flatMap(() => Effect.log(`   PID: ${status.pid || 'unknown'}`)),
-          Effect.flatMap(() => Effect.log(`   Started: ${status.startedAt || 'unknown'}`)),
-        )
-      } else {
-        return pipe(
-          Effect.log('❌ Daemon is not running'),
-          Effect.flatMap(() => Effect.log('   Start with: vibe daemon start')),
-        )
-      }
-    }),
+    Effect.flatMap((status) =>
+      pipe(
+        Effect.log('✅ Daemon is running'),
+        Effect.flatMap(() => Effect.log(`   Port: ${status.port || DAEMON_PORT}`)),
+        Effect.flatMap(() => Effect.log(`   PID: ${status.pid || 'unknown'}`)),
+        Effect.flatMap(() => Effect.log(`   Started: ${status.startedAt || 'unknown'}`)),
+      )
+    ),
+    Effect.catchAll(() => 
+      pipe(
+        Effect.log('❌ Daemon is not running'),
+        Effect.flatMap(() => Effect.log('   Start with: vibe daemon start')),
+      )
+    ),
   )
 
 /**
  * Stop daemon
  */
-const stopDaemon = () =>
+const stopDaemon = (): Effect.Effect<void, Error | VibeError, never> =>
   pipe(
     Effect.tryPromise({
       try: async () => {
@@ -80,7 +88,7 @@ const stopDaemon = () =>
         })
         return response.ok
       },
-      catch: () => false,
+      catch: (error) => new Error(`Failed to stop daemon: ${error}`),
     }),
     Effect.flatMap((stopped) => {
       if (stopped) {
@@ -97,7 +105,7 @@ const stopDaemon = () =>
 /**
  * Start daemon
  */
-const startDaemon = () =>
+const startDaemon = (): Effect.Effect<void, Error | VibeError, never> =>
   pipe(
     Effect.log('🚀 Starting daemon...'),
     Effect.flatMap(() => Effect.log('   Use: deno task daemon')),
@@ -109,8 +117,10 @@ const startDaemon = () =>
           const response = await fetch(`${DAEMON_URL}/status`)
           return response.ok
         },
-        catch: () => false,
-      })
+        catch: (error) => new Error(`Failed to check daemon status: ${error}`),
+      }).pipe(
+        Effect.catchAll(() => Effect.succeed(false)) // If check fails, assume not running
+      )
     ),
     Effect.flatMap((isRunning) => {
       if (isRunning) {
@@ -127,7 +137,7 @@ const startDaemon = () =>
 /**
  * Restart daemon
  */
-const restartDaemon = () =>
+const restartDaemon = (): Effect.Effect<void, Error | VibeError, never> =>
   pipe(
     Effect.log('🔄 Restarting daemon...'),
     Effect.flatMap(() => stopDaemon()),
@@ -138,7 +148,7 @@ const restartDaemon = () =>
 /**
  * Show daemon help
  */
-const showDaemonHelp = () =>
+const showDaemonHelp = (): Effect.Effect<void, Error | VibeError, never> =>
   pipe(
     Effect.log(''),
     Effect.flatMap(() => Effect.log('🔧 .vibe Daemon Commands:')),

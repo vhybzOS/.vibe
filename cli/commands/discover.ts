@@ -16,7 +16,7 @@ const discoverLogic: CommandFn<{ forceRefresh?: boolean }, void> =
   (vibePath, options) =>
     pipe(
       Effect.log('🔍 Starting autonomous discovery via daemon...'),
-      Effect.sync(() => vibePath.replace('/.vibe', '')), // Get project path from vibe path
+      Effect.flatMap(() => Effect.sync(() => vibePath.replace('/.vibe', ''))), // Get project path from vibe path
       Effect.flatMap((projectPath) => startDiscoverySession(projectPath, options)),
       Effect.flatMap((sessionId) =>
         pipe(

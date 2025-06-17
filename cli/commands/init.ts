@@ -5,24 +5,33 @@ import { VibeConfig } from '../../schemas/project.ts'
 import { setSecret, setSecretAndInferProvider } from '../../daemon/services/secrets_service.ts'
 import { readTextFile } from '../../lib/effects.ts'
 import { type FileSystemError, createCliError, type VibeError } from '../../lib/errors.ts'
+import { type CommandFn } from '../base.ts'
 
-export const initCommand = (
-  projectPath: string,
-  options: { force?: boolean; mcp?: boolean },
-): Effect.Effect<void, Error | VibeError, never> =>
-  pipe(
-    checkExistingVibe(projectPath, options.force || false),
-    Effect.flatMap(() => createVibeDirectory(projectPath)),
-    Effect.flatMap(() => detectAndImportExistingConfigs(projectPath)),
-    Effect.flatMap(() => createDefaultConfig(projectPath)),
-    Effect.flatMap(() => createInitialDirectories(projectPath)),
-    Effect.flatMap(() => bootstrapProjectSecrets(projectPath)),
-    Effect.tap(() => Effect.log('✅ .vibe initialized successfully!')),
-    Effect.tap(() => Effect.log('🔍 Starting automatic background discovery of dependencies...')),
-    Effect.flatMap(() => startBackgroundDiscovery(projectPath)),
-    Effect.tap(() => Effect.log('📚 Run `vibe status` to see progress.')),
-    Effect.tap(() => Effect.log('🚀 Run `vibe daemon` to start the daemon if not running')),
-  )
+/**
+ * Core init logic - operates on project directory path (not .vibe path)
+ * Init is unique - it creates the .vibe directory, so it doesn't use withVibeDirectory
+ */
+const initLogic: CommandFn<{ force?: boolean; mcp?: boolean }, void> = 
+  (projectPath, options) =>
+    pipe(
+      checkExistingVibe(projectPath, options.force || false),
+      Effect.flatMap(() => createVibeDirectory(projectPath)),
+      Effect.flatMap(() => detectAndImportExistingConfigs(projectPath)),
+      Effect.flatMap(() => createDefaultConfig(projectPath)),
+      Effect.flatMap(() => createInitialDirectories(projectPath)),
+      Effect.flatMap(() => bootstrapProjectSecrets(projectPath)),
+      Effect.tap(() => Effect.log('✅ .vibe initialized successfully!')),
+      Effect.tap(() => Effect.log('🔍 Starting automatic background discovery of dependencies...')),
+      Effect.flatMap(() => startBackgroundDiscovery(projectPath)),
+      Effect.tap(() => Effect.log('📚 Run `vibe status` to see progress.')),
+      Effect.tap(() => Effect.log('🚀 Run `vibe daemon` to start the daemon if not running')),
+      Effect.catchAll((error) => Effect.fail(createCliError(error, 'Init failed', 'init')))
+    )
+
+/**
+ * Init command - unique case that doesn't use withVibeDirectory since it creates .vibe
+ */
+export const initCommand = initLogic
 
 const checkExistingVibe = (projectPath: string, force: boolean) =>
   pipe(

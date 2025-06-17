@@ -181,14 +181,14 @@ graph TD
 
 ```mermaid
 graph TD
-    A[CLI: vibe search "query"] --> B{Daemon: /api/search}
-    B --> C[SearchService.search("query")]
-    C --> D{Inverted Index <br/>(Map<term, docIDs>)}
-    D --> E[Get Matching Doc IDs]
-    E --> F{Document Store <br/>(Map<docID, Document>)}
-    F --> G[Fetch Full Documents]
-    G --> H[Score & Rank Results]
-    H --> I[Return SearchResponse]
+    A["CLI: vibe search 'query'"] --> B{"Daemon: /api/search"}
+    B --> C["SearchService.search('query')"]
+    C --> D{"Inverted Index <br/>(Map<term, docIDs>)"}
+    D --> E["Get Matching Doc IDs"]
+    E --> F{"Document Store <br/>(Map<docID, Document>)"}
+    F --> G["Fetch Full Documents"]
+    G --> H["Score & Rank Results"]
+    H --> I["Return SearchResponse"]
     I --> B
     B --> A
 ```

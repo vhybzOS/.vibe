@@ -10,7 +10,7 @@
 
 ### **Progress Tracking**
 - **Started**: 146 TypeScript errors in `deno task check`
-- **Current**: 140 errors (6 errors fixed - 4% reduction achieved)
+- **Current**: 51 errors (95 errors fixed - 65% reduction achieved) 🚀
 - **Target**: 0 errors + architectural excellence
 
 ### **Recent Victories** ✅
@@ -299,18 +299,33 @@ export const commandName = withVibeDirectory((vibePath, options) =>
 - Effect return type changes could cause runtime failures
 - CLI command transformations could break actual command execution
 
-### **Solution: Immediate Runtime Testing After Each Change**
+### **Solution: Test-Driven Runtime Verification**
 
-**For every file modified, follow this verification pattern:**
+**CRITICAL ORDER: Read Tests First, Then Refactor, Then Verify**
 
-#### **1. Identify the Test File**
+**For every file about to be modified, follow this enhanced verification pattern:**
+
+#### **1. Identify and READ the Test File (BEFORE Refactoring)**
 ```bash
-# Pattern: Find test file for modified file
+# Pattern: Find test file for target file
 # Example: schemas/memory.ts → find related test
 find . -name "*memory*test*" -o -name "*test*memory*"
 ```
 
-#### **2. Run Isolated Test**
+**BEFORE making any changes:**
+- **READ** the corresponding test file completely
+- Understand what the tests expect the code to do
+- Identify the test patterns and expected behaviors
+- Remember which tests to run after refactor
+- If test flows don't make sense with your architectural understanding, plan to refactor tests too
+
+#### **2. Think Hard Before Starting Type Fixes**
+- Understand the full scope of what the file should accomplish
+- Plan changes that align with test expectations
+- Consider if tests need updating for better architectural patterns
+- Ensure changes maintain or improve the intended functionality
+
+#### **3. Run Isolated Test After Refactor**
 ```bash
 # Run only the specific test file in isolation
 deno test path/to/specific.test.ts --allow-all

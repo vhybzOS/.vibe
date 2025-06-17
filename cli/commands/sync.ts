@@ -65,7 +65,19 @@ const performSync = (
               Effect.flatMap(() => Effect.log('   Supported tools: Cursor, Windsurf, Claude Desktop')),
             )
           }
-          return performToolSync(tools, rules, options)
+          // Transform DetectedTool[] to the format expected by performToolSync
+          const transformedTools = tools.map(tool => ({
+            type: tool.tool,
+            name: tool.tool, // Use tool type as name for now
+          }))
+          // Transform UniversalRule[] to the format expected by performToolSync
+          const transformedRules = rules.map(rule => ({
+            id: rule.id,
+            description: rule.metadata.description,
+            enabled: rule.application.mode === 'always',
+            compatibility: rule.compatibility, // Preserve compatibility for filtering
+          }))
+          return performToolSync(transformedTools, transformedRules, options)
         }),
       )
     ),
@@ -106,7 +118,7 @@ const getProjectRules = (projectPath: string) =>
  */
 const performToolSync = (
   tools: Array<{ type: string; name: string }>,
-  rules: Array<{ id: string; description: string }>,
+  rules: Array<{ id: string; description: string; enabled: boolean; compatibility: any }>,
   options: { dryRun?: boolean; force?: boolean },
 ) =>
   pipe(
@@ -120,7 +132,7 @@ const performToolSync = (
  */
 const syncSingleTool = (
   tool: { type: string; name: string; configPath?: string },
-  rules: Array<{ id: string; description: string; enabled: boolean }>,
+  rules: Array<{ id: string; description: string; enabled: boolean; compatibility: any }>,
   options: { dryRun?: boolean; force?: boolean },
 ) =>
   Effect.sync(() => {
@@ -133,8 +145,8 @@ const syncSingleTool = (
     if (options.dryRun) {
       return {
         tool: tool.type,
-        action: 'preview' as const,
-        rulesCount: applicableRules.length,
+        status: 'preview' as const,
+        changes: applicableRules.length,
         message: `Would sync ${applicableRules.length} rules`,
       }
     }
@@ -142,8 +154,8 @@ const syncSingleTool = (
     // In a real implementation, this would write tool-specific config files
     return {
       tool: tool.type,
-      action: 'synced' as const,
-      rulesCount: applicableRules.length,
+      status: 'synced' as const,
+      changes: applicableRules.length,
       message: `Synced ${applicableRules.length} rules`,
     }
   })
@@ -152,7 +164,7 @@ const syncSingleTool = (
  * Show sync results
  */
 const showSyncResults = (
-  results: Array<{ tool: string; status: string; changes?: number }>,
+  results: Array<{ tool: string; status: string; changes?: number; message: string }>,
   options: { dryRun?: boolean; force?: boolean },
 ) =>
   pipe(

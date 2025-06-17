@@ -333,8 +333,8 @@ export class VibeServer {
         items: UniversalRule[]
       }
       tools?: {
-        detected: Awaited<ReturnType<typeof detectAITools>>
-        active: Awaited<ReturnType<typeof detectAITools>>
+        detected: Array<{ tool: string; configFiles: Array<{ path: string; exists: boolean }>; confidence: number; detectedAt: string; status: string }>
+        active: Array<{ tool: string; configFiles: Array<{ path: string; exists: boolean }>; confidence: number; detectedAt: string; status: string }>
       }
     }
 
@@ -351,27 +351,29 @@ export class VibeServer {
         const rules = await Effect.runPromise(loadRules(this.vibePath))
         result.rules = {
           total: rules.length,
-          active: rules.filter((r: UniversalRule) => r.application.mode === 'always'),
-          byPriority: {
-            high: rules.filter((r: UniversalRule) => r.content.priority === 'high'),
-            medium: rules.filter((r: UniversalRule) => r.content.priority === 'medium'),
-            low: rules.filter((r: UniversalRule) => r.content.priority === 'low'),
-          },
+          items: rules,
         }
       } catch (error) {
-        result.rules = { error: 'Failed to load rules', details: error }
+        result.rules = {
+          total: 0,
+          items: [],
+        }
       }
     }
 
     if (params.includeTools) {
       try {
-        const tools = await Effect.runPromise(detectAITools(this.projectPath))
+        const toolsEffect = detectAITools(this.projectPath)
+        const tools = await Effect.runPromise(toolsEffect)
         result.tools = {
           detected: tools,
-          count: tools.length,
+          active: tools.filter(tool => tool.status === 'active'),
         }
       } catch (error) {
-        result.tools = { error: 'Failed to detect tools', details: error }
+        result.tools = {
+          detected: [],
+          active: [],
+        }
       }
     }
 
@@ -580,10 +582,10 @@ export class VibeServer {
     try {
       const searchQuery = {
         query: params.query,
-        type: params.type || [],
+        type: (params.type || []) as ('context' | 'conversation' | 'decision' | 'pattern' | 'preference' | 'knowledge')[],
         tags: params.tags || [],
-        tool: [],
-        importance: [],
+        tool: [] as ('cursor' | 'windsurf' | 'claude' | 'copilot' | 'codeium' | 'cody' | 'tabnine')[],
+        importance: [] as ('low' | 'medium' | 'high' | 'critical')[],
         timeRange: {},
         limit: params.limit,
         threshold: 0.1,
@@ -624,7 +626,7 @@ export class VibeServer {
       const metadata: MemoryMetadataInput = {
         type: MemoryTypeSchema.parse(params.type),
         source: {
-          tool: 'mcp',
+          tool: undefined, // MCP is not a specific AI tool
           sessionId: crypto.randomUUID(),
           timestamp: new Date().toISOString(),
           location: this.projectPath,
@@ -755,8 +757,7 @@ export class VibeServer {
       const searchQuery = {
         query: params.query,
         category: z.enum(DIARY_CATEGORIES).parse(params.category),
-        tags: params.tags,
-        dateRange: undefined,
+        tags: params.tags || [],
         limit: params.limit,
       }
 

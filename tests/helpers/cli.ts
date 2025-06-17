@@ -7,6 +7,7 @@ import { resolve } from '@std/path'
 import { initCommand } from '../../cli/commands/init.ts'
 import { statusCommand } from '../../cli/commands/status.ts'
 import { discoverCommand } from '../../cli/commands/discover.ts'
+import { syncCommand } from '../../cli/commands/sync.ts'
 
 // Represents the state of our mock daemon API
 interface MockApiState {
@@ -104,6 +105,7 @@ export const setupTestCli = async () => {
       init: (options: { force?: boolean } = {}) => Effect.runPromise(initCommand(testDir, options)),
       status: () => Effect.runPromise(statusCommand(testDir, {})),
       discover: (options: { forceRefresh?: boolean } = {}) => Effect.runPromise(discoverCommand(testDir, options)),
+      sync: (options: { dryRun?: boolean; force?: boolean } = {}) => Effect.runPromise(syncCommand(testDir, options)),
     },
   }
 }

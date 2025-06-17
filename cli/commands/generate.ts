@@ -104,9 +104,12 @@ const analyzeProject = (
  */
 const generateRulesFromAnalysis = (
   analysis: {
+    projectPath: string
     patterns: Array<
-      { name: string; description: string; confidence: number; type: string; examples: string[] }
+      { name: string; confidence: number; description: string; pattern: string }
     >
+    threshold: number
+    requestedPatterns: string[]
   },
 ) =>
   Effect.sync(() => {
@@ -126,7 +129,15 @@ const generateRulesFromAnalysis = (
 /**
  * Show generation results
  */
-const showGenerationResults = (rules: Array<{ id: string; description: string; type: string }>) =>
+const showGenerationResults = (rules: Array<{ 
+  id: string; 
+  name: string; 
+  description: string; 
+  confidence: number; 
+  pattern: string; 
+  generated: boolean; 
+  createdAt: string 
+}>) =>
   pipe(
     Effect.log(''),
     Effect.flatMap(() => Effect.log('📊 Rule Generation Results:')),
@@ -155,7 +166,15 @@ const showGenerationResults = (rules: Array<{ id: string; description: string; t
 /**
  * Display generated rules
  */
-const showGeneratedRules = (rules: Array<{ id: string; description: string; type: string }>) =>
+const showGeneratedRules = (rules: Array<{ 
+  id: string; 
+  name: string; 
+  description: string; 
+  confidence: number; 
+  pattern: string; 
+  generated: boolean; 
+  createdAt: string 
+}>) =>
   pipe(
     Effect.all(rules.map((rule, index) =>
       pipe(

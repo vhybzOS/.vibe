@@ -2,6 +2,7 @@
 
 import { Effect, pipe } from 'effect'
 import { resolve } from '@std/path'
+import { expandGlob } from 'https://deno.land/std@0.211.0/fs/expand_glob.ts'
 import { createDefaultWatcherConfig, startFileWatcher } from '../services/file_watcher_service.ts'
 import { startMcpServer } from '../../mcp-server/server.ts'
 import { DaemonConfig, loadDaemonConfig, saveDaemonConfig } from './config.ts'
@@ -94,26 +95,28 @@ class VibeDaemon {
       autoDiscover: true,
       maxDepth: 3,
       ignorePaths: ['node_modules', '.git', 'dist', 'build'],
+      projectScanRoots: ['~/'],
     },
   }
 
-  async start() {
-    return pipe(
-      Effect.log(`🚀 Starting ${DAEMON_NAME} v${DAEMON_VERSION}...`),
-      Effect.flatMap(() => this.loadConfiguration()),
-      Effect.flatMap(() => this.setupPidFile()),
-      Effect.flatMap(() => this.startHttpServer()),
-      Effect.flatMap(() => this.startMcpServer()),
-      Effect.flatMap(() => this.discoverProjects()),
-      Effect.flatMap(() => this.startFileWatchers()),
-      Effect.flatMap(() => this.setupHealthChecks()),
-      Effect.tap(() => {
-        this.state.isRunning = true
-        return Effect.log('✅ Daemon started successfully')
-      }),
-      Effect.tap(() => this.printStatus()),
-      Effect.flatMap(() => this.waitForShutdown()),
-      Effect.runPromise,
+  start() {
+    return Effect.runPromise(
+      pipe(
+        Effect.log(`🚀 Starting ${DAEMON_NAME} v${DAEMON_VERSION}...`),
+        Effect.flatMap(() => this.loadConfiguration()),
+        Effect.flatMap(() => this.setupPidFile()),
+        Effect.flatMap(() => this.startHttpServer()),
+        Effect.flatMap(() => this.startMcpServer()),
+        Effect.flatMap(() => this.discoverProjects()),
+        Effect.flatMap(() => this.startFileWatchers()),
+        Effect.flatMap(() => this.setupHealthChecks()),
+        Effect.tap(() => {
+          this.state.isRunning = true
+          return Effect.log('✅ Daemon started successfully')
+        }),
+        Effect.tap(() => this.printStatus()),
+        Effect.flatMap(() => this.waitForShutdown()),
+      )
     )
   }
 
@@ -159,8 +162,8 @@ class VibeDaemon {
                     },
                     mcpServer: this.state.mcpServer,
                     projects: Array.from(this.state.projects.entries()).map(([path, state]) => ({
-                      path,
                       ...state,
+                      path, // Explicit path overrides any path in state
                     })),
                     config: this.config,
                   }),
@@ -239,7 +242,7 @@ class VibeDaemon {
   private discoverProjects = () =>
     pipe(
       Effect.log('🔍 Discovering .vibe projects...'),
-      this.scanForVibeProjects(),
+      Effect.flatMap(() => this.scanForVibeProjects()),
       Effect.tap((projects) => Effect.log(`📂 Found ${projects.length} .vibe project(s)`)),
       Effect.flatMap((projects) =>
         Effect.all(
@@ -273,7 +276,7 @@ class VibeDaemon {
               const globPattern = `${expandedRoot}/**/.vibe`
 
               for await (
-                const entry of Deno.expandGlob(globPattern, {
+                const entry of expandGlob(globPattern, {
                   maxDepth: config.maxDepth,
                   followSymlinks: false,
                   exclude: config.ignorePaths.map((path) => `**/${path}/**`),

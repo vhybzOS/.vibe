@@ -39,15 +39,19 @@ describe('Dependency Discovery User Tests', () => {
     it('should detect regular dependencies correctly', async () => {
       await Deno.writeTextFile(
         resolve(projectPath, 'package.json'),
-        JSON.stringify({
-          name: 'regular-deps-test',
-          version: '1.0.0',
-          dependencies: {
-            'express': '^4.18.0',
-            'lodash': '^4.17.21',
-            'axios': '^1.4.0',
-          }
-        }, null, 2)
+        JSON.stringify(
+          {
+            name: 'regular-deps-test',
+            version: '1.0.0',
+            dependencies: {
+              'express': '^4.18.0',
+              'lodash': '^4.17.21',
+              'axios': '^1.4.0',
+            },
+          },
+          null,
+          2,
+        ),
       )
 
       const result = await runVibeCommand(projectPath, ['init'])
@@ -76,16 +80,20 @@ describe('Dependency Discovery User Tests', () => {
     it('should detect dev dependencies correctly', async () => {
       await Deno.writeTextFile(
         resolve(projectPath, 'package.json'),
-        JSON.stringify({
-          name: 'dev-deps-test',
-          version: '1.0.0',
-          devDependencies: {
-            'typescript': '^5.0.0',
-            '@types/node': '^20.0.0',
-            'jest': '^29.0.0',
-            'eslint': '^8.0.0',
-          }
-        }, null, 2)
+        JSON.stringify(
+          {
+            name: 'dev-deps-test',
+            version: '1.0.0',
+            devDependencies: {
+              'typescript': '^5.0.0',
+              '@types/node': '^20.0.0',
+              'jest': '^29.0.0',
+              'eslint': '^8.0.0',
+            },
+          },
+          null,
+          2,
+        ),
       )
 
       const result = await runVibeCommand(projectPath, ['init'])
@@ -110,14 +118,18 @@ describe('Dependency Discovery User Tests', () => {
     it('should detect peer dependencies correctly', async () => {
       await Deno.writeTextFile(
         resolve(projectPath, 'package.json'),
-        JSON.stringify({
-          name: 'peer-deps-test',
-          version: '1.0.0',
-          peerDependencies: {
-            'react': '^18.0.0',
-            'react-dom': '^18.0.0',
-          }
-        }, null, 2)
+        JSON.stringify(
+          {
+            name: 'peer-deps-test',
+            version: '1.0.0',
+            peerDependencies: {
+              'react': '^18.0.0',
+              'react-dom': '^18.0.0',
+            },
+          },
+          null,
+          2,
+        ),
       )
 
       const result = await runVibeCommand(projectPath, ['init'])
@@ -140,21 +152,25 @@ describe('Dependency Discovery User Tests', () => {
     it('should handle mixed dependency types correctly', async () => {
       await Deno.writeTextFile(
         resolve(projectPath, 'package.json'),
-        JSON.stringify({
-          name: 'mixed-deps-test',
-          version: '1.0.0',
-          dependencies: {
-            'express': '^4.18.0',
-            'mongoose': '^7.0.0',
+        JSON.stringify(
+          {
+            name: 'mixed-deps-test',
+            version: '1.0.0',
+            dependencies: {
+              'express': '^4.18.0',
+              'mongoose': '^7.0.0',
+            },
+            devDependencies: {
+              'typescript': '^5.0.0',
+              '@types/express': '^4.17.0',
+            },
+            peerDependencies: {
+              'mongoose': '^7.0.0', // Same package in multiple categories
+            },
           },
-          devDependencies: {
-            'typescript': '^5.0.0',
-            '@types/express': '^4.17.0',
-          },
-          peerDependencies: {
-            'mongoose': '^7.0.0', // Same package in multiple categories
-          }
-        }, null, 2)
+          null,
+          2,
+        ),
       )
 
       const result = await runVibeCommand(projectPath, ['init'])
@@ -171,34 +187,38 @@ describe('Dependency Discovery User Tests', () => {
       const depsByType = {
         dependency: tools.dependencies.filter((d: any) => d.type === 'dependency').map((d: any) => d.name),
         devDependency: tools.dependencies.filter((d: any) => d.type === 'devDependency').map((d: any) => d.name),
-        peerDependency: tools.dependencies.filter((d: any) => d.type === 'peerDependency').map((d: any) => d.name)
+        peerDependency: tools.dependencies.filter((d: any) => d.type === 'peerDependency').map((d: any) => d.name),
       }
 
       assert(depsByType.dependency.includes('express'), 'Should detect express as regular dependency')
       assert(depsByType.devDependency.includes('typescript'), 'Should detect typescript as dev dependency')
-      
+
       // Handle potential duplicate mongoose entries correctly
       assert(
         depsByType.dependency.includes('mongoose') || depsByType.peerDependency.includes('mongoose'),
-        'Should detect mongoose in at least one category'
+        'Should detect mongoose in at least one category',
       )
     })
 
     it('should handle scoped packages correctly', async () => {
       await Deno.writeTextFile(
         resolve(projectPath, 'package.json'),
-        JSON.stringify({
-          name: 'scoped-deps-test',
-          version: '1.0.0',
-          dependencies: {
-            '@nestjs/core': '^10.0.0',
-            '@prisma/client': '^5.0.0',
+        JSON.stringify(
+          {
+            name: 'scoped-deps-test',
+            version: '1.0.0',
+            dependencies: {
+              '@nestjs/core': '^10.0.0',
+              '@prisma/client': '^5.0.0',
+            },
+            devDependencies: {
+              '@types/node': '^20.0.0',
+              '@typescript-eslint/parser': '^6.0.0',
+            },
           },
-          devDependencies: {
-            '@types/node': '^20.0.0',
-            '@typescript-eslint/parser': '^6.0.0',
-          }
-        }, null, 2)
+          null,
+          2,
+        ),
       )
 
       const result = await runVibeCommand(projectPath, ['init'])
@@ -225,10 +245,14 @@ describe('Dependency Discovery User Tests', () => {
     it('should handle empty package.json correctly', async () => {
       await Deno.writeTextFile(
         resolve(projectPath, 'package.json'),
-        JSON.stringify({
-          name: 'empty-deps-test',
-          version: '1.0.0',
-        }, null, 2)
+        JSON.stringify(
+          {
+            name: 'empty-deps-test',
+            version: '1.0.0',
+          },
+          null,
+          2,
+        ),
       )
 
       const result = await runVibeCommand(projectPath, ['init'])
@@ -244,14 +268,17 @@ describe('Dependency Discovery User Tests', () => {
     it('should handle malformed package.json gracefully', async () => {
       await Deno.writeTextFile(
         resolve(projectPath, 'package.json'),
-        '{ "name": "malformed-test", invalid json'
+        '{ "name": "malformed-test", invalid json',
       )
 
       const result = await runVibeCommand(projectPath, ['init'])
-      
+
       // Should either fail gracefully or succeed with no dependencies
       if (!result.success) {
-        assert(result.stderr.includes('package.json') || result.stderr.includes('JSON'), 'Should mention package.json parsing issue')
+        assert(
+          result.stderr.includes('package.json') || result.stderr.includes('JSON'),
+          'Should mention package.json parsing issue',
+        )
       } else {
         assert(result.stdout.includes('No dependencies detected'), 'Should fallback to no dependencies')
       }
@@ -266,11 +293,15 @@ describe('Dependency Discovery User Tests', () => {
 
       await Deno.writeTextFile(
         resolve(projectPath, 'package.json'),
-        JSON.stringify({
-          name: 'large-deps-test',
-          version: '1.0.0',
-          dependencies: largeDependencies,
-        }, null, 2)
+        JSON.stringify(
+          {
+            name: 'large-deps-test',
+            version: '1.0.0',
+            dependencies: largeDependencies,
+          },
+          null,
+          2,
+        ),
       )
 
       const startTime = Date.now()
@@ -292,15 +323,19 @@ describe('Dependency Discovery User Tests', () => {
       // Current P0 implementation note: Deno.json import detection is planned for future enhancement
       await Deno.writeTextFile(
         resolve(projectPath, 'deno.json'),
-        JSON.stringify({
-          name: 'deno-imports-test',
-          version: '1.0.0',
-          imports: {
-            'hono': 'jsr:@hono/hono@^4.0.0',
-            'zod': 'npm:zod@^3.0.0',
-            '@std/assert': 'jsr:@std/assert@^1.0.0',
-          }
-        }, null, 2)
+        JSON.stringify(
+          {
+            name: 'deno-imports-test',
+            version: '1.0.0',
+            imports: {
+              'hono': 'jsr:@hono/hono@^4.0.0',
+              'zod': 'npm:zod@^3.0.0',
+              '@std/assert': 'jsr:@std/assert@^1.0.0',
+            },
+          },
+          null,
+          2,
+        ),
       )
 
       const result = await runVibeCommand(projectPath, ['init'])
@@ -324,17 +359,21 @@ describe('Dependency Discovery User Tests', () => {
     it('should preserve exact version specifications', async () => {
       await Deno.writeTextFile(
         resolve(projectPath, 'package.json'),
-        JSON.stringify({
-          name: 'version-test',
-          version: '1.0.0',
-          dependencies: {
-            'exact-version': '1.2.3',
-            'caret-range': '^4.5.6',
-            'tilde-range': '~7.8.9',
-            'range-spec': '>=10.0.0 <11.0.0',
-            'pre-release': '2.0.0-beta.1',
-          }
-        }, null, 2)
+        JSON.stringify(
+          {
+            name: 'version-test',
+            version: '1.0.0',
+            dependencies: {
+              'exact-version': '1.2.3',
+              'caret-range': '^4.5.6',
+              'tilde-range': '~7.8.9',
+              'range-spec': '>=10.0.0 <11.0.0',
+              'pre-release': '2.0.0-beta.1',
+            },
+          },
+          null,
+          2,
+        ),
       )
 
       const result = await runVibeCommand(projectPath, ['init'])
@@ -345,7 +384,7 @@ describe('Dependency Discovery User Tests', () => {
 
       // Verify version specifications are preserved exactly
       const depVersions = Object.fromEntries(
-        tools.dependencies.map((d: any) => [d.name, d.version])
+        tools.dependencies.map((d: any) => [d.name, d.version]),
       )
 
       assertEquals(depVersions['exact-version'], '1.2.3', 'Should preserve exact version')
@@ -358,11 +397,15 @@ describe('Dependency Discovery User Tests', () => {
     it('should provide consistent timestamps', async () => {
       await Deno.writeTextFile(
         resolve(projectPath, 'package.json'),
-        JSON.stringify({
-          name: 'timestamp-test',
-          version: '1.0.0',
-          dependencies: { 'test-dep': '^1.0.0' }
-        }, null, 2)
+        JSON.stringify(
+          {
+            name: 'timestamp-test',
+            version: '1.0.0',
+            dependencies: { 'test-dep': '^1.0.0' },
+          },
+          null,
+          2,
+        ),
       )
 
       const beforeInit = Date.now()

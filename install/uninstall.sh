@@ -6,7 +6,7 @@ set -eo pipefail
 # This smart script detects where .vibe was installed (Current User or All Users)
 # and completely removes all associated files, PATH entries, and services.
 #
-# @version 1.1.0
+# @version 1.2.0
 
 # --- Color Definitions ---
 RED='\033[0;31m'
@@ -31,16 +31,21 @@ detect_platform() {
 }
 
 find_installation() {
+    # Define potential installation paths
     USER_INSTALL_DIR="$HOME/.local/share/dotvibe"
-    SYSTEM_INSTALL_DIR="/usr/local/dotvibe" # Note: installer now uses /usr/local/dotvibe for system-wide
+    USER_BIN_DIR="$HOME/.local/bin"
+    SYSTEM_INSTALL_DIR="/usr/local/share/dotvibe"
+    SYSTEM_BIN_DIR="/usr/local/bin"
 
-    if [ -d "$USER_INSTALL_DIR" ]; then
+    # Check for user-level installation first
+    if [ -d "$USER_INSTALL_DIR" ] || [ -f "$USER_BIN_DIR/vibe" ]; then
         INSTALL_PATH="$USER_INSTALL_DIR"
-        BIN_PATH="$HOME/.local/bin"
+        BIN_PATH="$USER_BIN_DIR"
         INSTALL_SCOPE="CurrentUser"
-    elif [ -d "$SYSTEM_INSTALL_DIR" ]; then
+    # Then check for system-level installation
+    elif [ -d "$SYSTEM_INSTALL_DIR" ] || [ -f "$SYSTEM_BIN_DIR/vibe" ]; then
         INSTALL_PATH="$SYSTEM_INSTALL_DIR"
-        BIN_PATH="/usr/local/bin"
+        BIN_PATH="$SYSTEM_BIN_DIR"
         INSTALL_SCOPE="AllUsers"
     else
         INSTALL_PATH=""
@@ -51,22 +56,25 @@ remove_service() {
     log_info "Attempting to stop and remove daemon service..."
     if [[ "$PLATFORM" == "linux" ]]; then
         if [[ "$INSTALL_SCOPE" == "CurrentUser" ]]; then
+            # Stop and disable user service
             systemctl --user stop vibe.service &>/dev/null || true
             systemctl --user disable vibe.service &>/dev/null || true
             rm -f "$HOME/.config/systemd/user/vibe.service"
             systemctl --user daemon-reload
         else
+            # Stop and disable system service
             systemctl stop vibe.service &>/dev/null || true
             systemctl disable vibe.service &>/dev/null || true
             rm -f "/etc/systemd/system/vibe.service"
             systemctl daemon-reload
         fi
-        log_success "Systemd service (if existed) has been removed."
-    elif [[ "$PLATFORM" == "macos" ]]; then
+        log_success "Systemd service (if it existed) has been removed."
+    elif [[ "$PLATFORM" == "macos" ]]; a
         local label="dev.dotvibe.daemon"
         local plist_path_user="$HOME/Library/LaunchAgents/$label.plist"
         local plist_path_system="/Library/LaunchDaemons/$label.plist"
         
+        # Unload and remove both potential plist files
         if [ -f "$plist_path_user" ]; then
             launchctl unload "$plist_path_user" 2>/dev/null || true
             rm -f "$plist_path_user"
@@ -75,7 +83,7 @@ remove_service() {
             launchctl unload "$plist_path_system" 2>/dev/null || true
             rm -f "$plist_path_system"
         fi
-        log_success "Launchd service (if existed) has been removed."
+        log_success "Launchd service (if it existed) has been removed."
     fi
 }
 
@@ -87,15 +95,14 @@ remove_from_path() {
     
     for config_file in "${shell_configs[@]}"; do
         if [ -f "$config_file" ]; then
-            # Use sed to remove the line. The weird syntax is for cross-platform compatibility (macOS vs Linux sed).
-            sed -i.bak "s|.*export PATH=\"$bin_dir:\$PATH\".*||g" "$config_file"
-            sed -i.bak "s|.*fish_add_path \"$bin_dir\".*||g" "$config_file"
-            # Clean up empty lines that might be left over
-            sed -i.bak '/^$/N;/^\n$/D' "$config_file"
+            # Use sed to remove the line(s) referencing the bin directory.
+            # The .bak extension is for cross-platform sed compatibility.
+            sed -i.bak -e "\|$bin_dir|d" "$config_file"
+            # Clean up the backup file created by sed
             rm -f "${config_file}.bak"
         fi
     done
-    log_success "PATH entries removed."
+    log_success "PATH entries removed from shell profiles."
 }
 
 remove_files() {
@@ -104,7 +111,7 @@ remove_files() {
         rm -rf "$INSTALL_PATH"
         log_success "Installation directory removed."
     else
-        log_warn "Installation directory not found."
+        log_warn "Installation directory not found, skipping."
     fi
 
     log_info "Removing binaries from $BIN_PATH..."
@@ -130,7 +137,7 @@ main() {
     if [[ "$INSTALL_SCOPE" == "AllUsers" ]] && [[ $EUID -ne 0 ]]; then
         log_warn "System-wide uninstallation requires sudo privileges."
         log_info "Re-running script with sudo..."
-        sudo "$0" "$@"
+        sudo bash "$0" "$@"
         exit 0
     fi
     

@@ -7,7 +7,7 @@
  * @tested_by tests/user/dependency-discovery.test.ts (Validation helper usage)
  */
 
-import { resolve, dirname } from '@std/path'
+import { dirname, resolve } from '@std/path'
 import { assert, assertEquals, assertExists } from '@std/assert'
 
 // Test utilities for real project simulation
@@ -84,15 +84,15 @@ export async function validateVibeStructure(vibePath: string): Promise<void> {
   assert(await dirExists(resolve(vibePath, 'tools')), 'tools directory should exist')
   assert(await dirExists(resolve(vibePath, 'rules')), 'rules directory should exist')
   assert(await dirExists(resolve(vibePath, 'mcp')), 'mcp directory should exist (P1/P2 placeholder)')
-  
+
   // Required files
   const requiredFiles = [
     'config.json',
     'tools/detected.json',
     'rules/universal.json',
-    'mcp/tools.json'
+    'mcp/tools.json',
   ]
-  
+
   for (const file of requiredFiles) {
     const filePath = resolve(vibePath, file)
     assert(await fileExists(filePath), `Required file should exist: ${file}`)
@@ -113,14 +113,14 @@ export async function validateConfigQuality(configPath: string, expectedProjectN
   assertExists(config.version, 'should have version')
   assertExists(config.created, 'should have creation timestamp')
   assertExists(config.updated, 'should have updated timestamp')
-  
+
   // Configuration should include essential settings
   assertExists(config.settings, 'should have settings object')
   assertEquals(typeof config.settings.autoDiscovery, 'boolean', 'should have autoDiscovery setting')
   assertEquals(typeof config.settings.mcpEnabled, 'boolean', 'should have mcpEnabled setting')
   assertExists(config.dependencies, 'should have dependencies array')
   assertEquals(Array.isArray(config.dependencies), true, 'dependencies should be array')
-  
+
   // Validate timestamps are realistic (within last minute)
   const now = Date.now()
   const created = new Date(config.created).getTime()
@@ -143,11 +143,11 @@ export async function validateDependencyDetection(toolsPath: string, expectedCou
 
   assert(Array.isArray(tools.dependencies), 'should have dependencies array')
   assertExists(tools.lastUpdated, 'should have lastUpdated timestamp')
-  
+
   if (expectedCount !== undefined) {
     assertEquals(tools.dependencies.length, expectedCount, `should detect ${expectedCount} dependencies`)
   }
-  
+
   // Verify dependency data structure for each detected dependency
   for (const dep of tools.dependencies) {
     assertExists(dep.name, 'dependency should have name')
@@ -155,11 +155,11 @@ export async function validateDependencyDetection(toolsPath: string, expectedCou
     assertExists(dep.type, 'dependency should have type')
     assert(['dependency', 'devDependency', 'peerDependency'].includes(dep.type), 'type should be valid')
   }
-  
+
   // Verify dependencies array structure is valid even when empty
-  const structureValid = Array.isArray(tools.dependencies) && 
-                         typeof tools.lastUpdated === 'string' &&
-                         tools.lastUpdated.includes('T') // ISO timestamp format
+  const structureValid = Array.isArray(tools.dependencies) &&
+    typeof tools.lastUpdated === 'string' &&
+    tools.lastUpdated.includes('T') // ISO timestamp format
   assert(structureValid, 'tools structure should be valid')
 
   return tools

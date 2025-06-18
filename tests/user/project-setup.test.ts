@@ -78,7 +78,11 @@ describe('Project Setup User Tests', () => {
 
       // Note: Current P0 implementation only detects package.json dependencies
       // Deno.json import detection is planned for future enhancement
-      assertEquals(config.dependencies.length, 0, 'Deno project without package.json should have no detected dependencies')
+      assertEquals(
+        config.dependencies.length,
+        0,
+        'Deno project without package.json should have no detected dependencies',
+      )
     })
 
     it('should initialize vibe in Node.js project', async () => {
@@ -113,7 +117,7 @@ describe('Project Setup User Tests', () => {
       const depsByType = {
         dependency: config.dependencies.filter((d: any) => d.type === 'dependency').map((d: any) => d.name),
         devDependency: config.dependencies.filter((d: any) => d.type === 'devDependency').map((d: any) => d.name),
-        peerDependency: config.dependencies.filter((d: any) => d.type === 'peerDependency').map((d: any) => d.name)
+        peerDependency: config.dependencies.filter((d: any) => d.type === 'peerDependency').map((d: any) => d.name),
       }
 
       // Validate specific dependencies are detected with correct types
@@ -133,10 +137,10 @@ describe('Project Setup User Tests', () => {
     it('should handle existing .vibe directory gracefully', async () => {
       // First initialization
       await runVibeCommand(projectPath, ['init'])
-      
+
       // Second initialization without force (should gracefully handle)
       const result = await runVibeCommand(projectPath, ['init'])
-      
+
       // Should either succeed gracefully or provide helpful message
       assert(result.success || result.stderr.includes('.vibe'), 'Should handle existing .vibe gracefully')
     })
@@ -185,7 +189,7 @@ describe('Project Setup User Tests', () => {
       const newConfig = JSON.parse(await Deno.readTextFile(configPath))
       assert(!newConfig.customField, 'Custom field should be removed by force init')
       assertEquals(newConfig.dependencies.length, 2, 'Should detect both dependencies after update')
-      
+
       const depNames = newConfig.dependencies.map((d: any) => d.name)
       assert(depNames.includes('lodash'), 'Should still have original lodash dependency')
       assert(depNames.includes('express'), 'Should detect newly added express dependency')
@@ -194,31 +198,35 @@ describe('Project Setup User Tests', () => {
 
   describe('Cross-Platform Compatibility', () => {
     it('should create identical .vibe structure on different platforms', async () => {
-      // Test Windows-style paths and separators 
+      // Test Windows-style paths and separators
       const windowsStyleProject = resolve(projectPath, 'windows-test')
       await Deno.mkdir(windowsStyleProject, { recursive: true })
-      
+
       await Deno.writeTextFile(
         resolve(windowsStyleProject, 'package.json'),
-        JSON.stringify({
-          name: 'cross-platform-test',
-          version: '1.0.0',
-          dependencies: { 'express': '^4.18.0' }
-        }, null, 2)
+        JSON.stringify(
+          {
+            name: 'cross-platform-test',
+            version: '1.0.0',
+            dependencies: { 'express': '^4.18.0' },
+          },
+          null,
+          2,
+        ),
       )
-      
+
       const result = await runVibeCommand(windowsStyleProject, ['init'])
       assert(result.success, 'Init should succeed with Windows-style paths')
-      
+
       // Verify structure is identical regardless of platform
       const vibeDir = resolve(windowsStyleProject, '.vibe')
       await validateVibeStructure(vibeDir)
-      
+
       // Verify config structure is consistent across platforms
       const config = await validateConfigQuality(resolve(vibeDir, 'config.json'), 'cross-platform-test')
       assertEquals(config.version, '1.0.0', 'should extract version correctly across platforms')
     })
-    
+
     it('should validate .vibe structure integrity across operations', async () => {
       // Create a complete project setup
       await Deno.writeTextFile(
@@ -228,7 +236,7 @@ describe('Project Setup User Tests', () => {
             name: 'integrity-test',
             version: '1.0.0',
             dependencies: { 'lodash': '^4.17.21' },
-            devDependencies: { 'typescript': '^5.0.0' }
+            devDependencies: { 'typescript': '^5.0.0' },
           },
           null,
           2,
@@ -238,21 +246,21 @@ describe('Project Setup User Tests', () => {
       // Initialize and verify complete structure
       const result = await runVibeCommand(projectPath, ['init'])
       assert(result.success, 'Init should succeed')
-      
+
       // Comprehensive structure validation
       const vibeDir = resolve(projectPath, '.vibe')
       await validateVibeStructure(vibeDir)
-      
+
       // Verify file contents are well-formed JSON
       const configContent = JSON.parse(await Deno.readTextFile(resolve(vibeDir, 'config.json')))
       const toolsContent = JSON.parse(await Deno.readTextFile(resolve(vibeDir, 'tools', 'detected.json')))
-      
+
       // Structure integrity checks
       assert(typeof configContent.projectName === 'string', 'config should have string projectName')
       assert(Array.isArray(configContent.dependencies), 'config should have dependencies array')
       assert(Array.isArray(toolsContent.dependencies), 'tools should have dependencies array')
       assert(configContent.dependencies.length === toolsContent.dependencies.length, 'dependency counts should match')
-      
+
       // Verify cross-references are consistent
       const configDepNames = configContent.dependencies.map((d: any) => d.name).sort()
       const toolsDepNames = toolsContent.dependencies.map((d: any) => d.name).sort()
@@ -264,7 +272,7 @@ describe('Project Setup User Tests', () => {
     it('should provide helpful error messages for permission issues', async () => {
       // This test validates error handling infrastructure exists
       // Actual permission errors are difficult to simulate in test environment
-      
+
       // Create a minimal project
       await Deno.writeTextFile(
         resolve(projectPath, 'package.json'),

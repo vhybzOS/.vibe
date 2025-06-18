@@ -1,0 +1,27 @@
+# Force LF line endings for all text files to ensure consistent behavior across platforms
+# This prevents Windows CRLF vs Unix LF issues that cause deno fmt --check to fail
+
+* text=auto eol=lf
+
+# Explicitly set LF for source code files
+*.ts text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+# Configuration files
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+
+# Keep binary files as-is
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

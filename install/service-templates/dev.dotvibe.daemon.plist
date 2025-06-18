@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>dev.dotvibe.daemon</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/dotvibe/vibectl</string>
+    </array>
+    
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>KeepAlive</key>
+    <true/>
+    
+    <key>StandardOutPath</key>
+    <string>/usr/local/var/log/vibe-daemon.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/usr/local/var/log/vibe-daemon.error.log</string>
+    
+    <key>WorkingDirectory</key>
+    <string>/usr/local/var/lib/vibe</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+    
+    <key>ProcessType</key>
+    <string>Background</string>
+    
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+</dict>
+</plist>

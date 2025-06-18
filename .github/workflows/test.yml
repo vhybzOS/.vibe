@@ -1,0 +1,65 @@
+name: Build and Test
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+env:
+  DENO_VERSION: 'v2.3.6'
+
+jobs:
+  test:
+    name: 'Test on ${{ matrix.os }}'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🦕 Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: 📦 Cache Deno dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.deno/deps
+          key: ${{ runner.os }}-deno-${{ hashFiles('**/deno.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-
+
+      - name: 📥 Verify lock file and cache dependencies
+        run: deno cache --frozen cli.ts daemon.ts
+
+      - name: 🔬 Lint and Format Check
+        run: |
+          deno task lint
+          deno task fmt --check
+
+      - name: 📝 Type Check
+        run: deno task check
+
+      - name: 🧪 Run Full Test Suite
+        # --no-check is used because we have a dedicated type-checking step
+        run: deno task test --no-check
+
+      - name: 📊 Generate and Upload Coverage (Linux only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          deno coverage coverage/ --lcov > coverage.lcov
+
+      - name: 📈 Upload Coverage to Codecov
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.lcov
+          fail_ci_if_error: false
+

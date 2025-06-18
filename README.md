@@ -47,6 +47,21 @@ vibe daemon       # Background service management
 
 **The daemon handles everything else automatically.**
 
+## 🗺️ Development Roadmap
+
+### Current Status
+
+✅ **Project Setup** - `vibe init` creates .vibe structure, detects dependencies
+✅ **Dependency Discovery** - Automatic detection from package.json/deno.json
+⏳ **Dependency Docs** - `vibe code <dependency>` (WIP) - Access fresh docs during coding
+❌ **AI Context Files** - Generate Cursor/Windsurf/Claude files for smarter AI assistance
+❌ **Auto-Sync Rules** - Edit .vibe/rules/*.md → auto-regenerate all IDE files
+❌ **Universal AI Access** - Same project tools work in Cursor, ChatGPT, Claude Desktop
+
+### What's Next
+
+We're prioritizing `vibe code <dependency>` to give developers instant access to fresh dependency documentation during coding sessions.
+
 ## 📚 Learn More
 
 - **🚀 [Get Started](https://dotvibe.dev/docs)** - See the magic in action

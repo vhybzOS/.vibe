@@ -102,13 +102,21 @@ their-project/
 - **llms.txt Fetching**: HTTP client for dependency documentation
 - **Simple Storage**: Copy llms.txt → .vibe/dependencies/docs/name.md
 
+#### 🚀 Next Priority: Dependency Documentation Access
+
+**`vibe code` Command** (Immediate Next Feature):
+
+- **User Story**: As an LLM implementing code, I want to quickly access current dependency documentation
+- **Technical Implementation**: HTTP client + documentation fetcher + local storage
+- **User Impact**: Fresh docs instead of stale LLM training data during coding
+- **Foundation**: Builds on existing dependency detection for future IDE file generation
+
 #### 📅 P1: Enhanced Tool Intelligence (Future)
 
 - **LLM Integration**: Fine-grained tool extraction from dependencies using user API keys
 - **Per-Dependency Folders**: `.vibe/dependencies/hono/` structure with tools/ subdirectories
 - **Tool Extraction**: LLM-powered capability analysis (e.g., Hono → routing, middleware, validation tools)
 - **Dynamic MCP Exposure**: Basic (single tool) vs Pro (multiple tools) per dependency
-- **`vibe code` Command**: LLM-friendly dependency documentation access during coding
 
 #### 📅 P2: Universal Access (Future)
 
@@ -159,54 +167,6 @@ their-project/
 - **Our URE generates**: All IDE-specific formats from single source
 - **Automatic Sync**: File watcher detects changes → regenerates all IDE files
 - **No manual intervention**: Consistent rules across all AI environments
-
-### `vibe code` Command Design (P1 Future Feature)
-
-**User Story**: As an LLM implementing code, I want to quickly access current dependency documentation and capabilities so that I can use up-to-date library information instead of outdated training data.
-
-**Technical Specification**:
-
-```typescript
-// CLI signature
-vibe code <dependency-name> [--format=json|markdown] [--capabilities]
-
-// Examples
-vibe code hono                    # Returns README.md (llms.txt copy)
-vibe code hono --capabilities     # Returns capabilities list (if Tool Intelligence enabled)
-vibe code effect --format=json   # Returns structured JSON format
-```
-
-**Implementation Architecture**:
-
-```
-ure/services/
-├── dependency-resolver.ts    # Resolve dependency name to registry/version
-├── documentation-fetcher.ts  # Fetch llms.txt on-demand (shared with watcher)
-├── capability-extractor.ts   # LLM-powered capability extraction (P1)
-└── code-command.ts          # CLI command implementation
-
-cli/commands/
-└── code.ts                  # CLI entry point for `vibe code`
-```
-
-**Data Flow**:
-
-```
-vibe code hono
-    ↓
-1. Check if dependency exists in .vibe/dependencies/
-2. If not, trigger dependency-resolver + documentation-fetcher
-3. Return content from .vibe/dependencies/docs/hono.md
-4. If --capabilities flag + Tool Intelligence enabled:
-   - Check .vibe/dependencies/hono/tools/index.toml
-   - Return capability list
-```
-
-**Design Principles for Current Implementation**:
-
-- **Shared Services**: `documentation-fetcher.ts` used by both file watcher and `vibe code` command
-- **Reusable Parsers**: TOML parser and dependency schemas support both automated and manual scenarios
-- **API Design**: Services designed for both background automation and on-demand CLI usage
 
 ### Legacy Code Integration
 

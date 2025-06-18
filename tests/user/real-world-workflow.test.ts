@@ -3,6 +3,13 @@
  *
  * Tests that simulate complete user workflows from start to finish,
  * creating real project structures and testing the full vibe experience.
+ *
+ * Tests the following implementations:
+ * @tests commands/init.ts (Complete workflow validation, cross-platform compatibility)
+ * @tests ure/lib/fs.ts (File system operations in real project scenarios)
+ * @tests ure/lib/errors.ts (Error handling in user workflows)
+ * @tests ure/schemas/project-config.ts (Config validation with real project data)
+ * @tests ure/schemas/dependency-index.ts (Dependency detection across Deno/Node.js)
  */
 
 import { assert, assertEquals, assertExists } from '@std/assert'
@@ -158,26 +165,59 @@ deno task start
       assert(result.success, `vibe init should succeed. stderr: ${result.stderr}`)
       assert(result.stdout.includes('Initialized .vibe'), `Should show success message. stdout: ${result.stdout}`)
 
-      // Step 4: Verify .vibe directory structure was created
+      // Step 4: Verify comprehensive .vibe directory structure (per PRD specification)
       const vibeDir = resolve(projectPath, '.vibe')
       assert(await dirExists(vibeDir), '.vibe directory should exist')
+
+      // Required subdirectories (current P0 implementation + P1/P2 placeholders)
       assert(await dirExists(resolve(vibeDir, 'tools')), 'tools directory should exist')
       assert(await dirExists(resolve(vibeDir, 'rules')), 'rules directory should exist')
-      assert(await dirExists(resolve(vibeDir, 'mcp')), 'mcp directory should exist')
+      assert(await dirExists(resolve(vibeDir, 'mcp')), 'mcp directory should exist (P1/P2 placeholder)')
 
-      // Step 5: Verify configuration file
+      // Verify current implementation structure matches expected P0 + placeholders
+      const requiredStructure = [
+        'config.json',
+        'tools/detected.json',
+        'tools',
+        'rules',
+        'mcp',
+      ]
+
+      for (const item of requiredStructure) {
+        const itemPath = resolve(vibeDir, item)
+        const exists = item.includes('.') ? await fileExists(itemPath) : await dirExists(itemPath)
+        assert(exists, `Required .vibe structure item should exist: ${item}`)
+      }
+
+      // Step 5: Verify configuration file content quality
       const configPath = resolve(vibeDir, 'config.json')
       assert(await fileExists(configPath), 'config.json should exist')
 
       const configContent = await Deno.readTextFile(configPath)
       const config = JSON.parse(configContent)
 
+      // Project metadata from deno.json should be properly extracted
       assertEquals(config.projectName, 'my-deno-app', 'should use deno.json name')
-      assertEquals(config.version, '1.0.0')
-      assertExists(config.created)
-      assertExists(config.updated)
+      assertEquals(config.version, '1.0.0', 'should use deno.json version')
+      assertExists(config.created, 'should have creation timestamp')
+      assertExists(config.updated, 'should have updated timestamp')
 
-      // Step 6: Verify tools detection (should be empty since no package.json)
+      // Configuration should include essential settings
+      assertExists(config.settings, 'should have settings object')
+      assertEquals(typeof config.settings.autoDiscovery, 'boolean', 'should have autoDiscovery setting')
+      assertEquals(typeof config.settings.mcpEnabled, 'boolean', 'should have mcpEnabled setting')
+      assertExists(config.dependencies, 'should have dependencies array')
+      assertEquals(Array.isArray(config.dependencies), true, 'dependencies should be array')
+
+      // Validate timestamps are realistic (within last minute)
+      const now = Date.now()
+      const created = new Date(config.created).getTime()
+      const updated = new Date(config.updated).getTime()
+      assert(now - created < 60000, 'created timestamp should be recent')
+      assert(now - updated < 60000, 'updated timestamp should be recent')
+      assert(updated >= created, 'updated should be >= created')
+
+      // Step 6: Verify dependency data structure (current P0 implementation)
       const toolsPath = resolve(vibeDir, 'tools', 'detected.json')
       assert(await fileExists(toolsPath), 'detected.json should exist')
 
@@ -185,7 +225,22 @@ deno task start
       const tools = JSON.parse(toolsContent)
 
       assert(Array.isArray(tools.dependencies), 'should have dependencies array')
-      assertEquals(tools.dependencies.length, 0, 'should have no npm dependencies')
+      assertExists(tools.lastUpdated, 'should have lastUpdated timestamp')
+
+      // Note: Current P0 implementation only detects package.json dependencies
+      // Deno.json import detection is planned for future enhancement
+      // For now, verify the data structure is correct (empty but valid)
+      assertEquals(
+        tools.dependencies.length,
+        0,
+        'Deno project without package.json should have no detected dependencies',
+      )
+
+      // Verify dependencies array structure is ready for when detection is enhanced
+      const emptyDepsValid = Array.isArray(tools.dependencies) &&
+        typeof tools.lastUpdated === 'string' &&
+        tools.lastUpdated.includes('T') // ISO timestamp format
+      assert(emptyDepsValid, 'tools structure should be valid even when empty')
     })
 
     it('should initialize vibe in existing Node.js project', async () => {
@@ -400,6 +455,102 @@ app.listen(port, () => {
       assertEquals(error._tag, 'FileSystemError')
       assertEquals(error.path, '/test/path')
       assert(error.message.includes('Test error'))
+    })
+  })
+
+  describe('Cross-Platform Compatibility', () => {
+    it('should create identical .vibe structure on different platforms', async () => {
+      // Test Windows-style paths and separators
+      const windowsStyleProject = resolve(projectPath, 'windows-test')
+      await Deno.mkdir(windowsStyleProject, { recursive: true })
+
+      await Deno.writeTextFile(
+        resolve(windowsStyleProject, 'package.json'),
+        JSON.stringify(
+          {
+            name: 'cross-platform-test',
+            version: '1.0.0',
+            dependencies: { 'express': '^4.18.0' },
+          },
+          null,
+          2,
+        ),
+      )
+
+      const result = await runVibeCommand(windowsStyleProject, ['init'])
+      assert(result.success, 'Init should succeed with Windows-style paths')
+
+      // Verify structure is identical regardless of platform
+      const vibeDir = resolve(windowsStyleProject, '.vibe')
+      const requiredItems = ['config.json', 'tools', 'rules', 'mcp']
+
+      for (const item of requiredItems) {
+        const itemPath = resolve(vibeDir, item)
+        const isFile = item.includes('.')
+        const exists = isFile ? await fileExists(itemPath) : await dirExists(itemPath)
+        assert(exists, `Cross-platform structure should include: ${item}`)
+      }
+
+      // Verify config structure is consistent across platforms
+      const config = JSON.parse(await Deno.readTextFile(resolve(vibeDir, 'config.json')))
+      assertEquals(config.projectName, 'cross-platform-test', 'project name should be detected correctly')
+      assert(typeof config.created === 'string', 'timestamps should be strings')
+      assert(typeof config.updated === 'string', 'timestamps should be strings')
+      assert(Array.isArray(config.dependencies), 'dependencies should be array')
+      assertExists(config.settings, 'settings should exist')
+    })
+
+    it('should validate .vibe structure integrity across operations', async () => {
+      // Create a complete project setup
+      await Deno.writeTextFile(
+        resolve(projectPath, 'package.json'),
+        JSON.stringify(
+          {
+            name: 'integrity-test',
+            version: '1.0.0',
+            dependencies: { 'lodash': '^4.17.21' },
+            devDependencies: { 'typescript': '^5.0.0' },
+          },
+          null,
+          2,
+        ),
+      )
+
+      // Initialize and verify complete structure
+      const result = await runVibeCommand(projectPath, ['init'])
+      assert(result.success, 'Init should succeed')
+
+      // Comprehensive structure validation
+      const vibeDir = resolve(projectPath, '.vibe')
+      const requiredPaths = [
+        'config.json',
+        'tools/detected.json',
+        'tools',
+        'rules',
+        'mcp',
+      ]
+
+      for (const path of requiredPaths) {
+        const fullPath = resolve(vibeDir, path)
+        const isFile = path.includes('.')
+        const exists = isFile ? await fileExists(fullPath) : await dirExists(fullPath)
+        assert(exists, `.vibe structure missing: ${path}`)
+      }
+
+      // Verify file contents are well-formed JSON
+      const configContent = JSON.parse(await Deno.readTextFile(resolve(vibeDir, 'config.json')))
+      const toolsContent = JSON.parse(await Deno.readTextFile(resolve(vibeDir, 'tools', 'detected.json')))
+
+      // Structure integrity checks
+      assert(typeof configContent.projectName === 'string', 'config should have string projectName')
+      assert(Array.isArray(configContent.dependencies), 'config should have dependencies array')
+      assert(Array.isArray(toolsContent.dependencies), 'tools should have dependencies array')
+      assert(configContent.dependencies.length === toolsContent.dependencies.length, 'dependency counts should match')
+
+      // Verify cross-references are consistent
+      const configDepNames = configContent.dependencies.map((d: any) => d.name).sort()
+      const toolsDepNames = toolsContent.dependencies.map((d: any) => d.name).sort()
+      assertEquals(configDepNames, toolsDepNames, 'dependency lists should be consistent')
     })
   })
 

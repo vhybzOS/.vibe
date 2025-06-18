@@ -76,18 +76,18 @@ jobs:
 
       - name: 🔨 Build Linux binaries
         run: |
-          deno compile --allow-all --target x86_64-unknown-linux-gnu --output build/vibe-linux-x86_64 cli.ts
-          deno compile --allow-all --target x86_64-unknown-linux-gnu --output build/vibectl-linux-x86_64 daemon.ts
+          deno compile --allow-all --target x86_64-unknown-linux-gnu --output build/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64 cli.ts
+          deno compile --allow-all --target x86_64-unknown-linux-gnu --output build/vibectl-${{ needs.check-version.outputs.new-version }}-linux-x86_64 daemon.ts
 
       - name: 🔨 Build macOS binaries
         run: |
-          deno compile --allow-all --target x86_64-apple-darwin --output build/vibe-macos-x86_64 cli.ts
-          deno compile --allow-all --target x86_64-apple-darwin --output build/vibectl-macos-x86_64 daemon.ts
+          deno compile --allow-all --target x86_64-apple-darwin --output build/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64 cli.ts
+          deno compile --allow-all --target x86_64-apple-darwin --output build/vibectl-${{ needs.check-version.outputs.new-version }}-macos-x86_64 daemon.ts
 
       - name: 🔨 Build Windows binaries
         run: |
-          deno compile --allow-all --target x86_64-pc-windows-msvc --output build/vibe-windows-x86_64.exe cli.ts
-          deno compile --allow-all --target x86_64-pc-windows-msvc --output build/vibectl-windows-x86_64.exe daemon.ts
+          deno compile --allow-all --target x86_64-pc-windows-msvc --output build/vibe-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe cli.ts
+          deno compile --allow-all --target x86_64-pc-windows-msvc --output build/vibectl-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe daemon.ts
 
       - name: 📦 Verify binaries created
         run: |
@@ -103,11 +103,11 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: |
-            build/vibe-linux-x86_64
-            build/vibectl-linux-x86_64
-            build/vibe-macos-x86_64
-            build/vibectl-macos-x86_64
-            build/vibe-windows-x86_64.exe
-            build/vibectl-windows-x86_64.exe
+            build/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64
+            build/vibectl-${{ needs.check-version.outputs.new-version }}-linux-x86_64
+            build/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64
+            build/vibectl-${{ needs.check-version.outputs.new-version }}-macos-x86_64
+            build/vibe-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe
+            build/vibectl-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}

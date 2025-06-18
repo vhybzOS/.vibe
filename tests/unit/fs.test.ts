@@ -496,7 +496,7 @@ Deno.test('FS - Cross-platform path handling - Windows paths', async () => {
   assertEquals(result, expectedVibePath)
 })
 
-Deno.test('FS - Cross-platform path handling - resolve normalization', async () => {
+Deno.test('FS - Cross-platform path handling - resolve normalization', () => {
   // Test that resolve() handles mixed separators correctly
   const mixedPath = 'D:/tmp\\vibe_fs_test/.vibe'
   const normalized = resolve(mixedPath)

@@ -35,9 +35,12 @@ jobs:
       - name: 📦 Cache Deno dependencies
         uses: actions/cache@v4
         with:
-          path: ~/.deno/deps
-          key: ${{ runner.os }}-deno-${{ hashFiles('**/deno.lock') }}
+          path: |
+            ~/.cache/deno
+            ~/.deno
+          key: ${{ runner.os }}-deno-${{ env.DENO_VERSION }}-${{ hashFiles('**/deno.lock', '**/deno.json') }}
           restore-keys: |
+            ${{ runner.os }}-deno-${{ env.DENO_VERSION }}-
             ${{ runner.os }}-deno-
 
       - name: 📥 Verify lock file and cache dependencies

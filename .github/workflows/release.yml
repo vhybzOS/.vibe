@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '**/*.ts'
+      - '!docs/**'
       - 'deno.json'
       - 'deno.lock'
   workflow_dispatch:

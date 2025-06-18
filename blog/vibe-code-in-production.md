@@ -73,7 +73,7 @@ Now the magic happens. The agent bounces between two roles:
 1. **The Intern**: Writes whatever ugly code is necessary to make the test pass
 2. **The Architect**: Looks at the passing code and refactors it to better match the project's vibe
 
-This cycle (implement, test, refactor, test) forces the chaotic energy of the LLM to converge on a high-quality result that matches your vision. You don't need to understand every line of the legacy code it generates. You just need to vibe-check the end result. You have legacy code sure, but isn't all code legacy except maybe few nerds hypnotized by a tech specifically? Algorithm is king. If you get your dream algorithm to shippable state, no one cares about the code underneath.
+This cycle (implement, test, refactor, test) forces the chaotic energy of the LLM to converge on a high-quality result that matches your vision. You don't need to understand every line of the legacy code it generates. You just need to vibe-check the end result. You have legacy code sure, but isn't all code legacy except maybe in the eyes of the few nerds hypnotized by that tech specifically? Algorithm is king. If you get your dream algorithm to shippable state, no one cares about the code underneath.
 
 ## We're Building .vibe with Vibe Coding
 

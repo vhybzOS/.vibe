@@ -12,7 +12,7 @@ cover_image:
 
 Every dev I know lives in two modes, even if they don’t admit it.
 
-First, there’s **"Passion Coding"**—the stuff that lights you up. When it feels like the code is flowing through you, not from you. Like this beauty I wrote called [Nancy](https://github.com/keyvan-m-sadeghi/nancy), re-implementing JavaScript promises using functional programming:
+First, there’s **"Passion Coding"**: the stuff that lights you up. When it feels like the code is flowing through you, not from you. Like this beauty I wrote called [Nancy](https://github.com/keyvan-m-sadeghi/nancy), re-implementing JavaScript promises using functional programming:
 
 ```js
 const callLater = (getMember) => (callback) =>

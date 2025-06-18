@@ -13,7 +13,7 @@
 
 import { walk } from 'https://deno.land/std@0.208.0/fs/walk.ts'
 import { parseArgs } from '@std/cli/parse-args'
-import { posix } from '@std/path'
+import { normalize } from '@std/path/posix/normalize'
 
 interface CoverageResult {
   totalFiles: number
@@ -29,10 +29,11 @@ interface CoverageOptions {
 }
 
 /**
- * Normalize path to use forward slashes for consistent cross-platform behavior
+ * Normalize path to POSIX format for consistent cross-platform behavior
  */
 function normalizePath(filePath: string): string {
-  return filePath.replace(/\\/g, '/')
+  // First convert Windows backslashes to forward slashes, then normalize with Deno std
+  return normalize(filePath.replace(/\\/g, '/'))
 }
 
 /**

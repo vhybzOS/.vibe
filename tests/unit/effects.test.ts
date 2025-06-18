@@ -7,6 +7,7 @@
 
 import { assertEquals, assertRejects } from '@std/assert'
 import { Effect } from 'effect'
+import { resolve } from '@std/path'
 import {
   ensureDir,
   logWithContext,
@@ -19,9 +20,10 @@ import {
   writeTextFile,
 } from '../../ure/lib/effects.ts'
 
-const TEST_DIR = '/tmp/vibe_effects_test'
-const TEST_FILE = `${TEST_DIR}/test.txt`
-const TEST_JSON_FILE = `${TEST_DIR}/test.json`
+// Use cross-platform temp directory instead of hard-coded /tmp
+const TEST_DIR = await Deno.makeTempDir({ prefix: 'vibe_effects_test_' })
+const TEST_FILE = resolve(TEST_DIR, 'test.txt')
+const TEST_JSON_FILE = resolve(TEST_DIR, 'test.json')
 
 Deno.test('Effects - readTextFile - valid file', async () => {
   // Create test directory and file

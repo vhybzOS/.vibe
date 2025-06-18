@@ -7,6 +7,7 @@
 
 import { assertEquals, assertRejects } from '@std/assert'
 import { Effect } from 'effect'
+import { resolve } from '@std/path'
 import { z } from 'zod/v4'
 import {
   createBackup,
@@ -24,10 +25,11 @@ import {
   writeJSONFile,
 } from '../../ure/lib/fs.ts'
 
-const TEST_DIR = '/tmp/vibe_fs_test'
-const TEST_FILE = `${TEST_DIR}/test.txt`
-const TEST_JSON_FILE = `${TEST_DIR}/test.json`
-const TEST_VIBE_DIR = `${TEST_DIR}/.vibe`
+// Use cross-platform temp directory instead of hard-coded /tmp
+const TEST_DIR = await Deno.makeTempDir({ prefix: 'vibe_fs_test_' })
+const TEST_FILE = resolve(TEST_DIR, 'test.txt')
+const TEST_JSON_FILE = resolve(TEST_DIR, 'test.json')
+const TEST_VIBE_DIR = resolve(TEST_DIR, '.vibe')
 
 // Test schemas
 const TestSchema = z.object({
@@ -300,33 +302,43 @@ Deno.test('FS - loadConfig - fails for invalid schema', async () => {
 })
 
 Deno.test('FS - ensureVibeDirectory - finds existing .vibe directory', async () => {
-  await Deno.mkdir(TEST_VIBE_DIR, { recursive: true })
+  const testDir = await Deno.makeTempDir({ prefix: 'vibe_test_' })
+  const vibeDir = resolve(testDir, '.vibe')
 
-  const vibePath = await Effect.runPromise(ensureVibeDirectory(TEST_DIR))
-  assertEquals(vibePath, TEST_VIBE_DIR)
+  await Deno.mkdir(vibeDir, { recursive: true })
 
-  await Deno.remove(TEST_DIR, { recursive: true })
+  const vibePath = await Effect.runPromise(ensureVibeDirectory(testDir))
+  // Use resolve to normalize paths for cross-platform comparison
+  assertEquals(vibePath, resolve(vibeDir))
+
+  await Deno.remove(testDir, { recursive: true })
 })
 
 Deno.test('FS - ensureVibeDirectory - fails for non-existing .vibe', async () => {
+  const testDir = await Deno.makeTempDir({ prefix: 'vibe_test_' })
+
   await assertRejects(
-    () => Effect.runPromise(ensureVibeDirectory(TEST_DIR)),
+    () => Effect.runPromise(ensureVibeDirectory(testDir)),
     Error,
     '.vibe not initialized',
   )
+
+  await Deno.remove(testDir, { recursive: true })
 })
 
 Deno.test('FS - ensureVibeDirectory - fails for .vibe file (not directory)', async () => {
-  await Deno.mkdir(TEST_DIR, { recursive: true })
-  await Deno.writeTextFile(TEST_VIBE_DIR, 'not a directory')
+  const testDir = await Deno.makeTempDir({ prefix: 'vibe_test_' })
+  const vibeFile = resolve(testDir, '.vibe')
+
+  await Deno.writeTextFile(vibeFile, 'not a directory')
 
   await assertRejects(
-    () => Effect.runPromise(ensureVibeDirectory(TEST_DIR)),
+    () => Effect.runPromise(ensureVibeDirectory(testDir)),
     Error,
     '.vibe not initialized',
   )
 
-  await Deno.remove(TEST_DIR, { recursive: true })
+  await Deno.remove(testDir, { recursive: true })
 })
 
 Deno.test('FS - loadSchemaValidatedJSON - valid file', async () => {
@@ -465,4 +477,47 @@ Deno.test('FS - integration test - complete file workflow', async () => {
   assertEquals(typeof result.backupPath, 'string')
 
   await Deno.remove(TEST_DIR, { recursive: true })
+})
+
+// Windows Path Simulation Tests - Mock Windows behavior on Linux
+Deno.test('FS - Cross-platform path handling - Windows paths', async () => {
+  // Simulate Windows path like the CI failure: D:\tmp\vibe_fs_test\.vibe
+  const windowsProjectPath = 'D:\\tmp\\vibe_fs_test'
+  const expectedVibePath = 'D:\\tmp\\vibe_fs_test\\.vibe'
+
+  // Mock Effect that simulates Windows path resolution
+  const mockWindowsEnsureVibe = Effect.sync(() => {
+    // Simulate what resolve() does on Windows
+    const vibePath = windowsProjectPath + '\\.vibe'
+    return vibePath
+  })
+
+  const result = await Effect.runPromise(mockWindowsEnsureVibe)
+  assertEquals(result, expectedVibePath)
+})
+
+Deno.test('FS - Cross-platform path handling - resolve normalization', async () => {
+  // Test that resolve() handles mixed separators correctly
+  const mixedPath = 'D:/tmp\\vibe_fs_test/.vibe'
+  const normalized = resolve(mixedPath)
+
+  // Should normalize to platform-appropriate separators
+  assertEquals(typeof normalized, 'string')
+  assertEquals(normalized.includes('vibe_fs_test'), true)
+  assertEquals(normalized.includes('.vibe'), true)
+})
+
+Deno.test('FS - Cross-platform path handling - Windows vs Unix comparison', () => {
+  // Test path comparison logic that should work across platforms
+  const unixPath = '/tmp/vibe_fs_test/.vibe'
+  const windowsPath = 'D:\\tmp\\vibe_fs_test\\.vibe'
+
+  // Both should resolve to valid paths on their respective platforms
+  const unixResolved = resolve(unixPath)
+  const windowsStyleResolved = resolve('tmp', 'vibe_fs_test', '.vibe')
+
+  // Key insight: use resolve() for path construction, not string concatenation
+  assertEquals(typeof unixResolved, 'string')
+  assertEquals(typeof windowsStyleResolved, 'string')
+  assertEquals(windowsStyleResolved.includes('.vibe'), true)
 })

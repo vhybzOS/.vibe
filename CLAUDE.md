@@ -14,6 +14,9 @@ Before any work, you MUST:
 
 This is a local-first, autonomous AI development environment built with Effect-TS and functional programming principles. Quality and architectural consistency are paramount.
 
+**Website**: https://dotvibe.dev  
+**Repository**: https://github.com/vhybzOS/.vibe
+
 **Key Technologies**: Deno, Effect-TS, TypeScript, Zod, functional programming patterns
 
 **Development Philosophy**: Test-driven, Effect-TS composition, tagged union errors, service-oriented architecture

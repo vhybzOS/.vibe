@@ -7,7 +7,7 @@
 ### Step 1: Install the Magic (30 seconds)
 ```bash
 # Downloads and installs vibe daemon + CLI
-curl -fsSL https://vibe.sh/install.sh | sh
+curl -fsSL https://dotvibe.dev/install.sh | sh
 ```
 
 This installs:
@@ -76,7 +76,7 @@ All of this intelligence is available in:
 
 ### Option 1: Automatic Install (Recommended)
 ```bash
-curl -fsSL https://vibe.sh/install.sh | sh
+curl -fsSL https://dotvibe.dev/install.sh | sh
 ```
 - ✅ **Easiest** - handles everything automatically
 - ✅ **Cross-platform** - works on macOS, Linux, Windows (WSL)

@@ -1,6 +1,8 @@
 {
   "name": "dotvibe",
   "version": "0.2.1",
+  "homepage": "https://dotvibe.dev",
+  "repository": "https://github.com/vhybzOS/.vibe",
   "exports": {
     "./cli": "./cli.ts"
   },

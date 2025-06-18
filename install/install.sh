@@ -1,208 +1,285 @@
 #!/bin/bash
-set -euo pipefail
+set -eo pipefail
 
-# Vibe Cross-Platform Installation Script (Unix)
-# Installs vibe and vibectl system-wide and sets up daemon service
+# Vibe Cross-Platform Installation Script (Unix: Linux & macOS)
+#
+# This smart script handles two scenarios:
+# 1. Developer Mode: If run from a cloned repo, it builds from local source.
+# 2. User Mode: If run standalone, it downloads the latest release from GitHub.
+#
+# It provides installation scope choices and handles `sudo` elevation automatically.
+#
+# @version 1.2.0
 
+# --- Parameters and Initial Setup ---
 VERSION="${1:-latest}"
-INSTALL_DIR="/usr/local/dotvibe"
-BIN_DIR="/usr/local/bin"
-SERVICE_DIR="/etc/systemd/system"
-LAUNCH_AGENTS_DIR="$HOME/Library/LaunchAgents"
-REPO="yourusername/vibe"  # Update this with actual repo
+REPO="vhybzos/.vibe" # Official repository
 
-# Colors for output
+# --- Color Definitions ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-log() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+# --- Logging Helpers ---
+log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1" >&2; exit 1; }
+
+# --- System Check Helpers ---
+check_dependencies() {
+    if ! command -v curl &>/dev/null; then log_error "cURL is required but not installed."; fi
+    if ! command -v jq &>/dev/null; then log_error "jq is required but not installed. Please install it with 'sudo apt-get install jq' or 'brew install jq'."; fi
 }
 
-success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-    exit 1
-}
-
-# Check if running as root for system installation
-check_permissions() {
-    if [[ $EUID -ne 0 ]]; then
-        error "This script must be run as root (use sudo)"
-    fi
-}
-
-# Detect platform
 detect_platform() {
     case "$(uname -s)" in
-        Darwin*)    PLATFORM="macos" ;;
-        Linux*)     PLATFORM="linux" ;;
-        *)          error "Unsupported platform: $(uname -s)" ;;
+        Darwin*) PLATFORM="macos" ;;
+        Linux*) PLATFORM="linux" ;;
+        *) log_error "Unsupported platform: $(uname -s)" ;;
     esac
-    log "Detected platform: $PLATFORM"
+    log_info "Detected platform: $PLATFORM"
 }
 
-# Check dependencies
-check_dependencies() {
-    if ! command -v curl &> /dev/null; then
-        error "curl is required but not installed"
-    fi
-    
-    if ! command -v tar &> /dev/null; then
-        error "tar is required but not installed"
+check_source() {
+    SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+    REPO_ROOT=$(cd "$SCRIPT_DIR/.." &>/dev/null && pwd)
+    DENO_JSON_PATH="$REPO_ROOT/deno.json"
+
+    if [[ -f "$DENO_JSON_PATH" ]] && grep -q '"name": "dotvibe"' "$DENO_JSON_PATH"; then
+        IS_REPO_INSTALL="true"
+        log_info "Developer repo mode detected."
+    else
+        IS_REPO_INSTALL="false"
+        log_info "Standalone user mode detected."
     fi
 }
 
-# Get latest version from GitHub
+# --- Core Logic ---
 get_latest_version() {
     if [[ "$VERSION" == "latest" ]]; then
-        VERSION=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-        if [[ -z "$VERSION" ]]; then
-            error "Failed to get latest version"
+        log_info "Fetching latest release version from GitHub..."
+        VERSION=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | jq -r '.tag_name')
+        if [[ -z "$VERSION" || "$VERSION" == "null" ]]; then
+            log_error "Failed to get latest version from GitHub."
         fi
     fi
-    log "Installing version: $VERSION"
+    log_info "Targeting version: $VERSION"
 }
 
-# Download and install binaries
-install_binaries() {
-    log "Creating installation directory: $INSTALL_DIR"
-    mkdir -p "$INSTALL_DIR"
+build_from_source() {
+    log_info "Building binaries from local source..."
+    if ! command -v deno &>/dev/null; then log_error "Deno is required to build from source but not found in PATH."; fi
     
-    # Download binaries based on platform
+    (cd "$REPO_ROOT" && deno task build:all) || log_error "Failed to build binaries from source."
+    log_success "Binaries built successfully."
+}
+
+download_from_github() {
+    get_latest_version
     local vibe_binary="vibe-${PLATFORM}-x86_64"
     local vibectl_binary="vibectl-${PLATFORM}-x86_64"
+
+    log_info "Downloading vibe binary..."
+    curl -# -L "https://github.com/$REPO/releases/download/$VERSION/$vibe_binary" -o "./vibe"
+    log_info "Downloading vibectl binary..."
+    curl -# -L "https://github.com/$REPO/releases/download/$VERSION/$vibectl_binary" -o "./vibectl"
     
-    if [[ "$PLATFORM" == "windows" ]]; then
-        vibe_binary="${vibe_binary}.exe"
-        vibectl_binary="${vibectl_binary}.exe"
-    fi
-    
-    log "Downloading vibe binary..."
-    curl -L "https://github.com/$REPO/releases/download/$VERSION/$vibe_binary" -o "$INSTALL_DIR/vibe"
-    
-    log "Downloading vibectl binary..."
-    curl -L "https://github.com/$REPO/releases/download/$VERSION/$vibectl_binary" -o "$INSTALL_DIR/vibectl"
-    
-    # Make binaries executable
-    chmod +x "$INSTALL_DIR/vibe"
-    chmod +x "$INSTALL_DIR/vibectl"
-    
-    # Create symlinks to bin directory
-    ln -sf "$INSTALL_DIR/vibe" "$BIN_DIR/vibe"
-    ln -sf "$INSTALL_DIR/vibectl" "$BIN_DIR/vibectl"
-    
-    success "Binaries installed successfully"
+    chmod +x ./vibe ./vibectl
+    log_success "Binaries downloaded successfully."
 }
 
-# Setup daemon service
-setup_daemon() {
+add_to_path() {
+    local bin_dir="$1"
+    local shell_config_file=""
+    local shell_name
+    shell_name=$(basename "$SHELL")
+
+    case "$shell_name" in
+        bash) shell_config_file="$HOME/.bashrc" ;;
+        zsh) shell_config_file="$HOME/.zshrc" ;;
+        fish) shell_config_file="$HOME/.config/fish/config.fish" ;;
+        *) log_warn "Could not detect shell. Please add '$bin_dir' to your PATH manually."; return ;;
+    esac
+
+    if ! grep -q "export PATH=\"$bin_dir:\$PATH\"" "$shell_config_file" &>/dev/null; then
+        log_info "Adding '$bin_dir' to your PATH in '$shell_config_file'..."
+        if [[ "$shell_name" == "fish" ]]; then
+            echo -e "\nfish_add_path \"$bin_dir\"" >> "$shell_config_file"
+        else
+            echo -e "\n# Add .vibe to PATH\nexport PATH=\"$bin_dir:\$PATH\"" >> "$shell_config_file"
+        fi
+        log_warn "You must source your profile ('source $shell_config_file') or open a new terminal for changes to take effect."
+    else
+        log_info "Installation directory is already in your PATH."
+    fi
+}
+
+setup_service() {
+    local bin_dir="$1"
+    local install_scope="$2"
+
     if [[ "$PLATFORM" == "linux" ]]; then
-        setup_systemd_service
+        setup_systemd_service "$bin_dir" "$install_scope"
     elif [[ "$PLATFORM" == "macos" ]]; then
-        setup_launchd_service
+        setup_launchd_service "$bin_dir" "$install_scope"
     fi
 }
 
-# Setup systemd service (Linux)
 setup_systemd_service() {
-    log "Setting up systemd service..."
+    local bin_dir="$1"
+    local install_scope="$2"
     
-    # Create service directories
-    mkdir -p /var/lib/vibe
-    mkdir -p /var/log/vibe
-    
-    # Copy service file (assuming it's bundled with the release)
-    curl -L "https://raw.githubusercontent.com/$REPO/$VERSION/install/service-templates/vibe.service" -o "$SERVICE_DIR/vibe.service"
-    
-    # Reload systemd and enable service
-    systemctl daemon-reload
-    systemctl enable vibe.service
-    systemctl start vibe.service
-    
-    success "Systemd service configured and started"
+    if [[ "$install_scope" == "CurrentUser" ]]; then
+        log_info "Setting up user-level systemd service..."
+        local service_dir="$HOME/.config/systemd/user"
+        mkdir -p "$service_dir"
+        
+        # User-level service definition
+        cat > "$service_dir/vibe.service" << EOF
+[Unit]
+Description=Vibe Daemon
+After=network.target
+
+[Service]
+ExecStart=$bin_dir/vibectl
+Restart=always
+
+[Install]
+WantedBy=default.target
+EOF
+        systemctl --user daemon-reload
+        systemctl --user enable vibe.service
+        systemctl --user start vibe.service
+        log_success "User-level systemd service configured and started."
+    else
+        log_info "Setting up system-wide systemd service..."
+        cat > "/etc/systemd/system/vibe.service" << EOF
+[Unit]
+Description=Vibe Daemon
+After=network.target
+
+[Service]
+ExecStart=$bin_dir/vibectl
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+        systemctl daemon-reload
+        systemctl enable vibe.service
+        systemctl start vibe.service
+        log_success "System-wide systemd service configured and started."
+    fi
 }
 
-# Setup LaunchDaemon (macOS)
 setup_launchd_service() {
-    log "Setting up LaunchAgent..."
-    
-    # Create necessary directories
-    mkdir -p /usr/local/var/lib/vibe
-    mkdir -p /usr/local/var/log
-    
-    # Use user's LaunchAgents directory for user-level daemon
-    mkdir -p "$LAUNCH_AGENTS_DIR"
-    
-    # Download and install LaunchAgent plist
-    curl -L "https://raw.githubusercontent.com/$REPO/$VERSION/install/service-templates/dev.dotvibe.daemon.plist" -o "$LAUNCH_AGENTS_DIR/dev.dotvibe.daemon.plist"
-    
-    # Load the service
-    launchctl load "$LAUNCH_AGENTS_DIR/dev.dotvibe.daemon.plist"
-    
-    success "LaunchAgent configured and loaded"
+    local bin_dir="$1"
+    local install_scope="$2"
+
+    local label="dev.dotvibe.daemon"
+    local plist_path
+
+    if [[ "$install_scope" == "CurrentUser" ]]; then
+        log_info "Setting up user-level LaunchAgent..."
+        plist_path="$HOME/Library/LaunchAgents/$label.plist"
+        mkdir -p "$HOME/Library/LaunchAgents"
+    else
+        log_info "Setting up system-wide LaunchDaemon..."
+        plist_path="/Library/LaunchDaemons/$label.plist"
+    fi
+
+    cat > "$plist_path" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>$label</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>$bin_dir/vibectl</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
+EOF
+
+    launchctl unload "$plist_path" 2>/dev/null || true
+    launchctl load "$plist_path"
+    log_success "Launch service configured and loaded."
 }
 
-# Verify installation
-verify_installation() {
-    log "Verifying installation..."
-    
-    if command -v vibe &> /dev/null; then
-        success "vibe command is available"
-        vibe --version || true
-    else
-        error "vibe command not found in PATH"
-    fi
-    
-    if command -v vibectl &> /dev/null; then
-        success "vibectl command is available"
-        vibectl --version || true
-    else
-        error "vibectl command not found in PATH"
-    fi
-    
-    # Check daemon status
-    if [[ "$PLATFORM" == "linux" ]]; then
-        if systemctl is-active --quiet vibe.service; then
-            success "Vibe daemon is running"
-        else
-            warn "Vibe daemon is not running. Check logs with: journalctl -u vibe.service"
-        fi
-    elif [[ "$PLATFORM" == "macos" ]]; then
-        if launchctl list | grep -q "dev.dotvibe.daemon"; then
-            success "Vibe daemon is loaded"
-        else
-            warn "Vibe daemon is not loaded"
-        fi
-    fi
-}
 
-# Main installation process
+# --- Main Installation Process ---
 main() {
-    log "Starting Vibe installation..."
+    echo -e "--- .vibe Installer for Linux & macOS ---\n"
     
-    check_permissions
+    # 1. System and Source Checks
     detect_platform
     check_dependencies
-    get_latest_version
-    install_binaries
-    setup_daemon
-    verify_installation
+    check_source
+
+    # 2. Get Installation Scope
+    echo -e "${YELLOW}Choose installation scope:${NC}"
+    echo "  [1] Current User (Recommended, no sudo needed)"
+    echo "  [2] All Users (System-wide, requires sudo)"
+    read -p "Enter your choice (1/2): " choice
+
+    local install_dir bin_dir
+    if [[ "$choice" == "1" ]]; then
+        INSTALL_SCOPE="CurrentUser"
+        install_dir="$HOME/.local/share/dotvibe"
+        bin_dir="$HOME/.local/bin"
+    elif [[ "$choice" == "2" ]]; then
+        INSTALL_SCOPE="AllUsers"
+        install_dir="/usr/local/dotvibe"
+        bin_dir="/usr/local/bin"
+        if [[ $EUID -ne 0 ]]; then
+            log_warn "System-wide installation requires sudo privileges."
+            log_info "Re-running script with sudo..."
+            sudo "$0" "$@"
+            exit 0
+        fi
+    else
+        log_error "Invalid choice. Aborting."
+    fi
+
+    # 3. Get Binaries
+    local local_binary_source_path
+    if [[ "$IS_REPO_INSTALL" == "true" ]]; then
+        build_from_source
+        local_binary_source_path="$REPO_ROOT/build"
+    else
+        download_from_github
+        local_binary_source_path="."
+    fi
+
+    # 4. Install Files
+    log_info "Creating installation directories..."
+    mkdir -p "$install_dir"
+    mkdir -p "$bin_dir"
+
+    log_info "Installing binaries to $bin_dir..."
+    mv "$local_binary_source_path/vibe" "$bin_dir/vibe"
+    mv "$local_binary_source_path/vibectl" "$bin_dir/vibectl"
     
-    success "Vibe installation completed!"
-    log "You can now use 'vibe' and 'vibectl' commands"
-    log "Daemon service is configured to start automatically"
+    # 5. Add to PATH
+    add_to_path "$bin_dir"
+
+    # 6. Setup Daemon Service
+    setup_service "$bin_dir" "$INSTALL_SCOPE"
+
+    # 7. Final Instructions
+    echo ""
+    log_success "🎉 .vibe has been installed successfully!"
+    log_info "Installation Path: $install_dir"
 }
 
-# Run main function
 main "$@"

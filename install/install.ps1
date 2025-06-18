@@ -1,183 +1,255 @@
 # Vibe Cross-Platform Installation Script (Windows PowerShell)
-# Installs vibe and vibectl system-wide and sets up daemon service
+#
+# This smart script handles two scenarios:
+# 1. Developer Mode: If run from a cloned repo, it builds from local source.
+# 2. User Mode: If run standalone, it downloads the latest release from GitHub.
+#
+# It provides installation scope choices and handles Administrator elevation.
+# Both `vibe` and `vibectl` are always installed and added to the PATH.
+#
+# @version 1.3.1
 
+# --- Parameters and Strict Mode ---
 param(
     [string]$Version = "latest",
-    [string]$Repo = "yourusername/vibe"  # Update this with actual repo
+    [string]$Repo = "vhybzOS/.vibe" # Official repository
 )
 
 $ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
 
-# Installation paths
-$InstallDir = "${env:ProgramFiles}\dotvibe"
-$DataDir = "${env:ProgramData}\dotvibe"
-$ServiceName = "DotVibeDaemon"
+# --- Helper Functions ---
 
-# Colors for output
-function Write-Info($message) {
-    Write-Host "[INFO] $message" -ForegroundColor Blue
-}
-
-function Write-Success($message) {
-    Write-Host "[SUCCESS] $message" -ForegroundColor Green
-}
-
-function Write-Warn($message) {
-    Write-Host "[WARN] $message" -ForegroundColor Yellow
-}
-
+#region Logging Helpers
+function Write-Info($message) { Write-Host "[INFO] $message" -ForegroundColor Cyan }
+function Write-Success($message) { Write-Host "[SUCCESS] $message" -ForegroundColor Green }
+function Write-Warn($message) { Write-Host "[WARN] $message" -ForegroundColor Yellow }
 function Write-Error($message) {
     Write-Host "[ERROR] $message" -ForegroundColor Red
+    if ($env:CI -ne 'true') { Read-Host "Press Enter to exit" }
     exit 1
 }
+#endregion
 
-# Check if running as administrator
+#region System Check Helpers
 function Test-Administrator {
-    $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
-    $principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
-    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = [System.Security.Principal.WindowsPrincipal]::new($currentUser)
+    return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
-# Check permissions
-function Test-Permissions {
+function Elevate-And-Rerun {
     if (-not (Test-Administrator)) {
-        Write-Error "This script must be run as Administrator"
-    }
-}
-
-# Check dependencies
-function Test-Dependencies {
-    if (-not (Get-Command curl -ErrorAction SilentlyContinue)) {
-        Write-Error "curl is required but not found. Please install curl or use a newer version of Windows"
-    }
-}
-
-# Get latest version from GitHub
-function Get-LatestVersion {
-    if ($Version -eq "latest") {
+        Write-Warn "Administrator privileges are required for system-wide installation."
+        Write-Info "Attempting to re-launch with elevated permissions..."
+        
+        $scriptPath = Join-Path $PSScriptRoot "install.ps1"
+        $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
+        
         try {
+            Start-Process powershell -Verb RunAs -ArgumentList $arguments
+        }
+        catch {
+            Write-Error "Failed to elevate. Please run this script from an Administrator PowerShell session."
+        }
+        
+        exit
+    }
+}
+
+function Check-Source {
+    $result = @{ IsRepo = $false; Message = "Standalone user mode detected." }
+    $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+    $denoJsonPath = Join-Path $repoRoot "deno.json"
+    
+    if (Test-Path $denoJsonPath) {
+        try {
+            $json = Get-Content $denoJsonPath | ConvertFrom-Json
+            if ($json.name -eq "dotvibe") {
+                $result.IsRepo = $true
+                $result.Message = "Developer repo mode detected."
+            }
+        } catch { /* Ignore parsing errors, assume user mode */ }
+    }
+    return $result
+}
+#endregion
+
+#region Core Logic Functions
+function Build-From-Source {
+    Write-Info "Building binaries from local source..."
+    if (-not (Get-Command deno -ErrorAction SilentlyContinue)) {
+        Write-Error "Deno is required to build from source but not found in PATH."
+    }
+    
+    try {
+        deno task build:all
+        Write-Success "Binaries built successfully."
+    }
+    catch {
+        Write-Error "Failed to build binaries from source. Error: $_"
+    }
+}
+
+function Download-From-GitHub {
+    $localVersion = $Version
+    if ($localVersion -eq "latest") {
+        Write-Info "Fetching latest release version from GitHub..."
+        try {
+            $ProgressPreference = 'SilentlyContinue'
             $response = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest"
-            $Script:Version = $response.tag_name
+            $localVersion = $response.tag_name
         }
         catch {
             Write-Error "Failed to get latest version: $_"
         }
+        finally {
+            $ProgressPreference = 'Continue'
+        }
     }
-    Write-Info "Installing version: $Version"
-}
-
-# Download and install binaries
-function Install-Binaries {
-    Write-Info "Creating installation directory: $InstallDir"
-    New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+    Write-Info "Targeting version: $localVersion"
     
-    # Download Windows binaries
-    $vibeUrl = "https://github.com/$Repo/releases/download/$Version/vibe-windows-x86_64.exe"
-    $vibectlUrl = "https://github.com/$Repo/releases/download/$Version/vibectl-windows-x86_64.exe"
+    $vibeUrl = "https://github.com/$Repo/releases/download/$localVersion/vibe-windows-x86_64.exe"
+    $vibectlUrl = "https://github.com/$Repo/releases/download/$localVersion/vibectl-windows-x86_64.exe"
     
-    Write-Info "Downloading vibe binary..."
-    curl.exe -L $vibeUrl -o "$InstallDir\vibe.exe"
-    
-    Write-Info "Downloading vibectl binary..."
-    curl.exe -L $vibectlUrl -o "$InstallDir\vibectl.exe"
-    
-    # Add to system PATH
-    $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
-    if ($currentPath -notlike "*$InstallDir*") {
-        Write-Info "Adding $InstallDir to system PATH"
-        [Environment]::SetEnvironmentVariable("Path", "$currentPath;$InstallDir", "Machine")
-    }
-    
-    Write-Success "Binaries installed successfully"
-}
-
-# Setup Windows Service
-function Install-Service {
-    Write-Info "Setting up Windows Service..."
-    
-    # Create data directories
-    New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
-    New-Item -ItemType Directory -Path "$DataDir\logs" -Force | Out-Null
-    
-    # Check if service already exists
-    $existingService = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
-    if ($existingService) {
-        Write-Info "Service already exists, removing old service..."
-        Stop-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue
-        & sc.exe delete $ServiceName
-        Start-Sleep -Seconds 2
-    }
-    
-    # Create Windows Service
-    $servicePath = "`"$InstallDir\vibectl.exe`""
-    $result = & sc.exe create $ServiceName binpath= $servicePath start= auto DisplayName= "Vibe Daemon (dotvibe.dev)"
-    
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to create service: $result"
-    }
-    
-    # Configure service
-    & sc.exe description $ServiceName "Vibe background daemon service for development workflow automation"
-    & sc.exe config $ServiceName obj= "NT AUTHORITY\SYSTEM"
-    
-    # Start the service
-    Write-Info "Starting Vibe service..."
-    Start-Service -Name $ServiceName
-    
-    Write-Success "Windows Service configured and started"
-}
-
-# Verify installation
-function Test-Installation {
-    Write-Info "Verifying installation..."
-    
-    # Refresh environment variables for current session
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
-    
-    # Test vibe command
+    $ProgressPreference = 'SilentlyContinue'
     try {
-        $vibeVersion = & "$InstallDir\vibe.exe" --version 2>$null
-        Write-Success "vibe command is available"
+        Write-Info "Downloading vibe binary..."
+        Invoke-WebRequest -Uri $vibeUrl -OutFile ".\vibe.exe"
+        
+        Write-Info "Downloading vibectl binary..."
+        Invoke-WebRequest -Uri $vibectlUrl -OutFile ".\vibectl.exe"
     }
     catch {
-        Write-Error "vibe command not working properly"
+        Write-Error "Failed to download binaries. Error: $_"
+    }
+    finally {
+        $ProgressPreference = 'Continue'
     }
     
-    # Test vibectl command
-    try {
-        $vibectlVersion = & "$InstallDir\vibectl.exe" --version 2>$null
-        Write-Success "vibectl command is available"
+    Write-Success "Binaries downloaded successfully."
+}
+
+function Get-InstallationScope {
+    while ($true) {
+        Write-Host ""
+        Write-Host "Choose installation scope:" -ForegroundColor Yellow
+        Write-Host "  [1] Current User (Recommended, no admin rights needed)"
+        Write-Host "  [2] All Users (System-wide, requires Administrator privileges)"
+        $choice = Read-Host -Prompt "Enter your choice (1/2)"
+        
+        if ($choice -eq '1') { return 'CurrentUser' }
+        if ($choice -eq '2') { return 'AllUsers' }
+        
+        Write-Warn "Invalid choice. Please enter 1 or 2."
     }
-    catch {
-        Write-Error "vibectl command not working properly"
-    }
+}
+
+function Add-To-Path($directory, $scope) {
+    $pathTarget = if ($scope -eq 'CurrentUser') { 'User' } else { 'Machine' }
+    $currentPath = [Environment]::GetEnvironmentVariable("Path", $pathTarget)
     
-    # Check service status
-    $service = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
-    if ($service -and $service.Status -eq "Running") {
-        Write-Success "Vibe daemon service is running"
+    if ($currentPath -notlike "*$directory*") {
+        Write-Info "Adding $directory to $pathTarget PATH..."
+        $newPath = "$currentPath;$directory"
+        [Environment]::SetEnvironmentVariable("Path", $newPath, $pathTarget)
+        Write-Success "PATH updated. Please open a new terminal to use the commands."
     }
     else {
-        Write-Warn "Vibe daemon service is not running. Check Windows Event Log for details"
+        Write-Info "Installation directory is already in the $pathTarget PATH."
     }
 }
+#endregion
 
-# Main installation process
+# --- Main Installation Process ---
 function Main {
-    Write-Info "Starting Vibe installation for Windows..."
+    Clear-Host
+    Write-Host "--- .vibe Installer for Windows ---`n"
     
-    Test-Permissions
-    Test-Dependencies
-    Get-LatestVersion
-    Install-Binaries
-    Install-Service
-    Test-Installation
+    # 1. Determine Source and Scope
+    $sourceInfo = Check-Source
+    Write-Info $sourceInfo.Message
+
+    $scope = Get-InstallationScope
+
+    if ($scope -eq 'AllUsers') {
+        Elevate-And-Rerun
+    }
+
+    # 2. Define Paths
+    $installDir = if ($scope -eq 'CurrentUser') {
+        Join-Path $env:LOCALAPPDATA "dotvibe"
+    } else {
+        Join-Path $env:ProgramFiles "dotvibe"
+    }
+    $binDir = Join-Path $installDir "bin"
+    $dataDir = Join-Path $installDir "data"
+    $repoRoot = if ($sourceInfo.IsRepo) { (Resolve-Path (Join-Path $PSScriptRoot "..")).Path } else { "." }
+    $localBinarySourcePath = if ($sourceInfo.IsRepo) { Join-Path $repoRoot "build" } else { "." }
     
-    Write-Success "Vibe installation completed!"
-    Write-Info "You can now use 'vibe' and 'vibectl' commands"
-    Write-Info "Daemon service is configured to start automatically"
-    Write-Info "You may need to restart your terminal to use the commands"
+    # 3. Get Binaries (Build or Download)
+    if ($sourceInfo.IsRepo) {
+        Push-Location $repoRoot
+        Build-From-Source
+        Pop-Location
+    } else {
+        Download-From-GitHub
+    }
+    
+    # 4. Install Files
+    Write-Info "Creating installation directories in $installDir..."
+    New-Item -ItemType Directory -Path $binDir -Force | Out-Null
+    New-Item -ItemType Directory -Path $dataDir -Force | Out-Null
+
+    Write-Info "Copying binaries to $binDir..."
+    Copy-Item -Path (Join-Path $localBinarySourcePath "vibe.exe") -Destination (Join-Path $binDir "vibe.exe") -Force
+    Copy-Item -Path (Join-Path $localBinarySourcePath "vibectl.exe") -Destination (Join-Path $binDir "vibectl.exe") -Force
+
+    if (-not $sourceInfo.IsRepo) {
+        if (Test-Path ".\vibe.exe") { Remove-Item ".\vibe.exe" }
+        if (Test-Path ".\vibectl.exe") { Remove-Item ".\vibectl.exe" }
+    }
+
+    # 5. Update PATH
+    Add-To-Path -directory $binDir -scope $scope
+
+    # 6. Install Service (only for system-wide install)
+    if ($scope -eq 'AllUsers') {
+        Write-Info "Setting up Windows Service (requires Administrator)..."
+        $serviceName = "DotVibeDaemon"
+        $existingService = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+        if ($existingService) {
+            Write-Info "Service '$serviceName' already exists. Re-creating..."
+            Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue
+            sc.exe delete $serviceName
+            Start-Sleep -Seconds 2
+        }
+        
+        $servicePath = Join-Path $binDir "vibectl.exe"
+        try {
+            New-Service -Name $serviceName -BinaryPathName $servicePath -DisplayName "Vibe Daemon" -StartupType Automatic
+            Start-Service -Name $serviceName
+            Write-Success "Windows Service '$serviceName' created and started."
+        }
+        catch {
+            Write-Warn "Could not set up Windows Service. You can run 'vibectl.exe' manually. Error: $_"
+        }
+    }
+
+    # 7. Final Instructions
+    Write-Host "`n"
+    Write-Success "🎉 .vibe has been installed successfully!"
+    Write-Info "Installation Path: $installDir"
+    if ($scope -eq 'CurrentUser') {
+        Write-Warn "The daemon service is not installed for 'Current User' mode."
+        Write-Warn "You will need to run 'vibectl' manually in a terminal when you want to use daemon features."
+    }
+    Write-Warn "IMPORTANT: You must open a new terminal window for the PATH changes to take effect."
 }
 
-# Run main function
-Main
+try {
+    Main
+}
+catch {
+    Write-Error "A critical error occurred during installation. Details: $_"
+}

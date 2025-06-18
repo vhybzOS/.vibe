@@ -1,165 +1,169 @@
 # Vibe Uninstallation Script (Windows PowerShell)
-# Removes vibe and vibectl from system and stops daemon service
+#
+# This smart script detects where .vibe was installed (Current User or All Users)
+# and completely removes all associated files, PATH entries, and services.
+#
+# @version 1.1.0
 
+# --- Strict Mode ---
 $ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
 
-# Installation paths
-$InstallDir = "${env:ProgramFiles}\dotvibe"
-$DataDir = "${env:ProgramData}\dotvibe"
-$ServiceName = "DotVibeDaemon"
+# --- Helper Functions ---
 
-# Colors for output
-function Write-Info($message) {
-    Write-Host "[INFO] $message" -ForegroundColor Blue
-}
-
-function Write-Success($message) {
-    Write-Host "[SUCCESS] $message" -ForegroundColor Green
-}
-
-function Write-Warn($message) {
-    Write-Host "[WARN] $message" -ForegroundColor Yellow
-}
-
+#region Logging Helpers
+function Write-Info($message) { Write-Host "[INFO] $message" -ForegroundColor Cyan }
+function Write-Success($message) { Write-Host "[SUCCESS] $message" -ForegroundColor Green }
+function Write-Warn($message) { Write-Host "[WARN] $message" -ForegroundColor Yellow }
 function Write-Error($message) {
     Write-Host "[ERROR] $message" -ForegroundColor Red
+    if ($env:CI -ne 'true') { Read-Host "Press Enter to exit" }
     exit 1
 }
+#endregion
 
-# Check if running as administrator
+#region System Check Helpers
 function Test-Administrator {
-    $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
-    $principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
-    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = [System.Security.Principal.WindowsPrincipal]::new($currentUser)
+    return $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
-# Check permissions
-function Test-Permissions {
+function Elevate-And-Rerun {
     if (-not (Test-Administrator)) {
-        Write-Error "This script must be run as Administrator"
+        Write-Warn "Administrator privileges are required for system-wide uninstallation."
+        Write-Info "Attempting to re-launch with elevated permissions..."
+        
+        $scriptPath = Join-Path $PSScriptRoot "uninstall.ps1"
+        $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
+        
+        try {
+            Start-Process powershell -Verb RunAs -ArgumentList $arguments
+        }
+        catch {
+            Write-Error "Failed to elevate. Please run this script from an Administrator PowerShell session."
+        }
+        
+        exit
+    }
+}
+#endregion
+
+#region Uninstallation Logic
+function Find-Installation {
+    $userInstallDir = Join-Path $env:LOCALAPPDATA "dotvibe"
+    $systemInstallDir = Join-Path $env:ProgramFiles "dotvibe"
+    
+    if (Test-Path $userInstallDir) {
+        return @{ Path = $userInstallDir; Scope = "CurrentUser" }
+    }
+    
+    if (Test-Path $systemInstallDir) {
+        return @{ Path = $systemInstallDir; Scope = "AllUsers" }
+    }
+    
+    return $null
+}
+
+function Remove-From-Path($directory, $scope) {
+    $pathTarget = if ($scope -eq 'CurrentUser') { 'User' } else { 'Machine' }
+    $currentPath = [Environment]::GetEnvironmentVariable("Path", $pathTarget)
+    $binDir = Join-Path $directory "bin"
+
+    if ($currentPath -like "*$binDir*") {
+        Write-Info "Removing '$binDir' from $pathTarget PATH..."
+        
+        # Split path, filter out the directory, and rejoin
+        $pathArray = $currentPath.Split(';') | Where-Object { $_ -ne $binDir -and $_ }
+        $newPath = $pathArray -join ';'
+        
+        [Environment]::SetEnvironmentVariable("Path", $newPath, $pathTarget)
+        Write-Success "PATH updated successfully."
+    }
+    else {
+        Write-Info "Installation directory not found in $pathTarget PATH. Skipping."
     }
 }
 
-# Remove Windows Service
-function Remove-Service {
-    Write-Info "Removing Windows Service..."
+function Remove-Windows-Service {
+    $serviceName = "DotVibeDaemon"
+    Write-Info "Checking for Windows Service '$serviceName'..."
+    $service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
     
-    $service = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
     if ($service) {
         if ($service.Status -eq "Running") {
             Write-Info "Stopping Vibe service..."
-            Stop-Service -Name $ServiceName -Force
+            Stop-Service -Name $serviceName -Force
         }
         
         Write-Info "Removing Vibe service..."
-        & sc.exe delete $ServiceName
-        
-        if ($LASTEXITCODE -eq 0) {
-            Write-Success "Windows Service removed successfully"
+        try {
+            sc.exe delete $serviceName
+            Write-Success "Windows Service removed successfully."
         }
-        else {
-            Write-Warn "Failed to remove Windows Service"
+        catch {
+            Write-Warn "Failed to remove Windows Service. You may need to remove it manually."
         }
     }
     else {
-        Write-Warn "Windows Service not found"
+        Write-Info "Windows Service not found. Skipping."
     }
 }
+#endregion
 
-# Remove binaries and directories
-function Remove-Binaries {
-    Write-Info "Removing binaries and directories..."
-    
-    # Remove from system PATH
-    $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
-    if ($currentPath -like "*$InstallDir*") {
-        Write-Info "Removing $InstallDir from system PATH"
-        $newPath = $currentPath -replace [regex]::Escape(";$InstallDir"), ""
-        $newPath = $newPath -replace [regex]::Escape("$InstallDir;"), ""
-        $newPath = $newPath -replace [regex]::Escape($InstallDir), ""
-        [Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
-        Write-Success "Removed from system PATH"
-    }
-    
-    # Remove installation directory
-    if (Test-Path $InstallDir) {
-        Remove-Item -Path $InstallDir -Recurse -Force
-        Write-Success "Removed installation directory: $InstallDir"
-    }
-    else {
-        Write-Warn "Installation directory not found: $InstallDir"
-    }
-    
-    # Remove data directory
-    if (Test-Path $DataDir) {
-        Remove-Item -Path $DataDir -Recurse -Force
-        Write-Success "Removed data directory: $DataDir"
-    }
-    else {
-        Write-Warn "Data directory not found: $DataDir"
-    }
-}
-
-# Verify uninstallation
-function Test-Uninstallation {
-    Write-Info "Verifying uninstallation..."
-    
-    # Refresh environment variables for current session
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
-    
-    # Test if commands are still available
-    if (Get-Command vibe -ErrorAction SilentlyContinue) {
-        Write-Warn "vibe command still found in PATH"
-    }
-    else {
-        Write-Success "vibe command removed from PATH"
-    }
-    
-    if (Get-Command vibectl -ErrorAction SilentlyContinue) {
-        Write-Warn "vibectl command still found in PATH"
-    }
-    else {
-        Write-Success "vibectl command removed from PATH"
-    }
-    
-    # Check service status
-    $service = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
-    if ($service) {
-        Write-Warn "Vibe daemon service still exists"
-    }
-    else {
-        Write-Success "Vibe daemon service removed"
-    }
-    
-    # Check directories
-    if (Test-Path $InstallDir) {
-        Write-Warn "Installation directory still exists: $InstallDir"
-    }
-    else {
-        Write-Success "Installation directory removed"
-    }
-    
-    if (Test-Path $DataDir) {
-        Write-Warn "Data directory still exists: $DataDir"
-    }
-    else {
-        Write-Success "Data directory removed"
-    }
-}
-
-# Main uninstallation process
+# --- Main Uninstallation Process ---
 function Main {
-    Write-Info "Starting Vibe uninstallation for Windows..."
+    Clear-Host
+    Write-Host "--- .vibe Uninstaller for Windows ---`n"
+
+    $installation = Find-Installation
     
-    Test-Permissions
-    Remove-Service
-    Remove-Binaries
-    Test-Uninstallation
+    if (-not $installation) {
+        Write-Success ".vibe installation not found. Nothing to do."
+        exit 0
+    }
     
-    Write-Success "Vibe uninstallation completed!"
-    Write-Info "All Vibe components have been removed from the system"
-    Write-Info "You may need to restart your terminal for PATH changes to take effect"
+    Write-Info "Found .vibe installation for $($installation.Scope) at: $($installation.Path)"
+    
+    # Require elevation only if a system-wide installation is found
+    if ($installation.Scope -eq "AllUsers") {
+        Elevate-And-Rerun
+    }
+    
+    # Confirmation prompt
+    $confirmation = Read-Host -Prompt "Are you sure you want to completely remove .vibe? (y/n)"
+    if ($confirmation.ToLower() -ne 'y') {
+        Write-Warn "Uninstallation cancelled by user."
+        exit 0
+    }
+    
+    # 1. Remove Windows Service (if system-wide install)
+    if ($installation.Scope -eq "AllUsers") {
+        Remove-Windows-Service
+    }
+    
+    # 2. Remove from PATH
+    Remove-From-Path -directory $installation.Path -scope $installation.Scope
+
+    # 3. Remove installation directory
+    Write-Info "Removing installation directory: $($installation.Path)..."
+    try {
+        Remove-Item -Path $installation.Path -Recurse -Force
+        Write-Success "Installation directory removed."
+    }
+    catch {
+        Write-Error "Failed to remove installation directory. Please remove it manually. Error: $_"
+    }
+    
+    # Final message
+    Write-Host "`n"
+    Write-Success "🎉 .vibe has been uninstalled successfully."
+    Write-Warn "You must open a new terminal window for the PATH changes to take full effect."
 }
 
-# Run main function
-Main
+try {
+    Main
+}
+catch {
+    Write-Error "A critical error occurred during uninstallation. Details: $_"
+}

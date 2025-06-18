@@ -6,7 +6,7 @@ set -eo pipefail
 # This smart script detects where .vibe was installed (Current User or All Users)
 # and completely removes all associated files, PATH entries, and services.
 #
-# @version 1.2.0
+# @version 1.2.1
 
 # --- Color Definitions ---
 RED='\033[0;31m'
@@ -69,7 +69,7 @@ remove_service() {
             systemctl daemon-reload
         fi
         log_success "Systemd service (if it existed) has been removed."
-    elif [[ "$PLATFORM" == "macos" ]]; a
+    elif [[ "$PLATFORM" == "macos" ]]; then
         local label="dev.dotvibe.daemon"
         local plist_path_user="$HOME/Library/LaunchAgents/$label.plist"
         local plist_path_system="/Library/LaunchDaemons/$label.plist"
@@ -158,3 +158,4 @@ main() {
 }
 
 main "$@"
+

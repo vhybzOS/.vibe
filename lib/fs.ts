@@ -1,8 +1,8 @@
 /**
  * File System Utilities with Effect-TS
- * 
+ *
  * Based on legacy/v0.2 Lib namespace patterns - provides composable file operations
- * 
+ *
  * @tested_by tests/unit/init-command.test.ts (File operations: readTextFile, writeTextFile, fileExists, dirExists)
  * @tested_by tests/integration/cli-integration.test.ts (Project detection: getProjectName, findProjectRoot, loadJson)
  * @tested_by tests/user/real-world-workflow.test.ts (Real-world file operations with both package.json and deno.json)
@@ -28,20 +28,20 @@ export const writeTextFile = (path: string, content: string): Effect.Effect<void
 
 export const fileExists = (path: string): Effect.Effect<boolean, VibeError> =>
   pipe(
-    Effect.tryPromise({ 
-      try: () => Deno.stat(path).then((s) => s.isFile), 
-      catch: (e) => createFileSystemError(e, path, 'Failed to check if file exists')
+    Effect.tryPromise({
+      try: () => Deno.stat(path).then((s) => s.isFile),
+      catch: (e) => createFileSystemError(e, path, 'Failed to check if file exists'),
     }),
-    Effect.catchAll(() => Effect.succeed(false))
+    Effect.catchAll(() => Effect.succeed(false)),
   )
 
 export const dirExists = (path: string): Effect.Effect<boolean, VibeError> =>
   pipe(
-    Effect.tryPromise({ 
-      try: () => Deno.stat(path).then((s) => s.isDirectory), 
-      catch: (e) => createFileSystemError(e, path, 'Failed to check if directory exists')
+    Effect.tryPromise({
+      try: () => Deno.stat(path).then((s) => s.isDirectory),
+      catch: (e) => createFileSystemError(e, path, 'Failed to check if directory exists'),
     }),
-    Effect.catchAll(() => Effect.succeed(false))
+    Effect.catchAll(() => Effect.succeed(false)),
   )
 
 export const ensureDir = (path: string): Effect.Effect<void, VibeError> =>
@@ -76,17 +76,17 @@ export const findProjectRoot = (startPath: string): Effect.Effect<string, VibeEr
           if (hasPackageJson) {
             return Effect.succeed(currentPath)
           }
-          
+
           const parentPath = dirname(currentPath)
           if (parentPath === currentPath) {
             // Reached root directory
             return Effect.succeed(startPath) // Use original path as fallback
           }
-          
+
           return findProjectRoot(parentPath)
-        })
+        }),
       )
-    )
+    ),
   )
 
 export const getProjectName = (projectPath: string): Effect.Effect<string, VibeError> =>
@@ -97,10 +97,10 @@ export const getProjectName = (projectPath: string): Effect.Effect<string, VibeE
         return pipe(
           loadJson(z.object({ name: z.string().optional() }))(resolve(projectPath, 'package.json')),
           Effect.map((pkg) => pkg.name || projectPath.split('/').pop() || 'unnamed-project'),
-          Effect.catchAll(() => Effect.succeed(projectPath.split('/').pop() || 'unnamed-project'))
+          Effect.catchAll(() => Effect.succeed(projectPath.split('/').pop() || 'unnamed-project')),
         )
       }
-      
+
       // Check for deno.json if no package.json
       return pipe(
         fileExists(resolve(projectPath, 'deno.json')),
@@ -109,13 +109,13 @@ export const getProjectName = (projectPath: string): Effect.Effect<string, VibeE
             // Use directory name as fallback
             return Effect.succeed(projectPath.split('/').pop() || 'unnamed-project')
           }
-          
+
           return pipe(
             loadJson(z.object({ name: z.string().optional() }))(resolve(projectPath, 'deno.json')),
             Effect.map((deno) => deno.name || projectPath.split('/').pop() || 'unnamed-project'),
-            Effect.catchAll(() => Effect.succeed(projectPath.split('/').pop() || 'unnamed-project'))
+            Effect.catchAll(() => Effect.succeed(projectPath.split('/').pop() || 'unnamed-project')),
           )
-        })
+        }),
       )
-    })
+    }),
   )

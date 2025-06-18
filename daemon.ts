@@ -2,9 +2,9 @@
 
 /**
  * Vibe Daemon Entry Point
- * 
+ *
  * Background service for cross-platform development workflow
- * 
+ *
  * @tested_by tests/unit/daemon.test.ts (Core daemon functionality, lifecycle management)
  * @tested_by tests/integration/daemon-integration.test.ts (Service integration, startup/shutdown)
  * @tested_by tests/user/daemon-workflow.test.ts (Complete daemon workflows, system service integration)

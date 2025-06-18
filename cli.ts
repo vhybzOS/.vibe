@@ -2,9 +2,9 @@
 
 /**
  * Vibe CLI Entry Point
- * 
+ *
  * Based on legacy/v0.2 CLI patterns with Commander.js and Effect-TS
- * 
+ *
  * @tested_by tests/user/real-world-workflow.test.ts (CLI integration: help, version, command execution)
  * @tested_by tests/integration/cli-integration.test.ts (CLI argument parsing and command routing)
  */
@@ -34,7 +34,7 @@ program
       force: options.force || false,
       quiet: options.quiet || false,
     })
-    
+
     // Run the command with proper error handling
     Effect.runPromise(runCommand(initCommand(validatedOptions)))
   })

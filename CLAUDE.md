@@ -64,8 +64,9 @@ Always start sessions in planning mode. Ask for specific user flow requirements.
 When instructed to commit:
 
 1. **Always** run `deno task fmt` first
-2. **Don't** follow pre-configured flow of checking past commits etc.
-3. **Grab** as much useful descriptive info as you can from interactions since last commit
-4. **Make the commit message engaging and fun** - start with conventional commit tag if applicable (e.g. `feat:`, `fix:`, `chore:`), then emojis are good, corporate wording is boring, yet maximum information capture for highly technical (but cool) audience
-5. **Craft** the best summary from recent work
-6. **Execute** `git commit -m` in one shot with comprehensive message
+2. **Run** `git status`, analyse if files listed need to be added to `.gitignore` and do if so, then `git add .`
+3. **Don't** follow pre-configured flow of checking past commits etc.
+4. **Grab** as much useful descriptive info as you can from interactions since last commit
+5. **Make the commit message engaging and fun** - start with conventional commit tag if applicable (e.g. `feat:`, `fix:`, `chore:`), then emojis are good, corporate wording is boring, yet maximum information capture for highly technical (but cool) audience
+6. **Craft** the best summary from recent work
+7. **Execute** `git commit -m` in one shot with comprehensive message

@@ -1,8 +1,8 @@
 /**
  * CLI Utilities and Command Runner
- * 
+ *
  * Based on legacy/v0.2 CLI patterns - provides Effect-TS command execution
- * 
+ *
  * @tested_by tests/integration/cli-integration.test.ts (Command runner integration, error handling)
  * @tested_by tests/user/real-world-workflow.test.ts (Real CLI execution, success/error logging)
  */
@@ -19,23 +19,22 @@ export const runCommand = <T>(command: Effect.Effect<T, VibeError | Error>): Eff
         Effect.sync(() => {
           const message = formatError(error instanceof Error ? error : error)
           console.error(`❌ ${message}`)
-          
+
           // Show debug info in debug mode
           if (Deno.env.get('VIBE_DEBUG') && error instanceof Error && error.cause) {
             console.error('Debug info:', error.cause)
           }
         }),
-        Effect.flatMap(() => Effect.sync(() => Deno.exit(1)))
+        Effect.flatMap(() => Effect.sync(() => Deno.exit(1))),
       )
-    )
+    ),
   )
 
 // Command success logging
 export const logSuccess = (message: string): Effect.Effect<void, never> =>
   Effect.sync(() => console.log(`✅ ${message}`))
 
-export const logInfo = (message: string): Effect.Effect<void, never> =>
-  Effect.sync(() => console.log(`ℹ️  ${message}`))
+export const logInfo = (message: string): Effect.Effect<void, never> => Effect.sync(() => console.log(`ℹ️  ${message}`))
 
 export const logWarning = (message: string): Effect.Effect<void, never> =>
   Effect.sync(() => console.log(`⚠️  ${message}`))

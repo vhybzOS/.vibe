@@ -2,6 +2,8 @@
  * Test Runner for .vibe Project
  *
  * Organizes and runs all test suites: unit, integration, and user tests
+ *
+ * @tested_by tests/integration/test-runner.test.ts (Test runner execution and CLI args)
  */
 
 import { parseArgs } from '@std/cli/parse-args'

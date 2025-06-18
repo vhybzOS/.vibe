@@ -1,6 +1,6 @@
 {
-  "name": "vibe",
-  "version": "1.0.0",
+  "name": "dotvibe",
+  "version": "0.2.0",
   "exports": {
     "./cli": "./cli.ts"
   },
@@ -17,7 +17,8 @@
     "fmt": "deno fmt",
     "build": "deno compile --allow-all --output build/vibe cli.ts",
     "build:daemon": "deno compile --allow-all --output build/vibectl daemon.ts",
-    "build:all": "deno task build && deno task build:daemon"
+    "build:all": "deno task build && deno task build:daemon",
+    "coverage": "deno run --allow-read scripts/coverage.ts --skip legacy"
   },
   "imports": {
     "effect": "npm:effect@3.16.7",

@@ -67,6 +67,11 @@ When instructed to commit:
 2. **Run** `git status`, analyse if files listed need to be added to `.gitignore` and do if so, then `git add .`
 3. **Don't** follow pre-configured flow of checking past commits etc.
 4. **Grab** as much useful descriptive info as you can from interactions since last commit
-5. **Make the commit message engaging and fun** - start with conventional commit tag if applicable (e.g. `feat:`, `fix:`, `chore:`), then emojis are good, corporate wording is boring, yet maximum information capture for highly technical (but cool) audience
-6. **Craft** the best summary from recent work
-7. **Execute** `git commit -m` in one shot with comprehensive message
+5. **Evaluate version impact** and update deno.json if warranted:
+   - **patch** (0.2.1): Bug fixes, docs, minor improvements, small features
+   - **minor** (0.3.0): New features, significant enhancements, API additions
+   - **major** (1.0.0): Breaking changes, major architectural shifts
+   - **Be frugal** - effort should earn version bumps, not every commit!
+6. **Make the commit message engaging and fun** - start with conventional commit tag if applicable (e.g. `feat:`, `fix:`, `chore:`), then emojis are good, corporate wording is boring, yet maximum information capture for highly technical (but cool) audience
+7. **Craft** the best summary from recent work
+8. **Execute** `git commit -m` in one shot with comprehensive message

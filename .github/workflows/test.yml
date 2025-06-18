@@ -50,15 +50,6 @@ jobs:
         # --no-check is used because we have a dedicated type-checking step
         run: deno task test --no-check
 
-      - name: 📊 Generate and Upload Coverage (Linux only)
+      - name: 📊 Analyze Test Coverage (Linux only)
         if: matrix.os == 'ubuntu-latest'
-        run: |
-          deno coverage coverage/ --lcov > coverage.lcov
-
-      - name: 📈 Upload Coverage to Codecov
-        if: matrix.os == 'ubuntu-latest'
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage.lcov
-          fail_ci_if_error: false
+        run: deno task coverage

@@ -125,12 +125,8 @@ deno task test:unit                    # Fast feedback for development
 deno task test:integration            # Component interaction verification  
 deno task test:user                   # Complete workflow validation
 
-# Find all files missing test coverage
-find . -name "*.ts" -not -path "./tests/*" -not -path "./legacy/*" -exec grep -L "@tested_by" {} \;
-
-# Count test coverage statistics
-echo "Files with tests: $(grep -r "@tested_by" . --include="*.ts" -l | wc -l)"
-echo "Total implementation files: $(find . -name "*.ts" -not -path "./tests/*" -not -path "./legacy/*" | wc -l)"
+# Check test coverage with our smart script
+deno task coverage
 ```
 
 ### **Quality Gates (Never Skip)**

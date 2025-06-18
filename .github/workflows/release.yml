@@ -3,7 +3,10 @@ name: Build and Release
 on:
   push:
     branches: [main]
-    paths: ['deno.json']
+    paths:
+      - '**/*.ts'
+      - 'deno.json'
+      - 'deno.lock'
   workflow_dispatch:
     inputs:
       tag:

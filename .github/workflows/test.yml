@@ -3,8 +3,18 @@ name: Build and Test
 on:
   push:
     branches: ['main']
+    paths:
+      - '**/*.ts'
+      - 'deno.json'
+      - 'deno.lock'
+      - '.github/workflows/test.yml'
   pull_request:
     branches: ['main']
+    paths:
+      - '**/*.ts'
+      - 'deno.json'
+      - 'deno.lock'
+      - '.github/workflows/test.yml'
 
 env:
   DENO_VERSION: 'v2.3.6'

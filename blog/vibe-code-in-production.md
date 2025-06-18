@@ -6,7 +6,7 @@ tags: ai, productivity, development, automation
 cover_image:
 ---
 
-**TL;DR** Stop letting coding purists hold you back. There are two kinds of code: the kind you write in flow, and the kind that gets products out the door. LLMs are perfect for the latter. Be a Vibe Coder—set the architectural direction, let AI agents do the grunt work, and still have time for a beer. 🍺
+**TL;DR** Stop letting coding purists hold you back. There are two kinds of code: the kind you write in flow, and the kind that gets products out the door. LLMs are perfect for the latter. Be a *proud* **Vibe Coder**: set the architectural direction, let AI agents do the grunt work, and still have time for a beer. 🍺
 
 ## The Two Faces of Code
 

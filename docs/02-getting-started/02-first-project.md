@@ -7,6 +7,7 @@
 Let's walk through transforming a real project and watch the magic happen in real-time.
 
 ### Starting Point: A Regular Project
+
 ```bash
 my-hono-api/
 ├── package.json        # Basic Hono + Zod + Effect project
@@ -19,6 +20,7 @@ my-hono-api/
 **Current AI State:** "I know these libraries exist but not how to use them well together."
 
 ### The Magic Command
+
 ```bash
 cd my-hono-api
 vibe init
@@ -27,6 +29,7 @@ vibe init
 ### What Happens Next (Watch in Real-Time)
 
 #### Phase 1: Discovery (5 seconds) 🔍
+
 ```
 🔍 Analyzing project dependencies...
 📦 Found: hono@4.0.0, zod@3.22.0, @effect/platform@0.45.0
@@ -34,6 +37,7 @@ vibe init
 ```
 
 #### Phase 2: Intelligence Harvesting (15 seconds) 🧠
+
 ```
 🌐 Fetching hono.dev/llms.txt... ✅
 🌐 Checking GitHub repos for .vibe patterns... ✅  
@@ -42,6 +46,7 @@ vibe init
 ```
 
 #### Phase 3: Tool Creation (5 seconds) ⚡
+
 ```
 🛠️  Creating Hono routing tools... ✅
 🛠️  Creating Zod validation tools... ✅  
@@ -50,6 +55,7 @@ vibe init
 ```
 
 #### Phase 4: Universal Translation (5 seconds) 🌍
+
 ```
 📝 Generating .cursorrules... ✅
 📝 Generating .windsurfrules... ✅
@@ -97,17 +103,19 @@ my-hono-api/
 Open your favorite AI coding assistant. The transformation is **immediate**:
 
 ### Before .vibe
+
 **You:** "Help me create a Hono API with Zod validation"
 
 **AI:** "I can help you create a basic API. Here's a generic Express-style approach..."
 
 ### After .vibe ✨
+
 **You:** "Help me create a Hono API with Zod validation"
 
 **AI:** "I'll create an optimized Hono API using the latest patterns. Based on your project setup, I'll use:
 
 - **Hono's type-safe routing** with automatic OpenAPI generation
-- **Zod schemas** with `.openapi()` extensions for documentation  
+- **Zod schemas** with `.openapi()` extensions for documentation
 - **Effect-TS error handling** for robust async operations
 - **Edge-optimized response patterns** for performance
 
@@ -120,11 +128,13 @@ Here's the implementation with your project's conventions..."
 Let's see what tools are now available:
 
 ### Check Available Tools
+
 ```bash
 vibe tools list
 ```
 
 Output:
+
 ```
 🛠️  Available AI Tools:
 
@@ -148,6 +158,7 @@ Output:
 ```
 
 ### Test MCP Integration
+
 ```bash
 # Check that your AI tools can connect
 curl http://localhost:4242/mcp/tools
@@ -160,9 +171,11 @@ You'll see JSON describing all available tools that any MCP-compatible AI can us
 Let's see the difference in practice:
 
 ### In Cursor (now with .vibe superpowers)
+
 1. **Type:** "Create a user registration route with validation"
 
 2. **AI suggests (with .vibe intelligence):**
+
 ```typescript
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
@@ -172,28 +185,23 @@ import { Effect } from 'effect'
 const CreateUserSchema = z.object({
   email: z.string().email().openapi({ example: 'user@example.com' }),
   password: z.string().min(8).openapi({ example: 'securepass123' }),
-  name: z.string().min(2).openapi({ example: 'John Doe' })
+  name: z.string().min(2).openapi({ example: 'John Doe' }),
 }).openapi('CreateUser')
 
 // Hono route with Effect error handling (from .vibe patterns)
-app.post('/users', 
-  zValidator('json', CreateUserSchema),
-  async (c) => {
-    const userData = c.req.valid('json')
-    
-    return Effect.gen(function* () {
-      // Effect-TS pattern for safe async operations
-      const hashedPassword = yield* hashPassword(userData.password)
-      const user = yield* createUser({ ...userData, password: hashedPassword })
-      
-      return c.json({ user: sanitizeUser(user) }, 201)
-    }).pipe(
-      Effect.catchAll(error => 
-        Effect.succeed(c.json({ error: formatError(error) }, 400))
-      )
-    )
-  }
-)
+app.post('/users', zValidator('json', CreateUserSchema), async (c) => {
+  const userData = c.req.valid('json')
+
+  return Effect.gen(function* () {
+    // Effect-TS pattern for safe async operations
+    const hashedPassword = yield* hashPassword(userData.password)
+    const user = yield* createUser({ ...userData, password: hashedPassword })
+
+    return c.json({ user: sanitizeUser(user) }, 201)
+  }).pipe(
+    Effect.catchAll((error) => Effect.succeed(c.json({ error: formatError(error) }, 400))),
+  )
+})
 ```
 
 **Notice:** The AI now suggests patterns that combine all three libraries optimally, with your project's specific conventions.
@@ -215,4 +223,4 @@ You've just experienced the revolution. Your dependencies are now superpowers, a
 
 ---
 
-**Next:** [Seeing the Magic →](03-seeing-the-magic.md) - *Explore all the ways .vibe transforms your development workflow*
+**Next:** [Seeing the Magic →](03-seeing-the-magic.md) - _Explore all the ways .vibe transforms your development workflow_

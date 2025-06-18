@@ -9,7 +9,7 @@
 - **🎯 Context-Aware Suggestions** - AI that understands your specific domain
 - **🧬 Code DNA Analysis** - Deep understanding of your project's architectural patterns
 
-**This section is under active development.** 
+**This section is under active development.**
 
 ---
 

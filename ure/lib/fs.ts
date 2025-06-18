@@ -1,6 +1,8 @@
 /**
  * File system utilities with proper Deno patterns
  * Centralizes common file operations with consistent error handling
+ *
+ * @tested_by tests/unit/fs.test.ts (File operations, JSON handling, directory utilities, schema validation, backup creation)
  */
 
 import { Effect, pipe } from 'effect'
@@ -87,7 +89,7 @@ const searchDirectory = (
   currentDepth: number,
   maxDepth: number,
 ): Effect.Effect<string[], FileSystemError> => {
-  if (currentDepth >= maxDepth) {
+  if (currentDepth > maxDepth) {
     return Effect.succeed(results)
   }
 
@@ -194,13 +196,20 @@ export const ensureVibeDirectory = (projectPath: string) =>
       pipe(
         Effect.tryPromise({
           try: async () => {
-            const stat = await Deno.stat(vibePath)
-            return stat.isDirectory
+            try {
+              const stat = await Deno.stat(vibePath)
+              return stat.isDirectory
+            } catch (error) {
+              if (error instanceof Deno.errors.NotFound) {
+                return false
+              }
+              throw error
+            }
           },
-          catch: () => false,
+          catch: (error) => createFileSystemError(error, vibePath, 'Failed to check .vibe directory'),
         }),
-        Effect.flatMap((exists) =>
-          exists ? Effect.succeed(vibePath) : Effect.fail(createFileSystemError(
+        Effect.flatMap((isDirectory) =>
+          isDirectory ? Effect.succeed(vibePath) : Effect.fail(createFileSystemError(
             new Error('.vibe directory not found'),
             vibePath,
             '.vibe not initialized. Run `vibe init` first.',

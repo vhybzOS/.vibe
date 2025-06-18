@@ -7,6 +7,7 @@
 Every developer has witnessed this tragedy:
 
 ### The Committee Approach 💀
+
 1. **Someone proposes** a new standard for AI tool configuration
 2. **Vendors argue** about implementation details for 18 months
 3. **Committees form** with competing interests and political agendas
@@ -15,6 +16,7 @@ Every developer has witnessed this tragedy:
 6. **Developers suffer** with continued fragmentation
 
 ### The Vendor Lock-In Approach 🔒
+
 1. **Big company** creates proprietary solution
 2. **Developers adopt** because it's the only option
 3. **Competition stagnates** due to switching costs
@@ -52,19 +54,22 @@ Instead of creating a standard that everyone must adopt, we created a **translat
 ## 🎭 How the Magic Works
 
 ### For Existing Tools (Zero Changes Required)
+
 - **Cursor** keeps reading `.cursorrules` exactly as before
-- **Windsurf** keeps reading `.windsurfrules` exactly as before  
+- **Windsurf** keeps reading `.windsurfrules` exactly as before
 - **Claude** keeps reading `.claude/commands.md` exactly as before
 
 **They don't even know `.vibe` exists.**
 
 ### For .vibe Users (Universal Benefits)
+
 - **Write once** in `.vibe/rules/` universal format
 - **Works everywhere** - `.vibe` generates all the tool-specific files
 - **Bidirectional sync** - change any tool's file, `.vibe` updates its universal format
 - **Automatic intelligence** - dependency analysis creates rules automatically
 
 ### For the Ecosystem (Network Effects Without Coordination)
+
 - **No vendor negotiations** needed
 - **No breaking changes** to existing workflows
 - **No political battles** over standard details
@@ -75,18 +80,21 @@ Instead of creating a standard that everyone must adopt, we created a **translat
 This creates a beautiful adoption pattern:
 
 ### Wave 1: Early Adopters 🚀
+
 - Install `.vibe` for personal productivity
 - Get immediate benefits with zero friction
 - Continue using their favorite AI tools exactly as before
 - Share `.vibe` projects that work seamlessly for everyone
 
-### Wave 2: Pragmatic Adoption 📈  
+### Wave 2: Pragmatic Adoption 📈
+
 - Teams see `.vibe` projects working well
 - Adopt because it makes their existing tools better
 - No workflow disruption, just enhanced capabilities
 - Gradual realization of cross-tool benefits
 
 ### Wave 3: Ecosystem Transformation 🌍
+
 - Libraries start including `.vibe` intelligence
 - AI tools add native `.vibe` support (optional, but beneficial)
 - Open source projects adopt for better collaboration
@@ -97,6 +105,7 @@ This creates a beautiful adoption pattern:
 The secret sauce is **Model Context Protocol (MCP)** - a standard that already exists and is being adopted by AI tools.
 
 ### Why MCP is Perfect
+
 - ✅ **Already adopted** by major AI tools
 - ✅ **Vendor neutral** - no single company controls it
 - ✅ **Extensible** - perfect for our tool-based approach
@@ -104,16 +113,17 @@ The secret sauce is **Model Context Protocol (MCP)** - a standard that already e
 - ✅ **Secure** - local-only communication
 
 ### The Beautiful Integration
+
 ```typescript
 // .vibe becomes an MCP server that speaks every AI tool's language
 const vibeServer = new MCPServer({
   tools: extractedFromDependencies,
   context: projectIntelligence,
-  memory: conversationHistory
+  memory: conversationHistory,
 })
 
 // Any MCP-compatible AI tool gets instant access to:
-// - Dependency-based tools (Hono routing, Zod validation)  
+// - Dependency-based tools (Hono routing, Zod validation)
 // - Project-specific patterns and decisions
 // - Cross-conversation memory and context
 ```
@@ -121,13 +131,15 @@ const vibeServer = new MCPServer({
 ## 🎯 Why This Approach is Revolutionary
 
 ### Traditional Standard Creation
+
 1. **Start with politics** - who controls the standard?
 2. **Fight over details** - every vendor wants their approach
-3. **Compromise on vision** - make everyone equally unhappy  
+3. **Compromise on vision** - make everyone equally unhappy
 4. **Ship complexity** - cover every edge case and use case
 5. **Struggle with adoption** - high switching costs and unclear benefits
 
 ### .vibe Standard Creation
+
 1. **Start with utility** - make existing tools better immediately
 2. **Focus on user value** - individual productivity drives adoption
 3. **Preserve compatibility** - zero breaking changes to existing workflows
@@ -139,11 +151,13 @@ const vibeServer = new MCPServer({
 The beauty of this approach is that **individual selfishness creates collective benefit**:
 
 ### Individual Motivation
+
 - "I want my AI to work better across all my tools"
 - "I want to stop maintaining multiple config files"
 - "I want my dependencies to make my AI smarter"
 
-### Collective Outcome  
+### Collective Outcome
+
 - **Universal standard** emerges without committees
 - **Cross-tool compatibility** without vendor negotiations
 - **Ecosystem intelligence** without central coordination
@@ -154,16 +168,19 @@ The beauty of this approach is that **individual selfishness creates collective 
 Imagine the end state:
 
 ### For Developers
+
 - **Any AI tool** works with any `.vibe` project seamlessly
 - **Any library** automatically provides AI expertise
 - **Any workflow** benefits from accumulated ecosystem intelligence
 
 ### For AI Tools
+
 - **Instant compatibility** with rich project context
 - **Competitive advantage** through better intelligence, not vendor lock-in
 - **Innovation focus** on user experience, not political standards battles
 
 ### For the Ecosystem
+
 - **Organic standardization** driven by utility, not politics
 - **Accelerated innovation** because energy goes to building, not negotiating
 - **Universal benefits** without universal requirements
@@ -172,4 +189,4 @@ Imagine the end state:
 
 ---
 
-**Next:** [Get Started →](../02-getting-started/01-installation.md) - *Join the revolution and transform your first project in 60 seconds*
+**Next:** [Get Started →](../02-getting-started/01-installation.md) - _Join the revolution and transform your first project in 60 seconds_

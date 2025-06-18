@@ -7,6 +7,7 @@
 **We eat our own dog food, and it's delicious.**
 
 The `.vibe` codebase itself is a `.vibe` project, which means:
+
 - 🤖 **Our AI assistants** use `.vibe` intelligence while building `.vibe`
 - 🔄 **Every feature** is tested in real development scenarios first
 - 📚 **Our own patterns** become part of the intelligence library
@@ -17,18 +18,21 @@ The `.vibe` codebase itself is a `.vibe` project, which means:
 Our codebase contains rich `.vibe` intelligence including:
 
 ### 📦 **Effect-TS Mastery**
+
 - Advanced composition patterns we've discovered
 - Error handling strategies that work in practice
 - Performance optimizations from real-world usage
 - Testing patterns for functional code
 
-### 🦕 **Deno Expertise**  
+### 🦕 **Deno Expertise**
+
 - Cross-platform deployment patterns
 - TypeScript configuration best practices
 - Module management strategies
 - Performance optimization techniques
 
 ### 🔮 **Zod v4 Patterns**
+
 - Schema composition for complex validation
 - Type inference optimization
 - Error message customization
@@ -37,6 +41,7 @@ Our codebase contains rich `.vibe` intelligence including:
 ## 🎯 Real Examples from Our Development
 
 ### Feature Development Flow
+
 1. **Problem Identification** - "We need better dependency discovery"
 2. **AI-Assisted Design** - Our AI suggests patterns based on existing codebase
 3. **Implementation** - AI helps with Effect-TS patterns and error handling
@@ -44,7 +49,9 @@ Our codebase contains rich `.vibe` intelligence including:
 5. **Documentation** - AI generates examples using our established patterns
 
 ### The Compound Effect
+
 As we build more features:
+
 - **Our AI gets smarter** about our specific architecture
 - **Pattern recognition improves** - similar problems get solved faster
 - **Code quality increases** - AI suggests better approaches based on learning
@@ -53,18 +60,22 @@ As we build more features:
 ## 🔧 Tools We've Built Using Our Own Intelligence
 
 ### Autonomous Discovery Engine
+
 **Challenge:** Analyze thousands of npm packages efficiently
 
 **Solution:** Used our own Effect-TS expertise to build:
+
 - Concurrent package analysis with proper error handling
 - Retry logic for unreliable network operations
 - Resource management for API rate limiting
 - Type-safe configuration management
 
 ### MCP Server Architecture
+
 **Challenge:** Create a robust, real-time AI tool server
 
 **Solution:** Applied our own patterns:
+
 - Effect-TS composition for complex async workflows
 - Zod validation for all external data
 - Functional error handling throughout
@@ -73,12 +84,14 @@ As we build more features:
 ## 📊 Metrics from Our Own Usage
 
 ### Development Velocity
+
 - **50% fewer bugs** - AI catches patterns we've established
 - **3x faster feature development** - Building on accumulated patterns
 - **90% test coverage** - AI suggests comprehensive test cases
 - **Zero configuration drift** - Universal rules keep all tools aligned
 
 ### Code Quality
+
 - **Consistent patterns** across all modules
 - **Robust error handling** using established Effect-TS approaches
 - **Type safety** enforced through Zod schemas everywhere
@@ -109,4 +122,4 @@ When you use `.vibe`, you're not just getting a tool - you're getting:
 
 ---
 
-**Next:** [Agents Workflow →](02-agents-workflow.md) - *How humans and AI collaborate in our development process*
+**Next:** [Agents Workflow →](02-agents-workflow.md) - _How humans and AI collaborate in our development process_

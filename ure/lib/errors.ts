@@ -1,6 +1,8 @@
 /**
  * Functional error system using tagged unions
  * NO CLASSES - uses pure data structures for type-safe error handling
+ *
+ * @tested_by tests/unit/errors.test.ts (Tagged union error types, error creation helpers, type discrimination)
  */
 
 /**

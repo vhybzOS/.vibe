@@ -14,7 +14,7 @@ Before any work, you MUST:
 
 This is a local-first, autonomous AI development environment built with Effect-TS and functional programming principles. Quality and architectural consistency are paramount.
 
-**Website**: https://dotvibe.dev  
+**Website**: https://dotvibe.dev\
 **Repository**: https://github.com/vhybzOS/.vibe
 
 **Key Technologies**: Deno, Effect-TS, TypeScript, Zod, functional programming patterns
@@ -78,3 +78,15 @@ When instructed to commit:
 6. **Make the commit message engaging and fun** - start with conventional commit tag if applicable (e.g. `feat:`, `fix:`, `chore:`), then emojis are good, corporate wording is boring, yet maximum information capture for highly technical (but cool) audience
 7. **Craft** the best summary from recent work
 8. **Execute** `git commit -m` in one shot with comprehensive message
+
+# Effect Documentation for LLMs
+
+## Critical Effect.retry() Behavior
+
+- **Correct syntax**: `Effect.retry(effect, { times: n })` NOT `pipe(effect, Effect.retry({ times: n }))`
+- `Effect.retry(effect, { times: n })` = 1 initial attempt + n retries
+- Total execution count = n + 1
+- For retry to work, effects must use `Effect.fail()` not thrown errors
+- Use `Effect.async((resume) => resume(Effect.fail(...)))` for testing retries
+- Use `Effect.sleep()` for testing timeouts, not raw setTimeout
+- Effect.tryPromise catch handlers should return proper Error types, not primitives

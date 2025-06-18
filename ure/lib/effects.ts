@@ -2,6 +2,8 @@
  * Effect-TS utilities and Deno-native file system wrappers
  * Pure functional wrappers around Deno APIs using Effect-TS
  * NO CLASSES - uses functional tagged union errors from lib/errors.ts
+ *
+ * @tested_by tests/unit/effects.test.ts (Effect-TS wrappers, file operations, retry logic, timeout handling)
  */
 
 import { Effect, pipe } from 'effect'
@@ -80,11 +82,7 @@ export const retryWithBackoff = <A, E>(
   effect: Effect.Effect<A, E>,
   maxAttempts: number = 3,
   _baseDelay: number = 1000,
-) =>
-  pipe(
-    effect,
-    Effect.retry({ times: maxAttempts - 1 }),
-  )
+) => Effect.retry(effect, { times: maxAttempts - 1 })
 
 /**
  * Timeout wrapper for effects

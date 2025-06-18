@@ -4,14 +4,14 @@
 
 ## 🎯 Overview
 
-*This section will contain the complete technical architecture documentation from `legacy/ARCHITECTURE.md`, adapted for the contributor audience.*
+_This section will contain the complete technical architecture documentation from `legacy/ARCHITECTURE.md`, adapted for the contributor audience._
 
 ## 🚀 Coming Soon
 
 This section will include:
 
 - **🦕 Deno + Effect-TS Architecture** - Why we chose functional composition
-- **🔮 Zod v4 Schema System** - Type-safe validation throughout  
+- **🔮 Zod v4 Schema System** - Type-safe validation throughout
 - **⚡ MCP Protocol Integration** - Universal AI tool interface
 - **🤖 Autonomous Discovery Engine** - How dependency analysis works
 - **📁 File System Architecture** - Local-first data organization
@@ -23,9 +23,10 @@ This section will include:
 ## 🔗 Reference
 
 For now, see the complete technical details in:
+
 - **[Legacy Architecture](../../legacy/ARCHITECTURE.md)** - Complete technical documentation
 - **[Legacy PRD](../../legacy/PRD.md)** - Product requirements and technical constraints
 
 ---
 
-*This completes the contributor documentation section.*
+_This completes the contributor documentation section._

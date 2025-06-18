@@ -14,21 +14,24 @@
 ## 🆘 Current Quick Fixes
 
 ### Daemon Won't Start
+
 ```bash
 vibe logs        # Check error messages
 vibe daemon restart
 ```
 
 ### Discovery Not Working
+
 ```bash
 vibe status      # Check daemon status
 vibe discover    # Force rediscovery
 ```
 
 ### Need Help?
+
 - Open an issue on [GitHub](https://github.com/vibecorp/vibe)
 - Check our [Discord community](https://discord.gg/vibe)
 
 ---
 
-*This completes the main documentation structure.*
+_This completes the main documentation structure._

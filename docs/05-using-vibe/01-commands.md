@@ -14,6 +14,7 @@
 ---
 
 **Current Basic Commands:**
+
 ```bash
 vibe init        # Transform current project
 vibe status      # Check daemon and project status  

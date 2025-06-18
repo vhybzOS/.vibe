@@ -32,7 +32,7 @@ Want to support us? Do one of these:
 ## 🛠️ What You Get
 
 - **🎯 Universal AI Assistant**: Same smart AI across Cursor, Claude, ChatGPT, any environment
-- **📦 Dependency Intelligence**: Every library becomes AI-accessible tools and expertise  
+- **📦 Dependency Intelligence**: Every library becomes AI-accessible tools and expertise
 - **🧠 Persistent Memory**: Your AI remembers decisions across machines and tools
 - **🔄 Zero Maintenance**: Everything automated - discovery, sync, intelligence updates
 - **🌐 Cross-Platform**: Works seamlessly on Linux, macOS, Windows, WSL2, cloud
@@ -58,7 +58,7 @@ vibe daemon       # Background service management
 
 **Deno** + **Effect-TS** + **MCP Protocol** + **Local-First Architecture**
 
-*No cloud dependencies. Your data stays yours.*
+_No cloud dependencies. Your data stays yours._
 
 ---
 

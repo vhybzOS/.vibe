@@ -7,10 +7,10 @@
 What if every library you `npm install` didn't just add code to your project, but **instantly unlocked new superpowers** for your AI assistant?
 
 - Add **Hono**? Your AI now knows advanced routing patterns and can build APIs instantly
-- Install **Zod**? Schema validation and type generation tools appear in every AI environment  
+- Install **Zod**? Schema validation and type generation tools appear in every AI environment
 - Use **Effect-TS**? Async composition and error handling expertise becomes available everywhere
 
-**This isn't a dream. This is `.vibe`.** 
+**This isn't a dream. This is `.vibe`.**
 
 ## ⚡ Zero-Config Magic
 
@@ -37,21 +37,24 @@ Imagine a world where:
 - **Every developer** benefits from the collective wisdom of how libraries should be used
 - **Every AI assistant** becomes exponentially smarter with each new project
 
-This isn't just about making *your* development better. It's about creating an **open standard** that elevates the entire developer ecosystem, without requiring anyone to coordinate or adopt anything.
+This isn't just about making _your_ development better. It's about creating an **open standard** that elevates the entire developer ecosystem, without requiring anyone to coordinate or adopt anything.
 
 ## 🎯 Start Your Revolution
 
 Ready to turn your dependencies into superpowers?
 
 ### **🔥 [The Revolution →](01-revolution/01-the-fragmentation-problem.md)**
-*Understand the broken world we're fixing*
 
-### **🚀 [Get Started →](02-getting-started/01-installation.md)**  
-*Transform your first project in 60 seconds*
+_Understand the broken world we're fixing_
+
+### **🚀 [Get Started →](02-getting-started/01-installation.md)**
+
+_Transform your first project in 60 seconds_
 
 ### **✨ [The Vision →](03-the-vision/01-universal-ai-assistant.md)**
-*See the future we're building*
+
+_See the future we're building_
 
 ---
 
-*`.vibe` - Because your AI assistant deserves to be as smart as your dependency list.*
+_`.vibe` - Because your AI assistant deserves to be as smart as your dependency list._

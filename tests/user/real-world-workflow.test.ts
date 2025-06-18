@@ -29,11 +29,12 @@ async function runVibeCommand(
   projectPath: string,
   args: string[],
 ): Promise<{ stdout: string; stderr: string; success: boolean }> {
-  const vibeExecutable = resolve(Deno.cwd(), 'vibe')
+  // Use deno run instead of compiled binary for cross-platform compatibility
+  const cliPath = resolve(Deno.cwd(), 'cli.ts')
 
   try {
-    const command = new Deno.Command(vibeExecutable, {
-      args,
+    const command = new Deno.Command('deno', {
+      args: ['run', '--allow-all', cliPath, ...args],
       cwd: projectPath,
       stdout: 'piped',
       stderr: 'piped',

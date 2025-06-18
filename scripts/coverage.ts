@@ -13,6 +13,7 @@
 
 import { walk } from 'https://deno.land/std@0.208.0/fs/walk.ts'
 import { parseArgs } from '@std/cli/parse-args'
+import { posix } from '@std/path'
 
 interface CoverageResult {
   totalFiles: number
@@ -28,9 +29,19 @@ interface CoverageOptions {
 }
 
 /**
+ * Normalize path to use forward slashes for consistent cross-platform behavior
+ */
+function normalizePath(filePath: string): string {
+  return filePath.replace(/\\/g, '/')
+}
+
+/**
  * Check if a file should be skipped based on patterns
  */
 function shouldSkipFile(filePath: string, skipPatterns: string[]): boolean {
+  // Normalize path to forward slashes for consistent matching
+  const normalizedPath = normalizePath(filePath)
+
   // Default exclusions (always applied)
   const defaultExclusions = [
     '/tests/',
@@ -42,20 +53,22 @@ function shouldSkipFile(filePath: string, skipPatterns: string[]): boolean {
 
   // Check default exclusions
   for (const exclusion of defaultExclusions) {
-    if (filePath.includes(exclusion)) {
+    if (normalizedPath.includes(exclusion)) {
       return true
     }
   }
 
   // Check user-specified skip patterns
   for (const pattern of skipPatterns) {
+    const normalizedPattern = normalizePath(pattern)
+
     // For folder patterns (e.g., "legacy")
-    if (filePath.includes(`/${pattern}/`) || filePath.startsWith(`${pattern}/`)) {
+    if (normalizedPath.includes(`/${normalizedPattern}/`) || normalizedPath.startsWith(`${normalizedPattern}/`)) {
       return true
     }
 
     // For exact file patterns (e.g., "test-dummy-single.ts")
-    if (filePath.endsWith(`/${pattern}`) || filePath === pattern) {
+    if (normalizedPath.endsWith(`/${normalizedPattern}`) || normalizedPath === normalizedPattern) {
       return true
     }
   }

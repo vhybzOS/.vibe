@@ -1,0 +1,21 @@
+{
+  "name": "deno-starter",
+  "version": "0.1.0",
+  "exports": {
+    ".": "./mod.ts"
+  },
+  "tasks": {
+    "dev": "deno run --allow-all --watch mod.ts",
+    "start": "deno run --allow-all mod.ts",
+    "test": "deno test --allow-all",
+    "check": "deno check **/*.ts",
+    "lint": "deno lint",
+    "fmt": "deno fmt"
+  },
+  "imports": {},
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build"
+  ]
+}

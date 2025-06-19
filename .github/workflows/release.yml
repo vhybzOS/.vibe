@@ -1,13 +1,11 @@
 name: Build and Release
 
 on:
-  push:
+  workflow_run:
+    workflows: ['Build and Test']
+    types:
+      - completed
     branches: [main]
-    paths:
-      - '**/*.ts'
-      - '!docs/**'
-      - 'deno.json'
-      - 'deno.lock'
   workflow_dispatch:
     inputs:
       tag:
@@ -22,6 +20,8 @@ jobs:
   check-version:
     name: 'Check Version Change'
     runs-on: ubuntu-latest
+    # Only run if test workflow completed successfully (or manual trigger)
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
     outputs:
       version-changed: ${{ steps.version-check.outputs.version-changed }}
       new-version: ${{ steps.version-check.outputs.new-version }}
@@ -29,6 +29,8 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
         with:
+          # For workflow_run, we need to checkout the commit that triggered the test workflow
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 2
 
       - name: 🔍 Check if version changed
@@ -107,7 +109,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: installer-build/
-          key: installers-${{ github.sha }}
+          key: installers-${{ github.event.workflow_run.head_sha || github.sha }}
           fail-on-cache-miss: true
 
       - name: 📋 Add installers to release

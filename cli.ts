@@ -13,6 +13,7 @@ import { Command } from 'commander'
 import { Effect } from 'effect'
 import { runCommand } from './lib/cli.ts'
 import { initCommand } from './commands/init.ts'
+import { executeVibeCode } from './commands/vibe-code.ts'
 import { InitOptionsSchema } from './schemas/config.ts'
 
 const program = new Command()
@@ -37,6 +38,15 @@ program
 
     // Run the command with proper error handling
     Effect.runPromise(runCommand(initCommand(validatedOptions)))
+  })
+
+// Code command
+program
+  .command('code <package>')
+  .description('📚 Fetch and display library documentation for the specified package')
+  .action((packageName: string) => {
+    // Run the command with proper error handling
+    Effect.runPromise(runCommand(executeVibeCode(packageName)))
   })
 
 // Parse command line arguments

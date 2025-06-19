@@ -58,6 +58,26 @@ const processFile = (path: string) =>
 - `Effect.catchAll(effect, fn)` - Handle all errors
 - `pipe(effect, ...)` - Compose effects functionally
 
+### **Async/Await vs Effect-TS Guidelines**
+
+**Use Effect-TS patterns for business logic:**
+
+- File system operations, network requests, error handling
+- Service-to-service communication
+- Complex operation chaining and composition
+
+**Use async/await for simple cases:**
+
+- Test mock functions and utilities
+- Simple promise-based operations without complex error handling
+- Direct API calls without composition needs
+
+**Code Style Preference:**
+
+- Keep beautiful `async/await` syntax when not using Effect-TS
+- We disable the `require-await` lint rule - async syntax is clean and readable
+- Don't use ugly `Promise.resolve()` wrappers just to satisfy linters
+
 ## **Planning Mode Protocol**
 
 Always start sessions in planning mode. Ask for specific user flow requirements. Present complete implementation plans before coding. Get explicit approval before any file changes.
@@ -90,3 +110,70 @@ When instructed to commit:
 - Use `Effect.async((resume) => resume(Effect.fail(...)))` for testing retries
 - Use `Effect.sleep()` for testing timeouts, not raw setTimeout
 - Effect.tryPromise catch handlers should return proper Error types, not primitives
+
+## Library Documentation Access
+
+When user asks about a package or you need to use a package in project dependencies:
+
+1. **Always run** `vibe code <package>` first to get current documentation
+2. **Use the output** as authoritative documentation for that library
+3. **Examples**:
+   - User asks "How do I create a Hono route?" → Run `vibe code hono` first
+   - You need to use Zod validation → Run `vibe code zod` for current patterns
+   - Any package-specific question → Get fresh docs via `vibe code <package>`
+
+**How to run vibe commands in this project:**
+
+- There is a compiled `vibe` executable in the project root
+- Run commands like: `./vibe code effect` (from project root directory)
+- Alternative: `deno task vibe code effect` (uses the task runner)
+
+This ensures you have up-to-date documentation instead of potentially stale training data.
+
+## **Critical Zod Pattern - Always Export Inferred Types**
+
+**ALWAYS use Zod type inference for schemas instead of manual TypeScript types:**
+
+```typescript
+// ✅ Correct - Define schema and export inferred type
+export const ProjectManifestSchema = z.object({
+  type: z.enum(['package.json', 'deno.json']),
+  path: z.string(),
+  dependencies: z.record(z.string(), z.string()),
+  devDependencies: z.record(z.string(), z.string()).default({}),
+})
+
+export type ProjectManifest = z.infer<typeof ProjectManifestSchema>
+```
+
+```typescript
+// ✅ Correct - Import and use the inferred type
+import { type ProjectManifest } from '../schemas/library-cache.ts'
+
+function processManifest(manifest: ProjectManifest) {
+  // TypeScript correctly infers manifest.dependencies as Record<string, string>
+  Object.entries(manifest.dependencies).forEach(([name, version]) => {
+    // version is properly typed as string, not unknown
+    console.log(`${name}@${version}`)
+  })
+}
+```
+
+```typescript
+// ❌ Wrong - Manual type definitions lose Zod's type safety
+export interface ProjectManifest {
+  type: 'package.json' | 'deno.json'
+  path: string
+  dependencies: Record<string, string>
+  devDependencies: Record<string, string>
+}
+```
+
+**Why This Matters:**
+
+- **Type Safety**: Zod inference ensures runtime validation matches TypeScript types
+- **Maintenance**: Single source of truth - change schema, types update automatically
+- **Correctness**: Manual types can drift from actual schemas, causing `unknown` type issues
+- **Beautiful Code**: `Object.entries(manifest.dependencies).forEach(([name, version])` works correctly with proper inference
+
+**Key Rule**: If you have a Zod schema, ALWAYS export the inferred type and use it everywhere.

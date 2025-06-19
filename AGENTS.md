@@ -192,6 +192,104 @@ deno task coverage
 6. **Present implementation plan**
 7. **Get approval, then exit planning mode**
 
+### **Mid-Implementation Checkpoint Protocol**
+
+When implementation becomes complex or before auto-compaction, create detailed checkboxes:
+
+1. **Current 8-Step Position** - Track where we are in the proven cycle:
+   - ✅ Step 1: **Write Tests First** - Define expected behavior from requirements
+   - ✅ Step 2: **Write Minimal Code** - Make tests pass with simplest implementation
+   - ✅ Step 3: **Extend Code Incrementally** - Add functionality piece by piece
+   - 🚧 Step 4: **Runtime Verification** - Run tests for specific file just edited
+   - ⭕ Step 5: **Test Evolution** - Update tests if architectural understanding evolved
+   - ⭕ Step 6: **Re-verify Runtime** - Ensure updated tests pass
+   - ⭕ Step 7: **Quality Gates** - Pass type check and lint
+   - ⭕ Step 8: **Loop** - Repeat for next increment
+
+2. **Implementation Progress Checkpoint** - List completed (✅) and remaining (🚧, ⭕) items
+3. **Architecture For Current Implementation Step** - Describe design to future clone without context:
+   - Overall system design and data flow
+   - Storage architecture and file structures
+   - Service architecture and responsibilities
+   - Error handling strategy and patterns
+   - Effect-TS composition patterns used
+4. **Continue implementation** - Fix remaining type issues and complete quality gates
+
+### **Threading Protocol**
+
+**When to Open a Thread:**
+
+- **User Request**: Explicit request to handle a sub-task or architectural concern
+- **Architectural Discovery**: Current work reveals larger design issues that need addressing
+- **Quality Gate Failures**: Testing/verification uncovers fundamental problems requiring redesign
+- **Scope Creep**: Requirements expand beyond current implementation boundaries
+- **Dependency Blocking**: Current work blocked by missing infrastructure or design decisions
+
+**Thread Management:**
+
+- **State Tracking**: Use indented bullet points with status emojis:
+  - 🚧 **Active** - Currently being worked on
+  - ✅ **Complete** - Finished and verified
+  - ⭕ **Pending** - Planned but not started
+  - ❌ **Blocked** - Cannot proceed due to dependencies
+- **Documentation Template**:
+  ```
+  ### **Thread**: [Name]
+  **Trigger**: [What caused this thread to open]
+  **Scope**: [What this thread covers]  
+  **Exit Criteria**: [How we know it's complete]
+  [Indented task list with status tracking]
+  ```
+
+**Thread Indentation Example:**
+
+```markdown
+**Main Plan:**
+
+- ✅ Step 1: **Requirements** - Complete
+- ✅ Step 2: **Planning** - Complete
+- 🚧 Step 3: **Implementation** - Fix core architecture
+  - [THREAD] ✅ **Step 1: Write Tests** - Define new interfaces
+    - Test RuntimeDetector service
+    - Test strategy pattern interfaces
+    - Demonstrate current broken behavior
+  - ⭕ **Step 2: Write Minimal Code** - Create strategy foundation
+    - Create PackageExtractorStrategy interface
+    - Create basic RuntimeDetector service
+    - Update extractAllDependencies for strategy pattern
+  - ⭕ **Step 3-8: [Continue thread cycle...]**
+- ⭕ Step 4: **Runtime Verification** - Test main feature
+- ⭕ Step 5-8: **[Continue main cycle...]**
+```
+
+**Key Principles:**
+
+- Thread steps are indented under the main step that opened them
+- Main plan continues at original indentation level
+- `[THREAD]` marker identifies thread entry point
+- Thread follows full 8-step cycle within the parent step
+
+**Thread Lifecycle:**
+
+1. **Open** - Document trigger, scope, exit criteria
+2. **Track** - Use same 8-step cycle with indented status tracking
+3. **Close** - Verify exit criteria met, update parent plan
+4. **Archive** - Document outcomes and return to main plan
+
+**Critical Thread Focus Rule:**
+
+- **ONLY run and fix tests directly related to the thread's implementation and exit criteria**
+- **DO NOT get distracted by unrelated test failures from main plan**
+- **Thread success = exit criteria met, regardless of other test failures**
+- **Other test failures are separate work items for the main plan**
+
+**Integration Rules:**
+
+- **Threads follow same protocols** - Requirements gathering, 8-step cycle, quality gates
+- **One active thread at a time** - Finish current thread before opening new ones
+- **Parent plan context** - Always maintain connection to main objective
+- **Status propagation** - Thread completion updates parent plan status
+
 ### **Between Features Protocol**
 
 - **Always return to planning mode** after completing a feature

@@ -71,9 +71,12 @@ export const findProjectRoot = (startPath: string): Effect.Effect<string, VibeEr
     Effect.sync(() => startPath),
     Effect.flatMap((currentPath) =>
       pipe(
-        fileExists(resolve(currentPath, 'package.json')),
-        Effect.flatMap((hasPackageJson) => {
-          if (hasPackageJson) {
+        Effect.all([
+          fileExists(resolve(currentPath, 'package.json')),
+          fileExists(resolve(currentPath, 'deno.json')),
+        ]),
+        Effect.flatMap(([hasPackageJson, hasDenoJson]) => {
+          if (hasPackageJson || hasDenoJson) {
             return Effect.succeed(currentPath)
           }
 

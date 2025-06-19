@@ -33,7 +33,15 @@ export interface CliError {
   cause?: unknown
 }
 
-export type VibeError = FileSystemError | ParseError | ConfigurationError | CliError
+export interface NetworkError {
+  readonly _tag: 'NetworkError'
+  message: string
+  url: string
+  status?: number
+  cause?: unknown
+}
+
+export type VibeError = FileSystemError | ParseError | ConfigurationError | CliError | NetworkError
 
 // Error creators
 export const createFileSystemError = (cause: unknown, path: string, message: string): FileSystemError => ({
@@ -59,6 +67,19 @@ export const createCliError = (cause: unknown, message: string, command: string)
   _tag: 'CliError',
   message,
   command,
+  cause,
+})
+
+export const createNetworkError = (
+  cause: unknown,
+  url: string,
+  message: string,
+  status?: number,
+): NetworkError => ({
+  _tag: 'NetworkError',
+  message,
+  url,
+  ...(status !== undefined && { status }),
   cause,
 })
 

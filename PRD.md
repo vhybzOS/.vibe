@@ -4,192 +4,291 @@
 
 Transform every dependency in your project into instantly-available tools across all AI environments. Solve IDE fragmentation by making your entire development toolkit accessible in Cursor, ChatGPT, Claude, and any MCP-compatible AI.
 
-## Core Problem
+## The "Vibe Coding" Philosophy
 
-Developers suffer from **AI IDE fragmentation**:
+Based on our blog article "Vibe code in production and don't listen to haters!", .vibe enables a new development paradigm:
 
-- Start coding in Cursor, can't continue context on ChatGPT mobile
-- Each AI tool has different interfaces for the same underlying capabilities
-- Project knowledge trapped in specific IDEs
-- Constant context switching between development environments
+- **Passion Coding**: The 5% of elegant, creative code you love to write
+- **Vibe Coding**: The 95% where you become a demanding architect, setting vision while AI handles implementation
+- **Corporate Jujitsu**: Using TDD, documentation standards, and other "corporate BS" as tools to control AI agents
 
-## Solution Approach
+**Key Promise**: Developers become "Karens" who define the architectural vision while robots handle the boring implementation work.
 
-**"Empowering coach lurking in the shadows"** - minimal-touch automation that:
+## Core Problem & Solution
 
-1. **Observes** your project dependencies automatically
-2. **Extracts** developer tools from each library (Hono → routing tools, Zod → validation tools)
-3. **Exposes** these tools universally via MCP protocol
+**Problem**: AI IDE fragmentation traps project knowledge in specific tools, forcing constant context switching.
+
+**Solution**: "Empowering coach lurking in the shadows" - minimal-touch automation that:
+
+1. **Observes** project dependencies automatically
+2. **Extracts** developer tools from each library
+3. **Exposes** tools universally via MCP protocol
 4. **Enables** seamless AI assistance across all environments
 
-## Key Differentiators
+## Current Implementation: Library Documentation Fetcher
 
-- **Zero Configuration**: `vibe init` → everything automated thereafter
-- **Tool-Centric**: Libraries become discoverable, callable tools
-- **Universal Access**: Same tools in Cursor, ChatGPT, Claude Desktop, etc.
-- **Network Effects**: Projects with `.vibe` folders share tool intelligence
-- **Non-Invasive**: No workflow disruption, no maintenance overhead
+### Blog Article Commitments
+
+Our blog article makes specific promises about current functionality:
+
+- 🚧 `vibe code hono` - Shows up-to-date library documentation (IMPLEMENTATION COMPLETE - Testing Phase)
+- 🚧 `vibe code hono --list` - Lists available capability patterns (Future Phase 2)
+- 🚧 `vibe code hono middleware` - Shows capability-specific docs (Future Phase 2)
+- 🚧 `vibe code --map zod zod/v4` - Version-specific AI context mapping (Future Phase 2)
+
+**Current Status**: Phase 1 implementation complete with comprehensive tests. In Step 4-5 of 8-step development cycle (Runtime Verification & Test Evolution).
+
+### Phase 1: Simple Documentation Fetcher (Current Priority)
+
+**What We're Building Now:**
+
+```bash
+vibe code hono              # Fetches https://hono.dev/llms.txt → prints to stdout
+vibe code effect            # Fetches https://effect.website/llms.txt → prints to stdout  
+vibe code zod               # Fetches https://zod.dev/llms.txt → prints to stdout
+```
+
+**Core Workflow:**
+
+1. Parse `package.json`/`deno.json` for dependencies
+2. Query package registry (npm/JSR) to get homepage URL
+3. Extract apex domain and fetch `{domain}/llms.txt`
+4. Cache in `.vibe/libraries/docs/{package}/README.md`
+5. Print cached content on subsequent calls
+
+**Storage Structure (Designed for Future Expansion):**
+
+```
+.vibe/
+├── libraries/
+│   ├── index.toml                    # package → version + domain mapping
+│   └── docs/
+│       ├── hono/
+│       │   ├── README.md             # Current: Main llms.txt content
+│       │   ├── route.md              # Future: Routing capability docs
+│       │   └── middleware.md         # Future: Middleware capability docs
+│       └── effect/
+│           ├── README.md             # Current: Main llms.txt content
+│           ├── pipe.md               # Future: Pipe capability docs
+│           └── error.md              # Future: Error handling docs
+```
+
+### Technical Implementation Status
+
+**✅ COMPLETED: Effect-TS Architecture**
+
+```typescript
+const vibeCodeCommand = (packageName: string) =>
+  pipe(
+    findProjectRoot(Deno.cwd()), // ✅ Implemented
+    Effect.flatMap((projectPath) =>
+      pipe(
+        validatePackageInProject(packageName, projectPath), // ✅ Implemented
+        Effect.flatMap((dependency) =>
+          pipe(
+            getCachedLibraryDocs(projectPath, packageName), // ✅ Implemented
+            Effect.catchAll(() => fetchAndCacheLibraryDocs(projectPath, packageName, dependency.version) // ✅ Implemented
+            ),
+          )
+        ),
+      )
+    ),
+  )
+```
+
+**✅ COMPLETED: Core Services**
+
+- `schemas/library-cache.ts` - Zod v4 schemas, TOML structure, helper functions
+- `services/registry-client.ts` - npm/JSR HTTP client with automatic fallback
+- `services/package-detector.ts` - package.json/deno.json parsing with dependency extraction
+- `services/library-cache.ts` - TOML index management + markdown file caching
+- `commands/vibe-code.ts` - Main command implementation with proper error handling
+
+**🚧 IN PROGRESS: Test Suite (Step 4-5 of 8-Step Cycle)**
+
+- ✅ Unit tests: library-cache.test.ts (11/11 passing)
+- ✅ Unit tests: package-spec-parser.test.ts (7/7 passing - NEW: comprehensive parser tests)
+- ✅ Unit tests: package-detector.test.ts (12/12 passing - FIXED: structured parsing)
+- 🚧 Unit tests: registry-client.test.ts (fixing legacy extractPackageName test expectations)
+- ✅ Integration tests: vibe-code.test.ts (written, needs verification)
+- ✅ User tests: library-documentation.test.ts (written, needs verification)
+
+**🔧 COMPLETED: Package Parsing Architecture Fix**
+
+- ✅ Created `parsePackageSpec()` function for structured parsing of `npm:hono@^4.0.0` → `{registry: 'npm', name: 'hono', version: '^4.0.0'}`
+- ✅ Updated package-detector to use clean structured data flow
+- ✅ Fixed test expectations to match corrected implementation behavior
+- ✅ Maintained backward compatibility with `extractPackageName()` function
+
+**🚧 CURRENT STATUS: Step 7 Quality Gates + Active Thread**
+
+**Main Plan - Phase 1 Implementation (Step 7 of 8-Step Cycle):**
+
+- ✅ **Step 1**: **Write Tests First** - Define expected behavior from requirements
+- ✅ **Step 2**: **Write Minimal Code** - Make tests pass with simplest implementation
+- 🚧 **Step 3**: **Extend Code Incrementally** - Add functionality piece by piece
+  - [THREAD] ✅ **Step 1: Write Tests First** - Define Runtime Strategy Interfaces
+    - ✅ Created comprehensive test suite for new runtime detection architecture
+    - ✅ Demonstrated current broken behavior - revealed root causes:
+      - **Registry detection hardcoded to 'npm'**: @std/path shows as 'npm' instead of 'jsr'
+      - **Missing dependency types**: no peer/optional support (only production/development)
+      - **Package lookup issue**: `vibe code effect` fails despite `extractAllDependencies` finding deps
+    - ✅ Tests show `extractAllDependencies` DOES process Deno imports correctly
+    - ✅ Defined interfaces for `RuntimeDetector`, `PackageExtractorStrategy`, `NodePackageExtractor`, `DenoPackageExtractor`
+    - ✅ Tests ready for TDD implementation of strategy pattern
+  - ⭕ **Step 2: Write Minimal Code** - Create Strategy Pattern Foundation
+    - Create `PackageExtractorStrategy` interface
+    - Create basic `RuntimeDetector` service (file presence detection)
+    - Create minimal `NodePackageExtractor` and `DenoPackageExtractor` classes
+    - Update `extractAllDependencies` to use strategy pattern instead of generic processing
+  - ⭕ **Step 3: Extend Code Incrementally** - Implement Full Strategy Logic
+    - Complete `NodePackageExtractor`: all dependency types (peer, optional) + npm registry logic
+    - Complete `DenoPackageExtractor`: imports parsing + registry detection (npm:, jsr:, bare → jsr default)
+    - Enhanced `RuntimeDetector`: handle hybrid projects (both package.json + deno.json)
+    - Registry detection service: parse all spec formats (npm:, jsr:, github:, etc.)
+  - ⭕ **Step 4: Runtime Verification** - Test Real Project Integration
+    - Test `vibe code effect` in our actual Deno project
+    - Test registry detection with our real dependencies (npm:effect, npm:commander, jsr:@std/*)
+    - Run tests for each modified file
+    - Verify strategy pattern correctly identifies and processes each runtime
+  - ⭕ **Step 5: Test Evolution** - Update Existing Test Suite
+    - Update existing `package-detector.test.ts` for strategy pattern
+    - Add comprehensive runtime-specific test coverage
+    - Update integration tests for new architecture
+    - Ensure backward compatibility with existing behavior
+  - ⭕ **Step 6: Re-verify Runtime** - Full Test Suite Validation
+    - Run complete unit test suite (should still be 162+ passing)
+    - Verify integration tests work with new architecture
+    - Test edge cases: hybrid projects, unusual registry specs
+  - ⭕ **Step 7: Quality Gates** - Standard Verification
+    - `deno task check` - 0 TypeScript errors
+    - `deno task lint` - 0 violations
+    - Full test suite passes
+    - Manual verification: `vibe code effect` works
+  - ⭕ **Step 8: Close Thread** - Verify Exit Criteria
+    - ✅ `vibe code effect` works in our Deno project
+    - ✅ Foundation for Python/other runtimes established via strategy pattern
+    - ✅ Registry detection fixed (no longer hardcoded to 'npm')
+    - ✅ All dependency types supported (peer, optional)
+- ⭕ **Step 4**: **Runtime Verification** - Run tests for specific file just edited
+- ⭕ **Step 5**: **Test Evolution** - Update tests if architectural understanding evolved
+- ⭕ **Step 6**: **Re-verify Runtime** - Ensure updated tests pass
+- ⭕ **Step 7**: **Quality Gates** - Pass type check and lint
+- ⭕ **Step 8**: **Loop** - Repeat for next increment
+
+### **Thread Details**: Multi-Runtime Package Detection Architecture
+
+**Trigger**: Quality Gate Failure - Manual verification revealed `extractAllDependencies` ignores Deno import maps\
+**Scope**: Fix broken Deno package detection + design extensible runtime-specific interfaces\
+**Exit Criteria**: `vibe code effect` works in our Deno project + foundation for Python/other runtimes
+
+**Package Registry Support:**
+
+- **npm packages**: `https://registry.npmjs.org/{package}` → extract `homepage` field
+- **JSR packages**: `https://jsr.io/@{scope}/{name}` → extract homepage from metadata
+- **Deno imports**: Support both `npm:` and `jsr:` specifiers from `deno.json`
+
+### Legacy Code Integration Strategy
+
+**Merge Strategy (Critical - Don't Overwrite):**
+
+- Check if target files exist before copying from legacy
+- Merge functionality rather than overwrite existing implementations
+- Use legacy as reference for patterns when conflicts exist
+
+**Direct Integration Candidates:**
+
+- `legacy/lib/{effects,errors,fs}.ts` → `src/lib/` (merge if exists)
+
+**Adaptation Candidates:**
+
+- `legacy/discovery/manifests/*` → `src/services/registry-client.ts` (adapt patterns)
+- `legacy/schemas/dependency-doc.ts` → `src/schemas/library-cache.ts` (adapt schemas)
+
+### CLAUDE.md Integration
+
+Add new section instructing AI agents:
+
+```markdown
+## Library Documentation Access
+
+When user asks about a package or you need to use a package in project dependencies:
+
+1. **Always run** `vibe code <package>` first to get current documentation
+2. **Use the output** as authoritative documentation for that library
+3. **Examples**: User asks about Hono routing → Run `vibe code hono` first
+```
+
+### Immediate Benefits
+
+- **Self-dogfooding**: Use immediately in .vibe development workflow
+- **Fresh documentation**: Current llms.txt content vs. stale LLM training data
+- **Foundation**: Storage and caching infrastructure for future capability extraction
+- **Battle-tested patterns**: Reuse proven Effect-TS utilities from legacy codebase
+
+## Future Roadmap
+
+### Phase 2: Enhanced Command Interface
+
+**Delivering Blog Article Promises:**
+
+- `vibe code hono --list` - List available capability patterns
+- `vibe code hono middleware` - Show capability-specific documentation
+- `vibe code --map zod zod/v4` - Version-specific AI context mapping
+
+**Technical Requirements:**
+
+- LLM-powered capability extraction from documentation
+- Enhanced TOML index with capability tracking
+- Pattern storage in capability-specific .md files
+
+### Phase 3: Automatic Intelligence & File Watching
+
+- Monitor `package.json`/`deno.json` for changes
+- Automatic documentation fetching for new dependencies
+- Version change detection and cache updates
+- Background capability extraction with confidence scoring
+
+### Phase 4: Universal Access via MCP Integration
+
+- Dynamic MCP tool generation from cached capabilities
+- Same functionality in ChatGPT, Claude Desktop, Cursor
+- Cross-platform integration with consistent interface
+- Repository intelligence for clone-and-go tool availability
+
+### Phase 5: Advanced Features & Quality of Life
+
+- Enhanced CLI commands (`vibe status`, `vibe sync`, `vibe extract`)
+- Performance optimization and cache validation
+- Migration tools and developer experience improvements
 
 ## Architecture Overview
 
-### Our Codebase Structure
+### Project Structure After Implementation
 
 ```
-.vibe/                       # Our development repo
-├── ure/                     # Unified Rule Engine module (OUR CODE)
-│   ├── schemas/             # Zod schemas for user project structures
-│   ├── services/            # Core business logic services
-│   ├── transformers/        # IDE-specific file generators
-│   ├── parsers/             # TOML/content parsing (@std/toml)
-│   ├── watcher/             # File watching system
-│   ├── lib/                 # Effect-TS utilities (from legacy)
-│   └── index.ts             # Main URE orchestrator
-├── templates/               # Generation templates (OUR TEMPLATES)
-│   ├── agents.md.hbs        # Handlebars template for AGENTS.md
-│   ├── claude.md.hbs        # Handlebars template for CLAUDE.md
-│   ├── cursor/              # Cursor .mdc templates
-│   └── windsurf/            # Windsurf .mdc templates
+user-project/
+├── .vibe/
+│   ├── config.json                # Project configuration
+│   ├── libraries/                 # NEW: Library documentation cache
+│   │   ├── index.toml            # Fast lookup: package → version + domain
+│   │   └── docs/{package}/       # Per-package documentation folders
+│   ├── rules/                    # EXISTING: Rule definitions
+│   └── generated/                # EXISTING: Generated file tracking
+├── package.json / deno.json      # Dependencies we'll scan
+├── AGENTS.md                     # EXISTING: Generated by URE
+└── CLAUDE.md                     # EXISTING: Will be enhanced
 ```
 
-### User Project Structure (Created by `vibe init`)
-
-```
-their-project/
-├── .vibe/                   # Created by our tool (THEIR DATA)
-│   ├── config.json         # Project configuration
-│   ├── rules/              # Rule definitions (TOML + .md)
-│   ├── dependencies/       # Dependency docs (TOML + .md)
-│   └── generated/          # Generated file tracking
-├── AGENTS.md              # Generated by our URE (committed)
-├── CLAUDE.md              # Generated by our URE (committed)
-├── .cursor/rules/*.mdc    # Generated by our URE (git-ignored)
-├── .windsurf/rules/*.mdc  # Generated by our URE (git-ignored)
-└── .claude/commands/*.md  # Generated by our URE (git-ignored)
-```
-
-## Validated Requirements
-
-### Core User Stories
-
-1. **As a developer**, I want my project's capabilities available in any AI environment
-2. **As a mobile coder**, I want to continue Cursor work seamlessly in ChatGPT mobile
-3. **As a team member**, I want instant access to project tools when I clone a repo
-4. **As a productivity-focused dev**, I want zero-maintenance tool orchestration
-
-### Feature Priorities
-
-#### ✅ P0: Foundation + IDE Integration (Current Active)
-
-**URE System:**
-
-- **URE Module** (`ure/` in our codebase): Complete engine for processing user .vibe/ data
-- **TOML Indexes**: Fast metadata lookup using @std/toml in user .vibe/ folders
-- **Rule Management**: TOML index + .md content files for user-editable rules
-- **Templates Module** (`templates/` in our codebase): Handlebars generators for all IDE formats
-- **File Generation**: Our templates + user data → user IDE files
-- **File Watching**: Our daemon monitors user .vibe/ changes
-
-**IDE Support:**
-
-- **Cursor Support**: Generate `.cursor/rules/*.mdc` with YAML frontmatter + content
-- **Windsurf Support**: Generate `.windsurf/rules/*.mdc` with similar MDC format
-- **Claude Code Support**: Generate `CLAUDE.md` (committed) + optional `CLAUDE.local.md`
-- **Gitignore Management**: Auto-add IDE-specific paths (`.cursor/`, `.windsurf/`, `.claude/`)
-
-**Dependency Discovery:**
-
-- **Manifest Detection**: package.json/deno.json parsing
-- **llms.txt Fetching**: HTTP client for dependency documentation
-- **Simple Storage**: Copy llms.txt → .vibe/dependencies/docs/name.md
-
-#### 🚀 Next Priority: Dependency Documentation Access
-
-**`vibe code` Command** (Immediate Next Feature):
-
-- **User Story**: As an LLM implementing code, I want to quickly access current dependency documentation
-- **Technical Implementation**: HTTP client + documentation fetcher + local storage
-- **User Impact**: Fresh docs instead of stale LLM training data during coding
-- **Foundation**: Builds on existing dependency detection for future IDE file generation
-
-#### 📅 P1: Enhanced Tool Intelligence (Future)
-
-- **LLM Integration**: Fine-grained tool extraction from dependencies using user API keys
-- **Per-Dependency Folders**: `.vibe/dependencies/hono/` structure with tools/ subdirectories
-- **Tool Extraction**: LLM-powered capability analysis (e.g., Hono → routing, middleware, validation tools)
-- **Dynamic MCP Exposure**: Basic (single tool) vs Pro (multiple tools) per dependency
-
-#### 📅 P2: Universal Access (Future)
-
-- **Claude Commands**: Generate `.claude/commands/*.md` for slash commands
-- **MCP Server Enhancement**: Dynamic tool loading based on extraction level
-- **Cross-Platform**: Multiple AI environment integration across Cursor, ChatGPT, Claude Desktop
-- **Repository Intelligence**: Clone-and-go tool availability
-
-#### 📅 P3: Quality of Life (Future)
-
-- **Enhanced CLI**: `vibe extract`, `vibe status`, `vibe sync` commands
-- **Migration Tools**: Convert existing configs to URE format
-- **Performance Optimization**: Caching, incremental updates, confidence scoring
-- **Error Recovery**: Graceful handling of edge cases
-
-## IDE File Format Specifications
-
-### Cursor (.cursor/rules/*.mdc)
-
-- **Format**: YAML frontmatter + Markdown content
-- **Metadata**: description, globs, triggers, alwaysApply, priority
-- **Features**: Nested rules, file references via `@filename.ext`
-- **Priority**: Filename ordering and YAML metadata controls priority
-
-### Windsurf (.windsurf/rules/*.mdc)
-
-- **Format**: Similar MDC format to Cursor
-- **Integration**: Compatible with Ruler bootstrapping tools
-- **Application**: Rules apply when Windsurf agent runs
-
-### Claude Code (CLAUDE.md + .claude/commands/*.md)
-
-- **Format**: Free-form Markdown for style guidelines, context, tool descriptions
-- **Commands**: Supports `.claude/commands/*.md` for slash commands in CLI
-- **Flexibility**: `CLAUDE.local.md` (git-ignored) and subdirectory support
-
-## Technical Implementation
-
-### TOML + Markdown Hybrid System
-
-- **Metadata**: TOML indexes for O(1) lookups (`@std/toml`)
-- **Content**: Markdown files for human-readable documentation
-- **Performance**: Fast metadata access with rich content editing
-
-### Single Source of Truth Strategy
-
-- **User edits**: `.vibe/rules/content/code-style.md` (human-readable)
-- **Our URE generates**: All IDE-specific formats from single source
-- **Automatic Sync**: File watcher detects changes → regenerates all IDE files
-- **No manual intervention**: Consistent rules across all AI environments
-
-### Legacy Code Integration
-
-- **Direct Copy**: `legacy/lib/{effects,errors,fs}.ts` → `ure/lib/`
-- **Adaptation**: File watcher, dependency detection, project schemas
-- **Reference**: Universal rule patterns, sync mechanisms
-
-## Success Metrics
-
-- **Adoption**: Projects using `.vibe` folders
-- **Tool Coverage**: Percentage of dependencies with extracted tools
-- **Cross-Platform Usage**: Same tools used across multiple AI environments
-- **Developer Velocity**: Reduced context switching, faster tool discovery
-- **IDE Integration**: Seamless rule sync across Cursor, Windsurf, Claude Code
-
-## Technical Constraints
+### Technical Constraints
 
 - **Deno-native**: No Node.js dependencies, use @std/toml for parsing
-- **Effect-TS**: Functional composition, type-safe errors throughout URE
+- **Effect-TS**: Functional composition, type-safe errors throughout
 - **File-Based**: Local storage, no cloud dependencies
-- **Zero Config**: Autonomous operation after `vibe init`
-- **Universal Compatibility**: Support for all major AI IDE formats
+- **Merge-Safe**: Never overwrite existing implementations
 
 ## Success Definition
 
-A developer can `vibe init` in any project, edit rules in `.vibe/rules/content/`, and immediately have those rules available in consistent formats across Cursor, Windsurf, Claude Code, and any future AI environment, with automatic sync and zero maintenance overhead.
+**Phase 1 Success**: A developer can run `vibe code <package>` for any dependency in their project and get fresh, authoritative documentation printed to stdout, with intelligent caching for fast subsequent access.
+
+**Long-term Success**: A developer can `vibe init` in any project and have their entire development toolkit available across all AI environments with zero maintenance overhead.

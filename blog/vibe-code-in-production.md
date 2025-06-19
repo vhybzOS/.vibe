@@ -108,7 +108,7 @@ AI coding tools are ready. The techniques work. The only thing standing between 
 
 That voice is wrong, and it's holding you back.
 
-So here's my challenge: try Vibe Coding on your next project. Don't follow hyped tutorials and click-bait videos. Build a process that feels right. Something that vibes with *you!* Set the architectural vision. Then vibe-check the results and iterate until it matches.
+So here's my challenge: try Vibe Coding on your next project. Don't follow hyped tutorials and click-bait videos. Build a process that feels right. Something that vibes with _you!_ Set the architectural vision. Then vibe-check the results and iterate until it matches.
 
 You might find yourself vibe coding a lot after a while, and still have time for that beer. 🍺
 

@@ -209,11 +209,15 @@ export const validateProjectPath = (projectPath: string): Effect.Effect<string, 
   )
 
 // Copy a single file from template to destination
-const copyFile = (sourcePath: string, destPath: string): Effect.Effect<void, VibeError> =>
-  pipe(
+const copyFile = (sourcePath: string, destPath: string): Effect.Effect<void, VibeError> => {
+  // Handle .template files by removing the .template extension in destination
+  const finalDestPath = destPath.endsWith('.template') ? destPath.slice(0, -9) : destPath
+
+  return pipe(
     readTextFile(sourcePath),
-    Effect.flatMap((content) => writeTextFile(destPath, content)),
+    Effect.flatMap((content) => writeTextFile(finalDestPath, content)),
   )
+}
 
 // Recursively copy template directory
 export const copyTemplate = (templateName: string, destinationPath: string): Effect.Effect<void, VibeError> => {

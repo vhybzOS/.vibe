@@ -74,17 +74,17 @@ Now the magic happens. The agent bounces between two roles:
 
 This cycle (implement, test, refactor, test, repeat) forces the chaotic energy of the LLM to converge on a high-quality result that matches your vision. You don't need to understand every line of the legacy code it generates. You just need to vibe-check the end result. You have legacy code sure, but isn't all code legacy except maybe in the eyes of the few nerds hypnotized by that tech specifically? Algorithm is king. If you get your dream algorithm to shippable state, no one cares about the code underneath.
 
-## We're Building .vibe with Vibe Coding
+## We're Building `.vibe` with Vibe Coding
 
-This whole philosophy isn't just theory. It's how we're building [.vibe](https://github.com/vhybzOS/.vibe), our open-source project that's eating our own dog food.
+This whole philosophy isn't just theory. It's how we're building [`.vibe` (dotvibe)](https://github.com/vhybzOS/.vibe), an open-source tool for codifying vibe flows!
 
-**.vibe** is a local-only, autonomous dependency management system built to solve "AI amnesia". On each `npm install <package>`, the know-how of using that package is injected to LLM's context, on autopilot. Think of it as giving your AI coder a photographic memory of your codebase, including your libraries and unique dev workflow..
+**.vibe** is a local-only, autonomous dependency management system built to solve "AI amnesia". On each `npm install <package>`, the know-how of using that package is injected to LLM's context. All you need to do is a simple `vibe init` command, everything runs on autopilot. Think of it as giving your AI coder a photographic memory of your codebase, including your libraries and unique dev workflow.
 
-We started building .vibe in full "Karen mode," using AI agents to generate tons of features rapidly. We quickly ended up with a `legacy/` directory full of functional but messy code. It proved the raw power but also highlighted the danger. Without proper constraints, AI can create an unmaintainable mess faster than any junior developer ever could. The excess of legacy became uncontrollable.
+We started building `.vibe` in full "Karen mode", using AI agents to generate tons of features rapidly. We quickly ended up with a `legacy/` directory full of functional but messy code. It proved the raw power but also highlighted the danger. Without proper constraints, AI can create an unmaintainable mess faster than any junior developer ever could. The excess of legacy became uncontrollable.
 
-So we built a harness using the corporate jujitsu I described. Our framework consists of `AGENTS.md` and `CLAUDE.md` files that serve as a "Constitution" for our AI workforce, laying down non-negotiable architectural laws like functional programming with Effect-TS, strict TDD cycles, and tagged union error handling. We use `@tested_by` annotations that anchor every line of generated code to concrete tests, making the entire system self-auditing. We even have `PRD.md` (Product Requirements Document) - another corporate concept, finally finding a home!
+So we built a harness using the corporate jujitsu I described. Our framework consists of `AGENTS.md` and `CLAUDE.md` files that serve as a "Constitution" for our AI workforce, laying down non-negotiable architectural laws like functional programming patterns, strict TDD cycles, and tagged union error handling. We use `@tested_by` annotations that anchor every line of generated code to concrete tests, making the entire system self-auditing. We even have `PRD.md` (Product Requirements Document) - another corporate concept, finally finding a home!
 
-But here's where it gets really cool: we're baking this philosophy directly into the tool itself. A `vibe code` command is being designed _for the robot_ to use. An LLM will run `vibe code hono --list` to discover what code patterns are available, then `vibe code hono middleware` to show the LLM up to date docs specifically for the used version of `hono`. The CLI becomes an API that allows AI to understand and execute on the human's architectural vision. The robot vibe-codes and understands the human authors!
+But here's where it gets really cool: we're baking this philosophy directly into the tool itself. A `vibe code` command is being designed _for the robot_ to use. An LLM will run `vibe code hono --list` to discover what code patterns are available, then `vibe code hono middleware` to show the LLM up to date docs specifically for the used version of `hono` library. The CLI becomes an API that allows AI to understand and execute on the human's architectural vision. The robot vibe-codes and understands the human authors!
 
 ## Don't Listen to the Haters
 

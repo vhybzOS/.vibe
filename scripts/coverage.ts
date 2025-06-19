@@ -123,6 +123,15 @@ async function analyzeCoverage(options: CoverageOptions): Promise<CoverageResult
   const implementationFiles = await findImplementationFiles(options)
   console.log(`📁 Found ${implementationFiles.length} implementation files`)
 
+  // DEBUG: Log all discovered files for CI vs local comparison
+  if (Deno.env.get('CI') || Deno.args.includes('--debug')) {
+    console.log('\n🔍 DEBUG: All discovered implementation files:')
+    implementationFiles.forEach((file, index) => {
+      console.log(`   ${index + 1}. ${file}`)
+    })
+    console.log('')
+  }
+
   const uncoveredFiles: string[] = []
   let coveredCount = 0
 
@@ -140,6 +149,21 @@ async function analyzeCoverage(options: CoverageOptions): Promise<CoverageResult
   const percentage = implementationFiles.length > 0
     ? Math.round((coveredCount / implementationFiles.length) * 100)
     : 100
+
+  // DEBUG: Log coverage calculation details for CI debugging
+  if (Deno.env.get('CI') || Deno.args.includes('--debug')) {
+    console.log('\n🔍 DEBUG: Coverage calculation details:')
+    console.log(`   Total files: ${implementationFiles.length}`)
+    console.log(`   Covered files: ${coveredCount}`)
+    console.log(`   Uncovered files: ${uncoveredFiles.length}`)
+    console.log(`   Calculated percentage: ${percentage}%`)
+    console.log(`   Success threshold: 80%`)
+    console.log(`   Will pass: ${percentage >= 80}`)
+    if (uncoveredFiles.length > 0) {
+      console.log(`   Uncovered files: ${uncoveredFiles.join(', ')}`)
+    }
+    console.log('')
+  }
 
   return {
     totalFiles: implementationFiles.length,

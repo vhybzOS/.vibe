@@ -10,26 +10,26 @@ Build a local-first, autonomous AI development environment using functional prog
 
 1. **Read AGENTS.md** (this file) completely
 2. **Fetch [coding guidelines](PROTOCOLS.md#coding-protocols)** before writing any code
-3. **Follow [planning mode protocol](PROTOCOLS.md#planning-mode)** - Don't code yet
+3. **Follow [planning mode protocol](PROTOCOLS.md#planning-mode-protocol)** - Don't code yet
 4. **Ask: "What user flow should we implement first?"**
-5. **Use [requirements gathering protocol](PROTOCOLS.md#requirements-gathering)** to get complete scope
-6. **Present implementation plan using [requirements template](PROTOCOLS.md#requirements-template)**
+5. **Use [requirements gathering protocol](PROTOCOLS.md#requirements-gathering-protocol)** to get complete scope
+6. **Present implementation plan using [requirements template](PROTOCOLS.md#requirements-gathering-protocol)**
 7. **Get approval, then exit planning mode**
 
 ### **Implementation Workflow**
 
-1. **Follow [8-step implementation cycle](PROTOCOLS.md#8-step-cycle)** religiously
-2. **Use [TDD protocol](PROTOCOLS.md#tdd-protocol)** for all new code
-3. **Apply [Effect-TS patterns](PROTOCOLS.md#effect-patterns)** consistently
+1. **Follow [8-step implementation cycle](PROTOCOLS.md#8-step-implementation-cycle)** religiously
+2. **Use [TDD protocol](PROTOCOLS.md#test-driven-development)** for all new code
+3. **Apply [Effect-TS patterns](PROTOCOLS.md#effect-ts-patterns)** consistently
 4. **Check [quality gates](PROTOCOLS.md#quality-gates)** at each step
-5. **For complex work, use [thread management protocol](PROTOCOLS.md#thread-management)**
+5. **For complex work, use [thread management protocol](PROTOCOLS.md#thread-management-protocol)**
 
 ### **Critical Implementation Principles**
 
 - **Runtime Safety ≠ TypeScript Safety** - Always verify changes work at runtime
-- **Test First** - Write tests before implementation using [TDD protocol](PROTOCOLS.md#tdd-protocol)
-- **Quality Gates** - Never skip [quality gate checklist](PROTOCOLS.md#quality-checklist)
-- **Effect-TS Excellence** - Use [Effect-TS patterns](PROTOCOLS.md#effect-patterns) for all business logic
+- **Test First** - Write tests before implementation using [TDD protocol](PROTOCOLS.md#test-driven-development)
+- **Quality Gates** - Never skip [quality gate checklist](PROTOCOLS.md#quality-gates)
+- **Effect-TS Excellence** - Use [Effect-TS patterns](PROTOCOLS.md#effect-ts-patterns) for all business logic
 
 ## 🏗️ **ARCHITECTURAL PRINCIPLES**
 
@@ -40,7 +40,7 @@ Build a local-first, autonomous AI development environment using functional prog
 - **Tagged union errors** with specific context (`FileSystemError`, `ParseError`, etc.)
 - **Composable error handling** using `Effect.catchTag` and `Effect.catchAll`
 
-_See [Effect-TS patterns](PROTOCOLS.md#effect-patterns) for detailed implementation guidance._
+_See [Effect-TS patterns](PROTOCOLS.md#effect-ts-patterns) for detailed implementation guidance._
 
 ### **Functional Programming Purity**
 
@@ -55,7 +55,7 @@ _See [Effect-TS patterns](PROTOCOLS.md#effect-patterns) for detailed implementat
 - **Service-oriented architecture** - stateless services with clear dependencies
 - **Thin entry points** - CLI/API are just routing layers that delegate to services
 
-_See [code style standards](PROTOCOLS.md#code-style) for detailed guidelines._
+_See [code style standards](PROTOCOLS.md#code-style-standards) for detailed guidelines._
 
 ## 🧪 **TEST-DRIVEN DEVELOPMENT STRATEGY**
 
@@ -63,7 +63,7 @@ _See [code style standards](PROTOCOLS.md#code-style) for detailed guidelines._
 
 Every implementation file MUST include test file references in header comments.
 
-_Use [file header template](PROTOCOLS.md#file-headers) and follow [TDD protocol](PROTOCOLS.md#tdd-protocol) for complete guidance._
+_Use [file header template](PROTOCOLS.md#file-header-templates) and follow [TDD protocol](PROTOCOLS.md#test-driven-development) for complete guidance._
 
 ### **Test Organization & Discovery**
 
@@ -95,7 +95,7 @@ When encountering multiple test failures, follow systematic approach:
 
 **Critical Rule**: When core functionality works correctly in manual testing, failing unit tests usually indicate outdated test expectations, not broken implementation.
 
-_See [TDD protocol](PROTOCOLS.md#tdd-protocol) for complete test management guidance._
+_See [TDD protocol](PROTOCOLS.md#test-driven-development) for complete test management guidance._
 
 ## 📚 **LEGACY CODE REFERENCE GUIDELINES**
 
@@ -113,8 +113,8 @@ _See [TDD protocol](PROTOCOLS.md#tdd-protocol) for complete test management guid
 ### **Critical Technical Requirements**
 
 - **ONLY Zod v4**: Use `zod/v4` import and `z.output<>` types
-- **Effect-TS**: All async operations use [Effect-TS patterns](PROTOCOLS.md#effect-patterns)
-- **Tagged Union Errors**: Use proven [error handling patterns](PROTOCOLS.md#error-patterns)
+- **Effect-TS**: All async operations use [Effect-TS patterns](PROTOCOLS.md#effect-ts-patterns)
+- **Tagged Union Errors**: Use proven [error handling patterns](PROTOCOLS.md#error-handling-patterns)
 
 ## 🔧 **OS FILE MANAGEMENT**
 
@@ -125,14 +125,14 @@ _See [TDD protocol](PROTOCOLS.md#tdd-protocol) for complete test management guid
 - Starting new features or major changes
 - Implementation status changes
 - Roadmap priorities shift
-- Use [thread template](PROTOCOLS.md#thread-template) for complex work tracking
+- Use [thread template](PROTOCOLS.md#thread-management-protocol) for complex work tracking
 
 **TESTS.md** - Update when:
 
 - Entering testing phases
 - Test strategy evolves
 - Major issues discovered
-- Reference [TDD protocol](PROTOCOLS.md#tdd-protocol) and [quality gates](PROTOCOLS.md#quality-gates)
+- Reference [TDD protocol](PROTOCOLS.md#test-driven-development) and [quality gates](PROTOCOLS.md#quality-gates)
 
 **PROTOCOLS.md** - Update when:
 
@@ -151,15 +151,15 @@ _See [TDD protocol](PROTOCOLS.md#tdd-protocol) for complete test management guid
 
 For complex implementations or architectural changes:
 
-1. **Open thread** using [thread template](PROTOCOLS.md#thread-template)
-2. **Track progress** with [status emojis](PROTOCOLS.md#status-emojis)
-3. **Follow thread indentation** pattern from [thread management protocol](PROTOCOLS.md#thread-management)
+1. **Open thread** using [thread template](PROTOCOLS.md#thread-management-protocol)
+2. **Track progress** with [status emojis](PROTOCOLS.md#thread-management-protocol)
+3. **Follow thread indentation** pattern from [thread management protocol](PROTOCOLS.md#thread-management-protocol)
 4. **Close thread** when exit criteria met
 
 ### **Between Features Protocol**
 
 - **Always return to planning mode** after completing a feature
-- **Use [planning mode protocol](PROTOCOLS.md#planning-mode)** for next steps
+- **Use [planning mode protocol](PROTOCOLS.md#planning-mode-protocol)** for next steps
 - **Ask for next user flow** rather than assuming priorities
 - **Present options** based on current foundation
 - **Get explicit direction** before proceeding
@@ -169,15 +169,15 @@ For complex implementations or architectural changes:
 When instructed to commit:
 
 1. **Follow [commit protocol](PROTOCOLS.md#commit-protocol)** exactly
-2. **Use [commit message template](PROTOCOLS.md#commit-message-template)** for consistency
-3. **Run [quality gate checklist](PROTOCOLS.md#quality-checklist)** first
+2. **Use [commit message template](PROTOCOLS.md#commit-protocol)** for consistency
+3. **Run [quality gate checklist](PROTOCOLS.md#quality-gates)** first
 
 ### **Session Handoff**
 
 At end of session:
 
-1. **Follow [session handoff protocol](PROTOCOLS.md#handoff-protocol)**
-2. **Use [session handoff template](PROTOCOLS.md#session-handoff-template)**
+1. **Follow [session handoff protocol](PROTOCOLS.md#session-handoff-protocol)**
+2. **Use [session handoff template](PROTOCOLS.md#session-handoff-protocol)**
 3. **Ensure next session has clear starting point**
 
 ## 🎯 **SUCCESS METRICS**

@@ -12,7 +12,7 @@
 
 **🎉 Implementation Status**: Phase 1 PRODUCTION READY
 
-All tests follow [TDD protocol](PROTOCOLS.md#tdd-protocol) with proper `@tested_by` annotations.
+All tests follow [TDD protocol](PROTOCOLS.md#test-driven-development) with proper `@tested_by` annotations.
 
 ## 📊 Progress Summary
 
@@ -234,10 +234,10 @@ const getCoverageScript = () => {
 
 For future test work, follow these protocols:
 
-**Test Development**: Use [TDD protocol](PROTOCOLS.md#tdd-protocol) for all new features\
-**Quality Verification**: Run [quality gate checklist](PROTOCOLS.md#quality-checklist) before completion\
-**Test Organization**: Follow [file header template](PROTOCOLS.md#file-headers) for `@tested_by` annotations\
-**Complex Testing**: Use [thread management protocol](PROTOCOLS.md#thread-management) for multi-step test refactoring
+**Test Development**: Use [TDD protocol](PROTOCOLS.md#test-driven-development) for all new features\
+**Quality Verification**: Run [quality gate checklist](PROTOCOLS.md#quality-gates) before completion\
+**Test Organization**: Follow [file header template](PROTOCOLS.md#file-header-templates) for `@tested_by` annotations\
+**Complex Testing**: Use [thread management protocol](PROTOCOLS.md#thread-management-protocol) for multi-step test refactoring
 
 **Test Suite Health**: PRODUCTION READY\
 **Next Testing Phase**: Ready for Phase 2 feature development with robust foundation

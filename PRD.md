@@ -133,7 +133,7 @@ const vibeCodeCommand = (packageName: string) =>
 
 - ✅ All TypeScript compilation errors resolved
 - ✅ Test suite: 100% passing (210 tests, 0 failures)
-- ✅ Quality gates: All passing ([quality gate checklist](PROTOCOLS.md#quality-checklist))
+- ✅ Quality gates: All passing ([quality gate checklist](PROTOCOLS.md#quality-gates))
 - ✅ Windows compatibility: Cross-platform filesystem handling fixed
 - ✅ Test utilities: Unified into single shared `tests/utils.ts`
 
@@ -151,13 +151,13 @@ Phase 1 implementation is **COMPLETE** and **PRODUCTION READY**. All [quality ga
 
 **🎯 Next Phase Planning:**
 
-Ready to begin Phase 2 planning. Use [planning mode protocol](PROTOCOLS.md#planning-mode) and [requirements gathering protocol](PROTOCOLS.md#requirements-gathering) for next feature selection.
+Ready to begin Phase 2 planning. Use [planning mode protocol](PROTOCOLS.md#planning-mode-protocol) and [requirements gathering protocol](PROTOCOLS.md#requirements-gathering-protocol) for next feature selection.
 
-For complex Phase 2 work, use [thread template](PROTOCOLS.md#thread-template):
+For complex Phase 2 work, use [thread template](PROTOCOLS.md#thread-management-protocol):
 
 ### **Thread Template Reference** {#thread-template}
 
-For future complex implementations, copy this template from [PROTOCOLS.md](PROTOCOLS.md#thread-template):
+For future complex implementations, copy this template from [PROTOCOLS.md](PROTOCOLS.md#thread-management-protocol):
 
 ```markdown
 ### **Thread**: [Name]
@@ -168,7 +168,7 @@ For future complex implementations, copy this template from [PROTOCOLS.md](PROTO
 [Indented task list with status tracking using status emojis]
 ```
 
-**Thread Management**: Follow [thread management protocol](PROTOCOLS.md#thread-management) with [status emojis](PROTOCOLS.md#status-emojis) for progress tracking.
+**Thread Management**: Follow [thread management protocol](PROTOCOLS.md#thread-management-protocol) with [status emojis](PROTOCOLS.md#thread-management-protocol) for progress tracking.
 
 ### Legacy Code Integration Strategy
 

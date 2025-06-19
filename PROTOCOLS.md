@@ -4,7 +4,7 @@ Reference manual for all development workflows and coding standards. This file i
 
 ## Workflow Protocols
 
-### Planning Mode Protocol {#planning-mode}
+### Planning Mode Protocol
 
 **NEVER start coding without clear requirements. Follow this sequence:**
 
@@ -22,7 +22,7 @@ Reference manual for all development workflows and coding standards. This file i
 - "What's the priority: local memory storage or MCP integration?"
 - "Do you want daemon startup or CLI-only operations first?"
 
-### Thread Management Protocol {#thread-management}
+### Thread Management Protocol
 
 **When to Open a Thread:**
 
@@ -32,7 +32,7 @@ Reference manual for all development workflows and coding standards. This file i
 - **Scope Creep**: Requirements expand beyond current implementation boundaries
 - **Dependency Blocking**: Current work blocked by missing infrastructure or design decisions
 
-**Thread Template:** {#thread-template}
+**Thread Template:**
 
 ```markdown
 ### **Thread**: [Name]
@@ -43,7 +43,7 @@ Reference manual for all development workflows and coding standards. This file i
 [Indented task list with status tracking]
 ```
 
-**Status Emojis:** {#status-emojis}
+**Status Emojis:**
 
 - 🚧 **Active** - Currently being worked on
 - ✅ **Complete** - Finished and verified
@@ -76,7 +76,7 @@ Reference manual for all development workflows and coding standards. This file i
 - **DO NOT get distracted by unrelated test failures from main plan**
 - **Thread success = exit criteria met, regardless of other test failures**
 
-### 8-Step Implementation Cycle {#8-step-cycle}
+### 8-Step Implementation Cycle
 
 **The Proven Development Flow:**
 
@@ -89,9 +89,9 @@ Reference manual for all development workflows and coding standards. This file i
 7. **Quality Gates** - Pass type check and lint
 8. **Loop** - Repeat for next increment
 
-### Requirements Gathering Protocol {#requirements-gathering}
+### Requirements Gathering Protocol
 
-**Documentation Template:** {#requirements-template}
+**Documentation Template:**
 For each user flow, document:
 
 - **User Story**: As a [user], I want [goal] so that [benefit]
@@ -100,7 +100,7 @@ For each user flow, document:
 - **Testing Strategy**: What tests prove it works
 - **Definition of Done**: How to verify completion
 
-### Commit Protocol {#commit-protocol}
+### Commit Protocol
 
 **When instructed to commit:**
 
@@ -117,7 +117,7 @@ For each user flow, document:
 7. **Craft** the best summary from recent work
 8. **Execute** `git commit -m` in one shot with comprehensive message
 
-**Commit Message Template:** {#commit-message-template}
+**Commit Message Template:**
 
 ```bash
 git commit -m "$(cat <<'EOF'
@@ -134,7 +134,7 @@ EOF
 )"
 ```
 
-### Session Handoff Protocol {#handoff-protocol}
+### Session Handoff Protocol
 
 **End of Session Checklist:**
 
@@ -144,7 +144,7 @@ EOF
 4. **Commit working state** - ensure all changes are saved and documented
 5. **Run final quality gates** - leave codebase in clean state
 
-**Session Handoff Template:** {#session-handoff-template}
+**Session Handoff Template:**
 
 ```markdown
 ## Session Summary
@@ -157,7 +157,7 @@ EOF
 
 ## Coding Protocols
 
-### Effect-TS Patterns {#effect-patterns}
+### Effect-TS Patterns
 
 **Correct Import Pattern:**
 
@@ -202,7 +202,7 @@ const processFile = (path: string) =>
 - Use `Effect.sleep()` for testing timeouts, not raw setTimeout
 - Effect.tryPromise catch handlers should return proper Error types, not primitives
 
-### Async/Await Guidelines {#async-guidelines}
+### Async/Await Guidelines
 
 **Use Effect-TS patterns for business logic:**
 
@@ -222,7 +222,7 @@ const processFile = (path: string) =>
 - We disable the `require-await` lint rule - async syntax is clean and readable
 - Don't use ugly `Promise.resolve()` wrappers just to satisfy linters
 
-### Error Handling Patterns {#error-patterns}
+### Error Handling Patterns
 
 **Tagged Union Error Pattern:**
 
@@ -238,7 +238,7 @@ const processData = (input: InputType): Effect<OutputType, DomainError, never> =
   )
 ```
 
-### CLI Command Patterns {#cli-patterns}
+### CLI Command Patterns
 
 **Higher-order Function Wrapper:**
 
@@ -253,7 +253,7 @@ export const commandName = withVibeDirectory((vibePath, options) =>
 )
 ```
 
-### Zod Type Inference {#zod-patterns}
+### Zod Type Inference
 
 **ALWAYS use Zod type inference for schemas instead of manual TypeScript types:**
 
@@ -278,7 +278,7 @@ export type ProjectManifest = z.infer<typeof ProjectManifestSchema>
 
 **Key Rule**: If you have a Zod schema, ALWAYS export the inferred type and use it everywhere.
 
-### Library Documentation Access {#library-access}
+### Library Documentation Access
 
 **When user asks about a package or you need to use a package in project dependencies:**
 
@@ -297,7 +297,7 @@ export type ProjectManifest = z.infer<typeof ProjectManifestSchema>
 
 This ensures you have up-to-date documentation instead of potentially stale training data.
 
-### Test-Driven Development {#tdd-protocol}
+### Test-Driven Development
 
 **Test-Implementation Linking (CRITICAL):**
 
@@ -336,7 +336,7 @@ Every implementation file MUST include test file references in header comments:
 - **Integration tests** (`tests/integration/`) - component interaction
 - **User tests** (`tests/user/`) - complete workflows, CLI behavior
 
-### Quality Gates {#quality-gates}
+### Quality Gates
 
 **Never Skip These Checks:**
 
@@ -345,7 +345,7 @@ Every implementation file MUST include test file references in header comments:
 - **Runtime Tests**: All relevant tests passing
 - **Test Coverage**: Every file has `@tested_by` annotations
 
-**Quality Gate Checklist:** {#quality-checklist}
+**Quality Gate Checklist:**
 
 ```markdown
 - [ ] `deno task check` passes (0 TypeScript errors)
@@ -355,7 +355,7 @@ Every implementation file MUST include test file references in header comments:
 - [ ] Manual verification of core functionality
 ```
 
-### File Header Templates {#file-headers}
+### File Header Templates
 
 **Implementation File Header:**
 
@@ -371,7 +371,7 @@ Every implementation file MUST include test file references in header comments:
  */
 ```
 
-### Code Style Standards {#code-style}
+### Code Style Standards
 
 **TypeScript Excellence:**
 

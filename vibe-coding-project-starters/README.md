@@ -27,6 +27,7 @@ vibe init deno myproject    # Creates project from deno-template/
 **Solution**: Use `.template` suffix for problematic files.
 
 **Convention**:
+
 - Template files ending in `.template` are automatically renamed during scaffolding
 - Example: `integration.test.ts.template` → `integration.test.ts` in scaffolded project
 - Preserves template functionality while avoiding build conflicts

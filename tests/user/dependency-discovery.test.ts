@@ -18,7 +18,7 @@ import {
   runVibeCommand,
   validateDependencyDetection,
   validateVibeStructure,
-} from './user-test-utils.ts'
+} from '../utils.ts'
 
 describe('Dependency Discovery User Tests', () => {
   let projectPath: string

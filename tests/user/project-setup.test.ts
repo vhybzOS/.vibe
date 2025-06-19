@@ -23,7 +23,7 @@ import {
   runVibeCommand,
   validateConfigQuality,
   validateVibeStructure,
-} from './user-test-utils.ts'
+} from '../utils.ts'
 
 describe('Project Setup User Tests', () => {
   let projectPath: string

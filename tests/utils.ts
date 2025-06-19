@@ -55,8 +55,16 @@ export async function findProjectRoot(startPath?: string): Promise<string> {
       console.log(`[DEBUG-WIN] Found deno.json, returning: ${projectRoot} - ${new Date().toISOString()}`)
       return projectRoot
     } catch {
-      projectRoot = resolve(projectRoot, '..')
-      console.log(`[DEBUG-WIN] Moving up to parent: ${projectRoot} - ${new Date().toISOString()}`)
+      const parentPath = resolve(projectRoot, '..')
+      console.log(`[DEBUG-WIN] Moving up to parent: ${parentPath} - ${new Date().toISOString()}`)
+
+      // Check if we've reached the root (parent path equals current path)
+      if (parentPath === projectRoot) {
+        console.log(`[DEBUG-WIN] Reached filesystem root, breaking loop - ${new Date().toISOString()}`)
+        break
+      }
+
+      projectRoot = parentPath
     }
   }
 

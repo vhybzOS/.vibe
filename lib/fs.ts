@@ -9,7 +9,7 @@
  */
 
 import { Effect, pipe } from 'effect'
-import { dirname, resolve } from '@std/path'
+import { basename, dirname, resolve } from '@std/path'
 import { z } from 'zod/v4'
 import { createFileSystemError, createParseError, type VibeError } from './errors.ts'
 
@@ -111,8 +111,8 @@ export const getProjectName = (projectPath: string): Effect.Effect<string, VibeE
       if (hasPackageJson) {
         return pipe(
           loadJson(z.object({ name: z.string().optional() }))(resolve(projectPath, 'package.json')),
-          Effect.map((pkg) => pkg.name || projectPath.split('/').pop() || 'unnamed-project'),
-          Effect.catchAll(() => Effect.succeed(projectPath.split('/').pop() || 'unnamed-project')),
+          Effect.map((pkg) => pkg.name || basename(projectPath) || 'unnamed-project'),
+          Effect.catchAll(() => Effect.succeed(basename(projectPath) || 'unnamed-project')),
         )
       }
 
@@ -122,13 +122,13 @@ export const getProjectName = (projectPath: string): Effect.Effect<string, VibeE
         Effect.flatMap((hasDenoJson) => {
           if (!hasDenoJson) {
             // Use directory name as fallback
-            return Effect.succeed(projectPath.split('/').pop() || 'unnamed-project')
+            return Effect.succeed(basename(projectPath) || 'unnamed-project')
           }
 
           return pipe(
             loadJson(z.object({ name: z.string().optional() }))(resolve(projectPath, 'deno.json')),
-            Effect.map((deno) => deno.name || projectPath.split('/').pop() || 'unnamed-project'),
-            Effect.catchAll(() => Effect.succeed(projectPath.split('/').pop() || 'unnamed-project')),
+            Effect.map((deno) => deno.name || basename(projectPath) || 'unnamed-project'),
+            Effect.catchAll(() => Effect.succeed(basename(projectPath) || 'unnamed-project')),
           )
         }),
       )

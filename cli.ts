@@ -14,6 +14,7 @@ import { Effect } from 'effect'
 import { runCommand } from './lib/cli.ts'
 import { initCommand } from './commands/init.ts'
 import { executeVibeCode } from './commands/vibe-code.ts'
+import { executeTemplateScaffolding } from './services/template-scaffolding.ts'
 import { InitOptionsSchema } from './schemas/config.ts'
 
 const program = new Command()
@@ -23,21 +24,24 @@ program
   .description('🥷 Universal Developer Tool Orchestrator - The empowering coach lurking in the shadows')
   .version('1.0.0')
 
-// Init command
+// Init command - handles both current directory init and template scaffolding
 program
-  .command('init')
-  .description('🚀 Initialize .vibe in the current project (one-time setup, everything automated thereafter)')
+  .command('init [runtime] [project-name]')
+  .description('🚀 Initialize .vibe (no args) or scaffold from template (init node/deno [name])')
   .option('-f, --force', 'Overwrite existing .vibe directory')
   .option('-q, --quiet', 'Suppress non-essential output')
-  .action((options) => {
-    // Validate options with schema
-    const validatedOptions = InitOptionsSchema.parse({
-      force: options.force || false,
-      quiet: options.quiet || false,
-    })
-
-    // Run the command with proper error handling
-    Effect.runPromise(runCommand(initCommand(validatedOptions)))
+  .action((runtime?: string, projectName?: string, options?: any) => {
+    if (!runtime) {
+      // No runtime specified - initialize .vibe in current directory
+      const validatedOptions = InitOptionsSchema.parse({
+        force: options?.force || false,
+        quiet: options?.quiet || false,
+      })
+      Effect.runPromise(runCommand(initCommand(validatedOptions)))
+    } else {
+      // Runtime specified - scaffold new project from template
+      Effect.runPromise(runCommand(executeTemplateScaffolding(runtime, projectName)))
+    }
   })
 
 // Code command

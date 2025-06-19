@@ -253,7 +253,7 @@ Every implementation file MUST include test file references in header comments:
 
 ```typescript
 // Basic test structure
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { myFunction } from '../src/utils.js'
 
 describe('myFunction', () => {

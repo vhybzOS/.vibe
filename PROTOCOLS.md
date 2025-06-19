@@ -336,6 +336,47 @@ Every implementation file MUST include test file references in header comments:
 - **Integration tests** (`tests/integration/`) - component interaction
 - **User tests** (`tests/user/`) - complete workflows, CLI behavior
 
+### CLI Testing Protocol
+
+**Local CLI Testing Pattern:**
+
+When testing CLI commands during development, use the local `./vibe` wrapper script instead of the installed `vibe` command:
+
+```bash
+# ✅ Correct - Use local wrapper script
+./vibe init                    # Test init command
+./vibe init node myproject     # Test template scaffolding
+./vibe code hono              # Test library documentation
+./vibe --help                 # Test help output
+
+# ❌ Incorrect - Don't use deno task vibe
+deno task vibe --help         # This runs CLI through task runner
+
+# ❌ Incorrect - Don't use uninstalled command
+vibe init                     # This requires global installation
+```
+
+**Local Wrapper Script (`./vibe`):**
+
+The `./vibe` script is a bash wrapper that:
+
+- Preserves working directory context
+- Uses `deno run --allow-all` with proper permissions
+- Allows testing CLI without installing binary
+
+**Testing CLI Commands in Code:**
+
+```typescript
+// Use local CLI path for testing
+const cliPath = resolve(await findProjectRoot(), 'cli.ts')
+const command = new Deno.Command('deno', {
+  args: ['run', '--allow-all', cliPath, ...args],
+  cwd: projectPath,
+  stdout: 'piped',
+  stderr: 'piped',
+})
+```
+
 ### Quality Gates
 
 **Never Skip These Checks:**

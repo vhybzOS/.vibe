@@ -45,8 +45,20 @@ export const InitOptionsSchema = z.object({
   quiet: z.boolean().optional().default(false),
 })
 
+// Template scaffolding schemas
+export const SupportedRuntimeSchema = z.enum(['node', 'deno'])
+
+export const TemplateScaffoldOptionsSchema = z.object({
+  runtime: SupportedRuntimeSchema,
+  projectName: z.string().min(1, 'Project name cannot be empty'),
+  targetDirectory: z.string(),
+  force: z.boolean().optional().default(false),
+})
+
 // Export types using z.output for Zod v4
 export type ProjectConfig = z.output<typeof ProjectConfigSchema>
 export type DetectedTool = z.output<typeof DetectedToolSchema>
 export type Dependency = z.output<typeof DependencySchema>
 export type InitOptions = z.output<typeof InitOptionsSchema>
+export type SupportedRuntime = z.output<typeof SupportedRuntimeSchema>
+export type TemplateScaffoldOptions = z.output<typeof TemplateScaffoldOptionsSchema>

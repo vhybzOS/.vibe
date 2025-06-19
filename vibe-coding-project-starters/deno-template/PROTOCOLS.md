@@ -194,19 +194,19 @@ _👋 Customize these sections for your tech stack and preferences_
 ```typescript
 // ✅ Structured error handling
 type Result<T, E = Error> = { success: true; data: T } | {
-  success: false;
-  error: E;
-};
+  success: false
+  error: E
+}
 
 const processData = async (input: unknown): Promise<Result<ProcessedData>> => {
   try {
-    const validated = validateInput(input);
-    const processed = await transformData(validated);
-    return { success: true, data: processed };
+    const validated = validateInput(input)
+    const processed = await transformData(validated)
+    return { success: true, data: processed }
   } catch (error) {
-    return { success: false, error: error as Error };
+    return { success: false, error: error as Error }
   }
-};
+}
 ```
 
 ### Test-Driven Development

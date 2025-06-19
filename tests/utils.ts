@@ -409,6 +409,23 @@ app.listen(port, () => {
 }
 
 /**
+ * Execute function with a temporary directory, automatically cleaning up afterwards
+ * Reusable pattern for tests that need temporary directories
+ */
+export async function withTempDir<T>(fn: (tempDir: string) => Promise<T>): Promise<T> {
+  const tempDir = await Deno.makeTempDir({ prefix: 'vibe_test_' })
+  try {
+    return await fn(tempDir)
+  } finally {
+    try {
+      await Deno.remove(tempDir, { recursive: true })
+    } catch {
+      // Ignore cleanup errors - directory might not exist or be in use
+    }
+  }
+}
+
+/**
  * Creates a realistic Deno project structure for testing
  */
 export async function createRealisticDenoProject(projectPath: string): Promise<void> {

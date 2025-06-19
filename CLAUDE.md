@@ -12,8 +12,9 @@ Before any work, you MUST:
 
 ## **Project Context**
 
-This is a local-first, autonomous AI development environment built with Effect-TS and functional programming principles. Quality and architectural consistency are paramount.
+This is `.vibe` - a local-first, autonomous AI development environment built with Effect-TS and functional programming principles. Quality and architectural consistency are paramount.
 
+**Project Name**: `.vibe`\
 **Website**: https://dotvibe.dev\
 **Repository**: https://github.com/vhybzOS/.vibe
 

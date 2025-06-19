@@ -1,4 +1,4 @@
-# Vibe Test Suite
+# .vibe Test Suite
 
 ## 🧪 Test Organization
 
@@ -238,8 +238,8 @@ All tests follow the TDD principles from AGENTS.md:
 Add to `tests/unit/` for testing individual functions:
 
 ```typescript
-describe('New Feature Unit Tests', () => {
-  it('should test specific function behavior', async () => {
+Deno.test('New Feature Unit Tests', async (t) => {
+  await t.step('should test specific function behavior', async () => {
     // Test isolated function
   })
 })
@@ -250,8 +250,8 @@ describe('New Feature Unit Tests', () => {
 Add to `tests/integration/` for testing component interaction:
 
 ```typescript
-describe('Feature Integration Tests', () => {
-  it('should test components working together', async () => {
+Deno.test('Feature Integration Tests', async (t) => {
+  await t.step('should test components working together', async () => {
     // Test multiple components interacting
   })
 })
@@ -262,9 +262,9 @@ describe('Feature Integration Tests', () => {
 Add to `tests/user/` for end-to-end workflows:
 
 ```typescript
-describe('Feature User Workflow', () => {
-  it('should test complete user experience', async () => {
-    // Create project, run vibe commands, verify results
+Deno.test('Feature User Workflow', async (t) => {
+  await t.step('should test complete user experience', async () => {
+    // Create project, run .vibe commands, verify results
   })
 })
 ```

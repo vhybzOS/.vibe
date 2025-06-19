@@ -1,7 +1,7 @@
 {
   "name": "your-project-name",
-  "version": "1.0.0",
-  "description": "A project built with the Vibe Coding Operating System",
+  "version": "0.1.0",
+  "description": "A project built with the `.vibe` Operating System",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {

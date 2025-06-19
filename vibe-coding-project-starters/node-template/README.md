@@ -8,7 +8,7 @@ This starter template gives you:
 
 - **🧠 AGENTS.md** - Main entrypoint for any coding agent with clear development protocols
 - **📋 PROTOCOLS.md** - Comprehensive workflow and coding standards reference manual
-- **🚀 CLAUDE.md** - Simple setup for AI coding assistants
+- **🚀 CLAUDE.md** - Simple setup for AI coding assistants (change filename to your own if not Claude Code)
 - **📊 PRD.md** - Product Requirements Document template for planning features
 - **🧪 TESTS.md** - Test tracking and strategy documentation template
 

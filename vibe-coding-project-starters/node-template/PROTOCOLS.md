@@ -126,10 +126,6 @@ git commit -m "$(cat <<'EOF'
 [Detailed technical description with specific changes]
 [Context about why this change was needed]
 [Impact/benefits of the change]
-
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
 ```

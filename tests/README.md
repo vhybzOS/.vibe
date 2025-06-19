@@ -1,32 +1,158 @@
-# .vibe Test Suite
+# Vibe Test Suite
 
-Comprehensive test coverage organized by test type and scope.
+## 🧪 Test Organization
 
-## Test Structure
+The test suite is organized into three categories:
 
-### 🔬 **Unit Tests** (`tests/unit/`)
+- **`unit/`** - Fast, isolated tests for individual functions and modules
+- **`integration/`** - Tests for component interaction and service integration
+- **`user/`** - End-to-end workflow tests simulating real user scenarios
 
-Tests individual functions and components in isolation.
+## 🔧 Test Utilities
 
-- **`init-command.test.ts`** - Core init command functionality
-- Focus: Pure function behavior, edge cases, error handling
-- Fast execution, no external dependencies
+### Shared Test Helpers (`utils.ts`)
 
-### 🔗 **Integration Tests** (`tests/integration/`)
+All tests should use the shared utilities from `utils.ts` for consistent behavior:
 
-Tests interaction between components and systems.
+```typescript
+import {
+  cleanupTestProject,
+  createTestProject,
+  ensureDirTest,
+  findProjectRoot,
+  safeGetCwd,
+  withDirectory,
+} from '../utils.ts'
+```
 
-- **`cli-integration.test.ts`** - CLI components working together
-- Focus: Component interaction, schema validation, file system integration
-- Medium execution time, tests real component integration
+### Key Utilities
 
-### 👤 **User Tests** (`tests/user/`)
+#### `createTestProject(testName, files, options)`
 
-End-to-end workflow simulations from user perspective.
+Creates a temporary test project with specified manifest files.
 
-- **`real-world-workflow.test.ts`** - Complete user workflows
-- Focus: Real project structures, CLI executable, complete user experience
-- Slower execution, tests actual executable with realistic scenarios
+**Options:**
+
+- `testCategory`: `'unit' | 'integration' | 'user'` - determines subdirectory
+- `isolateDirectory`: `boolean` - use `/tmp` for complete isolation
+
+**Example:**
+
+```typescript
+const testDir = await createTestProject('my-test', {
+  'package.json': { name: 'test-project', dependencies: { hono: '^4.0.0' } },
+  'deno.json': { imports: { effect: 'npm:effect@^3.0.0' } },
+}, { testCategory: 'unit' })
+```
+
+#### `withDirectory(dir, fn)`
+
+Safely executes a function in a different directory with automatic restoration.
+
+**Example:**
+
+```typescript
+await withDirectory(testDir, async () => {
+  const result = await Effect.runPromise(someCommand())
+  assertEquals(result, expectedValue)
+})
+```
+
+#### `safeGetCwd(fallbackUrl?)`
+
+Gets current working directory with graceful fallback if directory doesn't exist.
+
+#### `findProjectRoot(startPath?)`
+
+Finds project root by looking for `deno.json`, with robust error handling.
+
+## 🏗️ Directory Management Best Practices
+
+### Problem: Working Directory Instability
+
+Tests can fail when:
+
+- Previous tests delete the current working directory
+- Tests run in different orders
+- Directory changes cascade between tests
+
+### Solution: Robust Directory Handling
+
+**❌ Fragile Pattern:**
+
+```typescript
+// Don't do this - will fail if cwd is deleted
+let projectRoot = Deno.cwd()
+```
+
+**✅ Robust Pattern:**
+
+```typescript
+// Use shared utilities that handle missing directories
+const projectRoot = await findProjectRoot()
+const originalCwd = safeGetCwd()
+```
+
+### Test Structure Template
+
+```typescript
+import { cleanupTestProject, createTestProject, withDirectory } from '../utils.ts'
+
+Deno.test('Feature Tests', async (t) => {
+  await t.step('should do something', async () => {
+    const testDir = await createTestProject('feature-test', {
+      'package.json': { name: 'test', dependencies: { pkg: '^1.0.0' } },
+    })
+
+    try {
+      await withDirectory(testDir, async () => {
+        // Test logic here - directory will be restored automatically
+        const result = await Effect.runPromise(featureFunction())
+        assertEquals(result, expected)
+      })
+    } finally {
+      await cleanupTestProject(testDir)
+    }
+  })
+})
+```
+
+## 🎯 Test Isolation Principles
+
+### 1. Independent Directory Management
+
+- Each test creates its own temporary directory
+- Use `withDirectory()` for safe directory changes
+- Always clean up test directories in `finally` blocks
+
+### 2. Graceful Error Handling
+
+- Tests should not fail due to missing working directories
+- Use `safeGetCwd()` instead of `Deno.cwd()` directly
+- Handle directory deletion gracefully
+
+### 3. Predictable Test Environment
+
+- Tests should work regardless of execution order
+- No shared state between tests
+- Clean slate for each test scenario
+
+## 🚨 Common Pitfalls
+
+### Directory Not Found Errors
+
+**Symptom:** `NotFound: No such file or directory (os error 2)` on `Deno.cwd()`
+**Solution:** Use `safeGetCwd()` or `findProjectRoot()` from test utilities
+
+### Test Isolation Failures
+
+**Symptom:** Tests pass individually but fail when run together
+**Solution:** Use `withDirectory()` and proper cleanup in `finally` blocks
+
+### Path Resolution Issues
+
+**Symptom:** Tests can't find project files or create temporary directories
+**Solution:** Use `findProjectRoot()` to establish stable base directory
 
 ## Running Tests
 

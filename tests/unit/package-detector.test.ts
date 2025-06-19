@@ -10,16 +10,7 @@
 import { Effect } from 'effect'
 import { assertEquals, assertRejects } from '@std/assert'
 import { resolve } from '@std/path'
-// Use native Deno APIs for test setup
-async function ensureDirTest(path: string): Promise<void> {
-  try {
-    await Deno.mkdir(path, { recursive: true })
-  } catch (error) {
-    if (!(error instanceof Deno.errors.AlreadyExists)) {
-      throw error
-    }
-  }
-}
+import { cleanupTestProject, createTestProject, ensureDirTest } from '../utils.ts'
 
 import {
   type DetectedDependency,
@@ -27,53 +18,6 @@ import {
   extractAllDependencies,
   validatePackageInProject,
 } from '../../services/package-detector.ts'
-
-// Test helper to create temporary test directories
-interface ProjectFile {
-  name?: string
-  version?: string
-  dependencies?: Record<string, string>
-  devDependencies?: Record<string, string>
-  peerDependencies?: Record<string, string>
-  optionalDependencies?: Record<string, string>
-  imports?: Record<string, string>
-}
-
-async function createTestProject(
-  testName: string,
-  files: Record<string, ProjectFile>,
-): Promise<string> {
-  // Find project root by looking for deno.json - this works regardless of cwd
-  let projectRoot = Deno.cwd()
-  while (projectRoot !== '/' && projectRoot !== '.') {
-    try {
-      await Deno.stat(resolve(projectRoot, 'deno.json'))
-      break
-    } catch {
-      projectRoot = resolve(projectRoot, '..')
-    }
-  }
-
-  const testDir = resolve(projectRoot, 'tests', 'tmp', 'unit', testName)
-  await ensureDirTest(testDir)
-
-  for (const [filename, content] of Object.entries(files)) {
-    const filePath = resolve(testDir, filename)
-    await ensureDirTest(resolve(filePath, '..')) // Ensure parent directory exists
-    await Deno.writeTextFile(filePath, JSON.stringify(content, null, 2))
-  }
-
-  return testDir
-}
-
-// Clean up test directories
-async function cleanupTestProject(testDir: string): Promise<void> {
-  try {
-    await Deno.remove(testDir, { recursive: true })
-  } catch {
-    // Ignore cleanup errors
-  }
-}
 
 Deno.test('Package.json Detection Tests', async (t) => {
   await t.step('detectProjectManifests finds package.json', async () => {
@@ -97,7 +41,7 @@ Deno.test('Package.json Detection Tests', async (t) => {
 
     const testDir = await createTestProject('package-json-test', {
       'package.json': packageJson,
-    })
+    }, { testCategory: 'unit' })
 
     try {
       const manifests = await Effect.runPromise(detectProjectManifests(testDir))
@@ -122,7 +66,7 @@ Deno.test('Package.json Detection Tests', async (t) => {
 
     const testDir = await createTestProject('minimal-package-json', {
       'package.json': packageJson,
-    })
+    }, { testCategory: 'unit' })
 
     try {
       const manifests = await Effect.runPromise(detectProjectManifests(testDir))
@@ -155,7 +99,7 @@ Deno.test('Deno.json Detection Tests', async (t) => {
 
     const testDir = await createTestProject('deno-json-test', {
       'deno.json': denoJson,
-    })
+    }, { testCategory: 'unit' })
 
     try {
       const manifests = await Effect.runPromise(detectProjectManifests(testDir))
@@ -180,7 +124,7 @@ Deno.test('Deno.json Detection Tests', async (t) => {
 
     const testDir = await createTestProject('minimal-deno-json', {
       'deno.json': denoJson,
-    })
+    }, { testCategory: 'unit' })
 
     try {
       const manifests = await Effect.runPromise(detectProjectManifests(testDir))
@@ -208,7 +152,7 @@ Deno.test('Multi-Manifest Projects Tests', async (t) => {
     const testDir = await createTestProject('hybrid-project', {
       'package.json': packageJson,
       'deno.json': denoJson,
-    })
+    }, { testCategory: 'unit' })
 
     try {
       const manifests = await Effect.runPromise(detectProjectManifests(testDir))
@@ -225,13 +169,13 @@ Deno.test('Multi-Manifest Projects Tests', async (t) => {
   })
 
   await t.step('detectProjectManifests fails when no manifests found', async () => {
-    const testDir = await createTestProject('empty-project', {})
+    const testDir = await createTestProject('empty-project', {}, { testCategory: 'unit' })
 
     try {
       await assertRejects(
         () => Effect.runPromise(detectProjectManifests(testDir)),
         Error,
-        'No package.json or deno.json found',
+        'No manifests found in current directory',
       )
     } finally {
       await cleanupTestProject(testDir)
@@ -269,7 +213,7 @@ Deno.test('Dependency Extraction Tests', async (t) => {
     assertEquals(zod?.version, '^3.22.0')
     assertEquals(types?.type, 'development')
     assertEquals(effect?.originalSpec, 'effect@^3.0.0') // Reconstructed from clean data
-    assertEquals(effect?.registry, 'npm') // Default registry
+    assertEquals(effect?.registry, 'jsr') // Default registry for Deno bare specifiers
     assertEquals(effect?.source, '/test/deno.json')
   })
 
@@ -291,7 +235,7 @@ Deno.test('Package Validation Tests', async (t) => {
 
     const testDir = await createTestProject('validation-test', {
       'package.json': packageJson,
-    })
+    }, { testCategory: 'unit' })
 
     try {
       const dependency = await Effect.runPromise(
@@ -315,7 +259,7 @@ Deno.test('Package Validation Tests', async (t) => {
 
     const testDir = await createTestProject('validation-missing-test', {
       'package.json': packageJson,
-    })
+    }, { testCategory: 'unit' })
 
     try {
       await assertRejects(
@@ -336,7 +280,7 @@ Deno.test('Package Validation Tests', async (t) => {
 
     const testDir = await createTestProject('validation-helpful-test', {
       'package.json': packageJson,
-    })
+    }, { testCategory: 'unit' })
 
     try {
       await assertRejects(
@@ -359,7 +303,7 @@ Deno.test('Package Validation Tests', async (t) => {
 
     const testDir = await createTestProject('validation-deno-test', {
       'deno.json': denoJson,
-    })
+    }, { testCategory: 'unit' })
 
     try {
       const effectDep = await Effect.runPromise(
@@ -370,11 +314,11 @@ Deno.test('Package Validation Tests', async (t) => {
       )
 
       assertEquals(effectDep.name, 'effect')
-      assertEquals(effectDep.originalSpec, 'effect@^3.0.0') // Reconstructed from clean data
-      assertEquals(effectDep.registry, 'npm') // Default registry for now
+      assertEquals(effectDep.originalSpec, 'npm:effect@^3.0.0') // Original spec from imports
+      assertEquals(effectDep.registry, 'npm') // Correctly detected from npm: prefix
       assertEquals(stdDep.name, '@std/path')
-      assertEquals(stdDep.originalSpec, '@std/path@^1.0.0') // Reconstructed from clean data
-      assertEquals(stdDep.registry, 'npm') // Default registry for now (would be corrected by registry client)
+      assertEquals(stdDep.originalSpec, 'jsr:@std/path@^1.0.0') // Original spec from imports
+      assertEquals(stdDep.registry, 'jsr') // Correctly detected from jsr: prefix
     } finally {
       await cleanupTestProject(testDir)
     }

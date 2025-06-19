@@ -157,7 +157,7 @@ export const detectProjectManifests = (projectPath: string): Effect.Effect<Proje
         return Effect.fail(
           createParseError(
             null,
-            `No package.json or deno.json found in ${projectPath}`,
+            'No manifests found in current directory',
           ),
         )
       }
@@ -247,10 +247,10 @@ function extractWithDenoStrategy(manifests: ProjectManifest[]): DetectedDependen
   for (const manifest of manifests) {
     if (manifest.type !== 'deno.json') continue
 
-    // For Deno imports, we need to track original specs for registry detection
-    // The current parseDenoJson strips the prefixes, so we default to proper detection
+    // For Deno imports, use the original specs for proper registry detection
     Object.entries(manifest.dependencies).forEach(([name, version]) => {
-      const originalSpec = `${name}@${version}`
+      // Use the stored original spec if available, otherwise reconstruct
+      const originalSpec = manifest.originalSpecs?.[name] || `${name}@${version}`
 
       dependencies.push({
         name,
@@ -263,7 +263,8 @@ function extractWithDenoStrategy(manifests: ProjectManifest[]): DetectedDependen
     })
 
     Object.entries(manifest.devDependencies).forEach(([name, version]) => {
-      const originalSpec = `${name}@${version}`
+      // Use the stored original spec if available, otherwise reconstruct
+      const originalSpec = manifest.originalSpecs?.[name] || `${name}@${version}`
 
       dependencies.push({
         name,

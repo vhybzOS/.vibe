@@ -136,6 +136,43 @@ deno task coverage
 - **Runtime Tests**: All relevant tests passing
 - **Test Coverage**: Every file has `@tested_by` annotations
 
+### **Test Refactoring from First Principles**
+
+When encountering multiple test failures after code changes, follow this systematic approach:
+
+**1. Categorize Failures by Root Cause**
+
+- Schema/API mismatches (e.g., old test mocks don't match new schemas)
+- Test isolation issues (e.g., directory changes, shared state)
+- Implementation evolution (e.g., registry detection logic improved)
+- Test assumptions no longer valid (e.g., error message expectations)
+
+**2. Distinguish Between Implementation Issues vs Test Issues**
+
+- **Implementation bug**: Core functionality broken (fix implementation)
+- **Test outdated**: Test expectations don't match improved behavior (update test)
+- **Test design flaw**: Test creates artificial constraints (refactor test)
+
+**3. Update Tests to Match Improved Behavior**
+
+- When implementation correctly evolves (e.g., better registry detection), update test expectations
+- When error handling improves (e.g., walking up directory tree), adjust test scenarios
+- Preserve test intent while adapting to better implementation
+
+**4. Create Robust Test Helpers**
+
+- Replace manual resource management with helper functions
+- Add graceful error handling for test utilities
+- Ensure test isolation doesn't break when directories are deleted
+
+**5. Test First Principles Analysis**
+
+- Ask: "What is this test actually trying to verify?"
+- Ask: "Is the current behavior better than what the test expects?"
+- Ask: "Should I fix the code or fix the test?"
+
+**Critical Rule**: When core functionality works correctly in manual testing, failing unit tests usually indicate outdated test expectations, not broken implementation.
+
 ## 📚 **LEGACY CODE REFERENCE GUIDELINES**
 
 ### **When and How to Use Legacy Code**

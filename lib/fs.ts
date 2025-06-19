@@ -66,7 +66,10 @@ export const saveJson = <T>(path: string, data: T): Effect.Effect<void, VibeErro
   writeTextFile(path, JSON.stringify(data, null, 2))
 
 // Project detection utilities
-export const findProjectRoot = (startPath: string): Effect.Effect<string, VibeError> =>
+export const findProjectRoot = (
+  startPath: string,
+  searchUpTree = true,
+): Effect.Effect<string, VibeError> =>
   pipe(
     Effect.sync(() => startPath),
     Effect.flatMap((currentPath) =>
@@ -80,13 +83,22 @@ export const findProjectRoot = (startPath: string): Effect.Effect<string, VibeEr
             return Effect.succeed(currentPath)
           }
 
+          if (!searchUpTree) {
+            // Only check current directory - fail if no manifests found
+            return Effect.fail(createFileSystemError(
+              new Error('No package.json or deno.json found'),
+              startPath,
+              'No manifests found in current directory',
+            ))
+          }
+
           const parentPath = dirname(currentPath)
           if (parentPath === currentPath) {
             // Reached root directory
             return Effect.succeed(startPath) // Use original path as fallback
           }
 
-          return findProjectRoot(parentPath)
+          return findProjectRoot(parentPath, searchUpTree)
         }),
       )
     ),

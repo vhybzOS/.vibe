@@ -46,6 +46,7 @@ function shouldSkipFile(filePath: string, skipPatterns: string[]): boolean {
   // Default exclusions (always applied)
   const defaultExclusions = [
     '/tests/',
+    'tests/', // Also match paths starting with tests/
     '/node_modules/',
     '/build/',
     '.test.ts',
@@ -54,7 +55,7 @@ function shouldSkipFile(filePath: string, skipPatterns: string[]): boolean {
 
   // Check default exclusions
   for (const exclusion of defaultExclusions) {
-    if (normalizedPath.includes(exclusion)) {
+    if (normalizedPath.includes(exclusion) || normalizedPath.startsWith(exclusion.replace(/^\//, ''))) {
       return true
     }
   }

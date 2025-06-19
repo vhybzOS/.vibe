@@ -175,7 +175,7 @@ Deno.test('Package Info Schema Tests', async (t) => {
   await t.step('NpmPackageInfoSchema validates npm API responses', () => {
     const npmResponse = {
       name: 'hono',
-      version: '4.0.0',
+      'dist-tags': { latest: '4.0.0' },
       description: 'Web framework for the Edge',
       homepage: 'https://hono.dev',
       repository: {

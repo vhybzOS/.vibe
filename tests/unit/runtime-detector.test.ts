@@ -9,7 +9,8 @@
 
 import { Effect } from 'effect'
 import { assertEquals, assertExists } from '@std/assert'
-import { resolve } from '@std/path'
+import { dirname, resolve } from '@std/path'
+import { cleanupTestProject, createTestProject } from '../utils.ts'
 
 // Import the new services we're about to create
 import {
@@ -19,52 +20,6 @@ import {
   RuntimeDetector,
   RuntimeType,
 } from '../../services/runtime-detector.ts'
-
-// Test helper to create temporary test directories (same pattern as package-detector tests)
-async function ensureDirTest(path: string): Promise<void> {
-  try {
-    await Deno.mkdir(path, { recursive: true })
-  } catch (error) {
-    if (!(error instanceof Deno.errors.AlreadyExists)) {
-      throw error
-    }
-  }
-}
-
-async function createTestProject(
-  testName: string,
-  files: Record<string, any>,
-): Promise<string> {
-  // Find project root by looking for deno.json - this works regardless of cwd
-  let projectRoot = Deno.cwd()
-  while (projectRoot !== '/' && projectRoot !== '.') {
-    try {
-      await Deno.stat(resolve(projectRoot, 'deno.json'))
-      break
-    } catch {
-      projectRoot = resolve(projectRoot, '..')
-    }
-  }
-
-  const testDir = resolve(projectRoot, 'tests', 'tmp', 'unit', 'runtime-detector', testName)
-  await ensureDirTest(testDir)
-
-  for (const [filename, content] of Object.entries(files)) {
-    const filePath = resolve(testDir, filename)
-    await ensureDirTest(resolve(filePath, '..')) // Ensure parent directory exists
-    await Deno.writeTextFile(filePath, JSON.stringify(content, null, 2))
-  }
-
-  return testDir
-}
-
-async function cleanupTestProject(testDir: string): Promise<void> {
-  try {
-    await Deno.remove(testDir, { recursive: true })
-  } catch {
-    // Ignore cleanup errors
-  }
-}
 
 Deno.test('Runtime Detection Tests', async (t) => {
   await t.step('detectRuntime identifies Node.js projects', async () => {
@@ -83,7 +38,7 @@ Deno.test('Runtime Detection Tests', async (t) => {
 
     const testDir = await createTestProject('node-project', {
       'package.json': packageJson,
-    })
+    }, { testCategory: 'unit' })
 
     try {
       const detector = new RuntimeDetector()
@@ -111,7 +66,7 @@ Deno.test('Runtime Detection Tests', async (t) => {
 
     const testDir = await createTestProject('deno-project', {
       'deno.json': denoJson,
-    })
+    }, { testCategory: 'unit' })
 
     try {
       const detector = new RuntimeDetector()
@@ -139,7 +94,7 @@ Deno.test('Runtime Detection Tests', async (t) => {
     const testDir = await createTestProject('hybrid-project', {
       'package.json': packageJson,
       'deno.json': denoJson,
-    })
+    }, { testCategory: 'unit' })
 
     try {
       const detector = new RuntimeDetector()

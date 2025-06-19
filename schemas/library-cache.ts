@@ -66,7 +66,9 @@ export const ProjectManifestSchema = z.object({
  */
 export const NpmPackageInfoSchema = z.object({
   name: z.string(),
-  version: z.string(),
+  'dist-tags': z.object({
+    latest: z.string(),
+  }),
   description: z.string().optional(),
   homepage: z.string().url().optional(),
   repository: z.union([

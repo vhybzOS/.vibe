@@ -103,17 +103,17 @@ jobs:
           cp macos-binaries/vibe-macos-x86_64 release-assets/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64
           cp macos-binaries/vibectl-macos-x86_64 release-assets/vibectl-${{ needs.check-version.outputs.new-version }}-macos-x86_64
 
-      - name: 📥 Restore Self-Contained Installers
+      - name: 📥 Get Self-Contained Installers
         uses: actions/cache/restore@v4
         with:
-          path: build/
+          path: installer-build/
           key: installers-${{ github.sha }}
           fail-on-cache-miss: true
 
-      - name: 📋 Copy installers to release
+      - name: 📋 Add installers to release
         run: |
-          cp build/install-dotvibe release-assets/install-dotvibe
-          cp build/install-dotvibe.exe release-assets/install-dotvibe.exe
+          cp installer-build/install-dotvibe release-assets/install-dotvibe
+          cp installer-build/install-dotvibe.exe release-assets/install-dotvibe.exe
 
       - name: 📦 Verify release assets
         run: |
@@ -159,13 +159,13 @@ jobs:
           generate_release_notes: ${{ steps.release-notes.outputs.use-auto-notes == 'true' }}
           body_path: ${{ steps.release-notes.outputs.use-auto-notes == 'false' && 'release_notes.md' || '' }}
           files: |
-            build/install-dotvibe
-            build/install-dotvibe.exe
-            build/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64
-            build/vibectl-${{ needs.check-version.outputs.new-version }}-linux-x86_64
-            build/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64
-            build/vibectl-${{ needs.check-version.outputs.new-version }}-macos-x86_64
-            build/vibe-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe
-            build/vibectl-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe
+            release-assets/install-dotvibe
+            release-assets/install-dotvibe.exe
+            release-assets/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64
+            release-assets/vibectl-${{ needs.check-version.outputs.new-version }}-linux-x86_64
+            release-assets/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64
+            release-assets/vibectl-${{ needs.check-version.outputs.new-version }}-macos-x86_64
+            release-assets/vibe-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe
+            release-assets/vibectl-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}

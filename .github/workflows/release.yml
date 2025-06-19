@@ -101,6 +101,33 @@ jobs:
           ls -la build/
           file build/* || true
 
+      - name: 📝 Extract Release Notes
+        id: release-notes
+        run: |
+          VERSION="${{ needs.check-version.outputs.new-version }}"
+          VERSION_NO_V="${VERSION#v}"
+
+          # Check if CHANGELOG.md exists
+          if [ -f "CHANGELOG.md" ]; then
+            # Extract section for this version from CHANGELOG.md
+            NOTES=$(awk "/^## \[${VERSION_NO_V}\]/ {flag=1; next} /^## \[[0-9]/ {flag=0} flag" CHANGELOG.md)
+
+            if [ -z "$NOTES" ]; then
+              echo "⚠️  No changelog entry found for version ${VERSION_NO_V}"
+              echo "📝 Using auto-generated release notes instead"
+              echo "use-auto-notes=true" >> $GITHUB_OUTPUT
+            else
+              # Save to file for release body
+              echo "$NOTES" > release_notes.md
+              echo "use-auto-notes=false" >> $GITHUB_OUTPUT
+              echo "✅ Found changelog entry for version ${VERSION_NO_V}"
+            fi
+          else
+            echo "⚠️  CHANGELOG.md not found"
+            echo "📝 Using auto-generated release notes"
+            echo "use-auto-notes=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: 🚀 Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -108,7 +135,8 @@ jobs:
           name: Release ${{ needs.check-version.outputs.new-version }}
           draft: false
           prerelease: false
-          generate_release_notes: true
+          generate_release_notes: ${{ steps.release-notes.outputs.use-auto-notes == 'true' }}
+          body_path: ${{ steps.release-notes.outputs.use-auto-notes == 'false' && 'release_notes.md' || '' }}
           files: |
             build/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64
             build/vibectl-${{ needs.check-version.outputs.new-version }}-linux-x86_64

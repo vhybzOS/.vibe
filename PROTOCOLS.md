@@ -155,6 +155,63 @@ EOF
 **State**: [Current implementation state and quality gate status]
 ```
 
+### Release Protocol
+
+**When preparing a release:**
+
+1. **Update CHANGELOG.md** - Generate from PRD.md completed features
+2. **Version Bump** - Update deno.json version according to semver rules
+3. **Extract Release Notes** - Pull feature highlights from PRD.md phases
+4. **Format for Users** - Convert technical specs to user-friendly features
+
+**CHANGELOG.md Generation:**
+
+```bash
+# Extract completed features from PRD.md
+grep -A 20 "✅.*COMPLETE" PRD.md | format_for_changelog
+
+# Include:
+- Major features from completed phases
+- New CLI commands with examples  
+- Breaking changes (if any)
+- Technical improvements that affect users
+```
+
+**Release Notes Template:**
+
+```markdown
+## v{VERSION} - {DATE}
+
+### 🎯 Highlights
+
+- {Main feature from PRD phase}
+- {Key improvement}
+
+### ✨ New Features
+
+- **{Feature Name}**: {Brief user-facing description}
+  - Example: `vibe init node myproject`
+
+### 🔧 Technical Improvements
+
+- {Internal improvement that benefits users}
+
+### 📚 Documentation
+
+- {Any new docs or examples}
+
+Full changelog: [{PREV_VERSION}...v{VERSION}]
+```
+
+**Extracting from PRD.md:**
+
+When a phase is marked COMPLETE in PRD.md:
+
+1. Copy the "Core Success" bullets as feature highlights
+2. Transform technical implementation details into user benefits
+3. Extract command examples from acceptance criteria
+4. Note any breaking changes or migration needs
+
 ## Coding Protocols
 
 ### Effect-TS Patterns

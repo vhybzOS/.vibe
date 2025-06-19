@@ -9,7 +9,7 @@
 import { Effect, pipe } from 'effect'
 import { basename, resolve } from '@std/path'
 import { z } from 'zod/v4'
-import { dirExists, ensureDir, readTextFile, writeTextFile } from '../lib/fs.ts'
+import { dirExists, ensureDir, loadJson, readTextFile, saveJson, writeTextFile } from '../lib/fs.ts'
 import { createConfigurationError, createFileSystemError, type VibeError } from '../lib/errors.ts'
 import {
   type SupportedRuntime,
@@ -25,6 +25,95 @@ const RUNTIME_TEMPLATE_MAP: Record<SupportedRuntime, string> = {
   node: 'node-template',
   deno: 'deno-template',
 }
+
+// Manifest file schemas for validation and type safety
+const PackageJsonSchema = z.object({
+  name: z.string(),
+  version: z.string().optional(),
+  description: z.string().optional(),
+  type: z.string().optional(),
+  main: z.string().optional(),
+  scripts: z.record(z.string()).optional(),
+  dependencies: z.record(z.string()).optional(),
+  devDependencies: z.record(z.string()).optional(),
+  peerDependencies: z.record(z.string()).optional(),
+  engines: z.record(z.string()).optional(),
+}).passthrough() // Allow additional properties
+
+const DenoJsonSchema = z.object({
+  name: z.string(),
+  version: z.string().optional(),
+  exports: z.record(z.string()).optional(),
+  tasks: z.record(z.string()).optional(),
+  imports: z.record(z.string()).optional(),
+  compilerOptions: z.record(z.any()).optional(),
+  fmt: z.record(z.any()).optional(),
+  lint: z.record(z.any()).optional(),
+  exclude: z.array(z.string()).optional(),
+}).passthrough() // Allow additional properties
+
+// Generic manifest updater function type - extensible for any file format
+type ManifestUpdater = (projectPath: string, projectName: string) => Effect.Effect<void, VibeError>
+
+// Node.js manifest updater - updates package.json name field
+const updateNodeManifest: ManifestUpdater = (projectPath: string, projectName: string) =>
+  pipe(
+    loadJson(PackageJsonSchema)(resolve(projectPath, 'package.json')),
+    Effect.map((pkg) => ({ ...pkg, name: projectName })),
+    Effect.flatMap((updatedPkg) => saveJson(resolve(projectPath, 'package.json'), updatedPkg)),
+    Effect.catchAll(() =>
+      Effect.fail(
+        createFileSystemError(
+          new Error('Failed to update package.json'),
+          resolve(projectPath, 'package.json'),
+          'Could not update project name in package.json',
+        ),
+      )
+    ),
+  )
+
+// Deno manifest updater - updates deno.json name field
+const updateDenoManifest: ManifestUpdater = (projectPath: string, projectName: string) =>
+  pipe(
+    loadJson(DenoJsonSchema)(resolve(projectPath, 'deno.json')),
+    Effect.map((deno) => ({ ...deno, name: projectName })),
+    Effect.flatMap((updatedDeno) => saveJson(resolve(projectPath, 'deno.json'), updatedDeno)),
+    Effect.catchAll(() =>
+      Effect.fail(
+        createFileSystemError(
+          new Error('Failed to update deno.json'),
+          resolve(projectPath, 'deno.json'),
+          'Could not update project name in deno.json',
+        ),
+      )
+    ),
+  )
+
+// Future: Python manifest updater - updates project name in requirements.txt or pyproject.toml
+// const updatePythonManifest: ManifestUpdater = (projectPath: string, projectName: string) =>
+//   pipe(
+//     readTextFile(resolve(projectPath, 'pyproject.toml')),
+//     Effect.map(content => content.replace(/name\s*=\s*"[^"]*"/, `name = "${projectName}"`)),
+//     Effect.flatMap(content => writeTextFile(resolve(projectPath, 'pyproject.toml'), content))
+//   )
+
+// Runtime to manifest updater mapping - extensible for future runtimes
+const MANIFEST_UPDATERS: Record<SupportedRuntime, ManifestUpdater> = {
+  node: updateNodeManifest,
+  deno: updateDenoManifest,
+}
+
+// Main function to update project manifest for any runtime
+export const updateProjectManifest = (
+  runtime: SupportedRuntime,
+  projectPath: string,
+  projectName: string,
+): Effect.Effect<void, VibeError> =>
+  pipe(
+    Effect.sync(() => MANIFEST_UPDATERS[runtime]),
+    Effect.flatMap((updater) => updater(projectPath, projectName)),
+    Effect.flatMap(() => logInfo(`Updated ${runtime} manifest with project name: ${projectName}`)),
+  )
 
 // Get template directory name for runtime
 export const getRuntimeTemplate = (runtime: string): Effect.Effect<string, VibeError> =>
@@ -177,6 +266,16 @@ export const scaffoldProject = (
         logInfo(`Creating project '${projectName}' from ${runtime} template...`),
         Effect.flatMap(() => copyTemplate(templateName, projectPath)),
         Effect.flatMap(() => logSuccess(`Template copied to ${projectPath}`)),
+        // Update manifest with project name
+        Effect.flatMap(() =>
+          pipe(
+            Effect.try({
+              try: () => SupportedRuntimeSchema.parse(runtime),
+              catch: (e) => createConfigurationError(e, `Invalid runtime for manifest update: ${runtime}`),
+            }),
+            Effect.flatMap((validRuntime) => updateProjectManifest(validRuntime, projectPath, projectName)),
+          )
+        ),
       )
     ),
     // Initialize .vibe in the new project

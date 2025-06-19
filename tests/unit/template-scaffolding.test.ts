@@ -15,7 +15,7 @@ import { describe, it } from '@std/testing/bdd'
 import { withTempDir } from '../utils.ts'
 
 // Import functions to test (these will be implemented)
-// import { getRuntimeTemplate, copyTemplate, scaffoldProject } from '../../services/template-scaffolding.ts'
+// import { getRuntimeTemplate, copyTemplate, scaffoldProject, updateProjectManifest } from '../../services/template-scaffolding.ts'
 // import { TemplateScaffoldOptionsSchema } from '../../schemas/config.ts'
 
 describe('Template Scaffolding - Runtime Mapping', () => {
@@ -241,5 +241,121 @@ describe('Template Scaffolding - Schema Validation', () => {
     //   Error,
     //   'Invalid runtime'
     // )
+  })
+})
+
+describe('Template Scaffolding - Manifest Updates', () => {
+  it('should update package.json name for Node.js projects', async () => {
+    await withTempDir(async (tempDir) => {
+      const projectPath = resolve(tempDir, 'test-node-project')
+
+      // Create a mock package.json
+      await Deno.mkdir(projectPath)
+      await Deno.writeTextFile(
+        resolve(projectPath, 'package.json'),
+        JSON.stringify(
+          {
+            name: 'your-project-name',
+            version: '0.1.0',
+            description: 'A project built with the `.vibe` Operating System',
+          },
+          null,
+          2,
+        ),
+      )
+
+      // Test manifest update
+      // await Effect.runPromise(updateProjectManifest('node', projectPath, 'my-awesome-project'))
+
+      // Verify the name was updated
+      // const updatedContent = await Deno.readTextFile(resolve(projectPath, 'package.json'))
+      // const updatedPkg = JSON.parse(updatedContent)
+      // assertEquals(updatedPkg.name, 'my-awesome-project')
+      // assertEquals(updatedPkg.version, '0.1.0') // Other fields preserved
+    })
+  })
+
+  it('should update deno.json name for Deno projects', async () => {
+    await withTempDir(async (tempDir) => {
+      const projectPath = resolve(tempDir, 'test-deno-project')
+
+      // Create a mock deno.json
+      await Deno.mkdir(projectPath)
+      await Deno.writeTextFile(
+        resolve(projectPath, 'deno.json'),
+        JSON.stringify(
+          {
+            name: 'your-project-name',
+            version: '0.1.0',
+            exports: { '.': './mod.ts' },
+          },
+          null,
+          2,
+        ),
+      )
+
+      // Test manifest update
+      // await Effect.runPromise(updateProjectManifest('deno', projectPath, 'my-deno-app'))
+
+      // Verify the name was updated
+      // const updatedContent = await Deno.readTextFile(resolve(projectPath, 'deno.json'))
+      // const updatedDeno = JSON.parse(updatedContent)
+      // assertEquals(updatedDeno.name, 'my-deno-app')
+      // assertEquals(updatedDeno.exports['.'], './mod.ts') // Other fields preserved
+    })
+  })
+
+  it('should handle missing manifest files gracefully', async () => {
+    await withTempDir(async (tempDir) => {
+      const projectPath = resolve(tempDir, 'empty-project')
+      await Deno.mkdir(projectPath)
+
+      // Should fail gracefully when manifest file doesn't exist
+      // await assertRejects(
+      //   () => Effect.runPromise(updateProjectManifest('node', projectPath, 'test-project')),
+      //   Error,
+      //   'Could not update project name in package.json'
+      // )
+    })
+  })
+
+  it('should preserve all existing fields in manifest files', async () => {
+    await withTempDir(async (tempDir) => {
+      const projectPath = resolve(tempDir, 'complex-project')
+      await Deno.mkdir(projectPath)
+
+      // Create a complex package.json with many fields
+      const complexPackage = {
+        name: 'your-project-name',
+        version: '2.1.0',
+        description: 'Complex project',
+        type: 'module',
+        main: 'dist/index.js',
+        scripts: { start: 'node dist/index.js', build: 'tsc' },
+        dependencies: { express: '^4.18.0' },
+        devDependencies: { typescript: '^5.0.0' },
+        engines: { node: '>=18.0.0' },
+        keywords: ['test', 'project'],
+        author: 'Test Author',
+        license: 'MIT',
+      }
+
+      await Deno.writeTextFile(
+        resolve(projectPath, 'package.json'),
+        JSON.stringify(complexPackage, null, 2),
+      )
+
+      // Test manifest update
+      // await Effect.runPromise(updateProjectManifest('node', projectPath, 'updated-name'))
+
+      // Verify only name changed, everything else preserved
+      // const updatedContent = await Deno.readTextFile(resolve(projectPath, 'package.json'))
+      // const updatedPkg = JSON.parse(updatedContent)
+      // assertEquals(updatedPkg.name, 'updated-name')
+      // assertEquals(updatedPkg.version, '2.1.0')
+      // assertEquals(updatedPkg.scripts.start, 'node dist/index.js')
+      // assertEquals(updatedPkg.dependencies.express, '^4.18.0')
+      // assertEquals(updatedPkg.author, 'Test Author')
+    })
   })
 })

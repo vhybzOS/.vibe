@@ -9,12 +9,13 @@ Build high-quality software using proven development workflows, test-driven deve
 ### **Session Startup Protocol**
 
 1. **Read AGENTS.md** (this file) completely
-2. **Fetch [coding guidelines](PROTOCOLS.md#coding-protocols)** before writing any code
-3. **Follow [planning mode protocol](PROTOCOLS.md#planning-mode-protocol)** - Don't code yet
-4. **Ask: "What user flow should we implement first?"**
-5. **Use [requirements gathering protocol](PROTOCOLS.md#requirements-gathering-protocol)** to get complete scope
-6. **Present implementation plan using [requirements template](PROTOCOLS.md#requirements-gathering-protocol)**
-7. **Get approval, then exit planning mode**
+2. **Read PRD.md** to understand current project status and priorities
+3. **Fetch [coding guidelines](PROTOCOLS.md#coding-protocols)** before writing any code
+4. **Follow [planning mode protocol](PROTOCOLS.md#planning-mode-protocol)** - Don't code yet
+5. **Ask: "What user flow should we implement first?"**
+6. **Use [requirements gathering protocol](PROTOCOLS.md#requirements-gathering-protocol)** to get complete scope
+7. **Present implementation plan using [requirements template](PROTOCOLS.md#requirements-gathering-protocol)**
+8. **Get approval, then exit planning mode**
 
 ### **Implementation Workflow**
 

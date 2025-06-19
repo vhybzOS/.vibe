@@ -52,8 +52,8 @@ jobs:
             echo "📋 No version change detected"
           fi
 
-  build:
-    name: 'Build Cross-Platform Binaries'
+  release:
+    name: 'Publish Release with Native Binaries'
     runs-on: ubuntu-latest
     needs: check-version
     if: needs.check-version.outputs.version-changed == 'true'
@@ -62,45 +62,65 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🦕 Setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: ${{ env.DENO_VERSION }}
+      - name: 📁 Create release directory
+        run: mkdir -p release-assets
 
-      - name: 📦 Cache Deno dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/deno
-            ~/.deno
-          key: ${{ runner.os }}-deno-${{ env.DENO_VERSION }}-${{ hashFiles('**/deno.lock', '**/deno.json') }}
-          restore-keys: |
-            ${{ runner.os }}-deno-${{ env.DENO_VERSION }}-
-            ${{ runner.os }}-deno-
-
-      - name: 📥 Cache dependencies
-        run: deno cache --frozen cli.ts daemon.ts
-
-      - name: 🔨 Build cross-platform binaries
-        run: deno task build:cross-platform
-
-      - name: 🔨 Build self-contained installers
-        run: deno task build:installers
-
-      - name: 🔨 Build versioned binaries for release
+      - name: 📥 Restore All Platform Binaries
         run: |
-          # Build individual binaries with version names for backward compatibility
-          deno compile --allow-all --target x86_64-unknown-linux-gnu --include vibe-coding-project-starters/ --output build/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64 cli.ts
-          deno compile --allow-all --target x86_64-unknown-linux-gnu --output build/vibectl-${{ needs.check-version.outputs.new-version }}-linux-x86_64 daemon.ts
-          deno compile --allow-all --target x86_64-apple-darwin --include vibe-coding-project-starters/ --output build/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64 cli.ts
-          deno compile --allow-all --target x86_64-apple-darwin --output build/vibectl-${{ needs.check-version.outputs.new-version }}-macos-x86_64 daemon.ts
-          deno compile --allow-all --target x86_64-pc-windows-msvc --include vibe-coding-project-starters/ --output build/vibe-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe cli.ts
-          deno compile --allow-all --target x86_64-pc-windows-msvc --output build/vibectl-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe daemon.ts
+          # Restore each platform's binaries to separate directories
+          echo "Restoring platform binaries..."
 
-      - name: 📦 Verify binaries created
+      - name: 📥 Get Linux Binaries
+        uses: actions/cache/restore@v4
+        with:
+          path: linux-binaries/
+          key: native-binaries-linux-${{ github.sha }}
+          fail-on-cache-miss: true
+
+      - name: 📥 Get Windows Binaries
+        uses: actions/cache/restore@v4
+        with:
+          path: windows-binaries/
+          key: native-binaries-windows-${{ github.sha }}
+          fail-on-cache-miss: true
+
+      - name: 📥 Get macOS Binaries
+        uses: actions/cache/restore@v4
+        with:
+          path: macos-binaries/
+          key: native-binaries-macos-${{ github.sha }}
+          fail-on-cache-miss: true
+
+      - name: 📋 Organize release assets
         run: |
-          ls -la build/
-          file build/* || true
+          # Copy all platform binaries with version names
+          cp linux-binaries/vibe-linux-x86_64 release-assets/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64
+          cp linux-binaries/vibectl-linux-x86_64 release-assets/vibectl-${{ needs.check-version.outputs.new-version }}-linux-x86_64
+
+          cp windows-binaries/vibe-windows-x86_64.exe release-assets/vibe-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe
+          cp windows-binaries/vibectl-windows-x86_64.exe release-assets/vibectl-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe
+
+          cp macos-binaries/vibe-macos-x86_64 release-assets/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64
+          cp macos-binaries/vibectl-macos-x86_64 release-assets/vibectl-${{ needs.check-version.outputs.new-version }}-macos-x86_64
+
+      - name: 📥 Restore Self-Contained Installers
+        uses: actions/cache/restore@v4
+        with:
+          path: build/
+          key: installers-${{ github.sha }}
+          fail-on-cache-miss: true
+
+      - name: 📋 Copy installers to release
+        run: |
+          cp build/install-dotvibe release-assets/install-dotvibe
+          cp build/install-dotvibe.exe release-assets/install-dotvibe.exe
+
+      - name: 📦 Verify release assets
+        run: |
+          echo "Release assets prepared:"
+          ls -la release-assets/
+          echo "Asset sizes:"
+          du -sh release-assets/*
 
       - name: 📝 Extract Release Notes
         id: release-notes

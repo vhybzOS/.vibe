@@ -141,7 +141,7 @@ Deno.test('Helper Functions Tests', async (t) => {
   await t.step('discoverLibraryDomain extracts domains from package info', () => {
     const npmPackage = {
       name: 'hono',
-      version: '4.0.0',
+      'dist-tags': { latest: '4.0.0' },
       homepage: 'https://hono.dev',
     }
     assertEquals(discoverLibraryDomain(npmPackage), 'hono.dev')
@@ -155,7 +155,7 @@ Deno.test('Helper Functions Tests', async (t) => {
 
     const npmWithRepo = {
       name: 'zod',
-      version: '3.22.0',
+      'dist-tags': { latest: '3.22.0' },
       repository: {
         type: 'git',
         url: 'https://github.com/colinhacks/zod',
@@ -165,7 +165,7 @@ Deno.test('Helper Functions Tests', async (t) => {
 
     const noHomepage = {
       name: 'unknown',
-      version: '1.0.0',
+      'dist-tags': { latest: '1.0.0' },
     }
     assertEquals(discoverLibraryDomain(noHomepage), null)
   })

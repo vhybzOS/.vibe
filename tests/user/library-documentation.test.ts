@@ -25,7 +25,7 @@ async function createRealProject(
   },
 ): Promise<string> {
   const testDir = resolve(Deno.cwd(), 'tests', 'tmp', 'user', testName)
-  await ensureDir(testDir)
+  await Effect.runPromise(ensureDir(testDir))
 
   if (config.type === 'node' || config.type === 'hybrid') {
     const packageJson = {
@@ -77,7 +77,7 @@ function mockRealisticResponses() {
         json: () =>
           Promise.resolve({
             name: 'hono',
-            version: '4.0.0',
+            'dist-tags': { latest: '4.0.0' },
             description:
               'Fast, Lightweight, Web-framework built on Web Standards for Cloudflare Workers, Deno, Bun, and Node.js',
             homepage: 'https://hono.dev',
@@ -96,7 +96,7 @@ function mockRealisticResponses() {
         json: () =>
           Promise.resolve({
             name: 'zod',
-            version: '3.22.4',
+            'dist-tags': { latest: '3.22.4' },
             description: 'TypeScript-first schema validation with static type inference',
             homepage: 'https://zod.dev',
             repository: {
@@ -114,7 +114,7 @@ function mockRealisticResponses() {
         json: () =>
           Promise.resolve({
             name: 'effect',
-            version: '3.0.0',
+            'dist-tags': { latest: '3.0.0' },
             description: 'A TypeScript library for building resilient and scalable applications',
             homepage: 'https://effect.website',
             repository: {
@@ -589,9 +589,9 @@ Deno.test('User Acceptance Tests - Library Documentation', async (t) => {
         errorMessage = error instanceof Error ? error.message : String(error)
       }
 
-      // Then: Helpful error message is displayed
+      // Then: Helpful error message is displayed (finds parent project but package not in deps)
       assertEquals(errorCaught, true)
-      assertEquals(errorMessage.includes('No package.json or deno.json found'), true)
+      assertEquals(errorMessage.includes('not found in project dependencies'), true)
 
       Deno.chdir(originalCwd)
     } finally {

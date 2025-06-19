@@ -123,7 +123,7 @@ Deno.test('NPM Registry Tests', async (t) => {
   await t.step('fetchNpmPackageInfo handles successful response', async () => {
     const mockResponse = {
       name: 'hono',
-      version: '4.0.0',
+      'dist-tags': { latest: '4.0.0' },
       description: 'Web framework for the Edge',
       homepage: 'https://hono.dev',
       repository: {
@@ -142,7 +142,7 @@ Deno.test('NPM Registry Tests', async (t) => {
     try {
       const result = await Effect.runPromise(fetchNpmPackageInfo('hono'))
       assertEquals(result.name, 'hono')
-      assertEquals(result.version, '4.0.0')
+      assertEquals(result['dist-tags'].latest, '4.0.0')
       assertEquals(result.homepage, 'https://hono.dev')
     } finally {
       restoreFetch()
@@ -291,7 +291,7 @@ Deno.test('Unified Package Info Fetching Tests', async (t) => {
   await t.step('fetchPackageInfo respects npm: prefix', async () => {
     const npmResponse = {
       name: 'hono',
-      version: '4.0.0',
+      'dist-tags': { latest: '4.0.0' },
       homepage: 'https://hono.dev',
     }
 

@@ -42,11 +42,11 @@ async function createTestProject(
   }
 
   const testDir = resolve(projectRoot, 'tests', 'tmp', 'integration', testName)
-  await ensureDir(testDir)
+  await Effect.runPromise(ensureDir(testDir))
 
   for (const [filename, content] of Object.entries(files)) {
     const filePath = resolve(testDir, filename)
-    await ensureDir(dirname(filePath)) // Ensure parent directory exists
+    await Effect.runPromise(ensureDir(dirname(filePath))) // Ensure parent directory exists
     await Deno.writeTextFile(filePath, JSON.stringify(content, null, 2))
   }
 
@@ -105,7 +105,7 @@ Deno.test('Vibe Code Integration Tests', async (t) => {
 
     const npmResponse = {
       name: 'hono',
-      version: '4.0.0',
+      'dist-tags': { latest: '4.0.0' },
       homepage: 'https://hono.dev',
     }
 
@@ -173,7 +173,7 @@ app.get('/', (c) => c.text('Hello World!'))
 
     const npmResponse = {
       name: 'zod',
-      version: '3.22.0',
+      'dist-tags': { latest: '3.22.0' },
       homepage: 'https://zod.dev',
     }
 
@@ -358,7 +358,7 @@ app.get('/', (c) => c.text('Hello World!'))
 
     const npmResponse = {
       name: 'no-docs-package',
-      version: '1.0.0',
+      'dist-tags': { latest: '1.0.0' },
       homepage: 'https://example.com',
     }
 
@@ -405,13 +405,13 @@ app.get('/', (c) => c.text('Hello World!'))
 
     const honoResponse = {
       name: 'hono',
-      version: '4.0.0',
+      'dist-tags': { latest: '4.0.0' },
       homepage: 'https://hono.dev',
     }
 
     const effectResponse = {
       name: 'effect',
-      version: '3.0.0',
+      'dist-tags': { latest: '3.0.0' },
       homepage: 'https://effect.website',
     }
 

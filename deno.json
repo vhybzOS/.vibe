@@ -1,6 +1,6 @@
 {
   "name": "dotvibe",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "homepage": "https://dotvibe.dev",
   "repository": "https://github.com/vhybzOS/.vibe",
   "exports": {
@@ -24,7 +24,7 @@
     "build:installer-unix": "deno compile --allow-all --include installers/embedded/ --output build/install-dotvibe installers/install-dotvibe.ts",
     "build:installer-windows": "deno compile --allow-all --include installers/embedded/ --output build/install-dotvibe.exe installers/install-dotvibe-windows.ts",
     "build:installers": "deno task build:cross-platform && deno task build:installer-unix && deno task build:installer-windows",
-    "coverage": "deno run --allow-read scripts/coverage.ts --skip legacy"
+    "coverage": "deno run --allow-read --allow-env scripts/coverage.ts --skip legacy"
   },
   "imports": {
     "effect": "npm:effect@3.16.7",

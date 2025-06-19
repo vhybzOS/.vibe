@@ -21,7 +21,6 @@ import {
 
 Deno.test('Package.json Detection Tests', async (t) => {
   await t.step('detectProjectManifests finds package.json', async () => {
-    console.log(`[DEBUG-WIN] TEST START - detectProjectManifests finds package.json - ${new Date().toISOString()}`)
     const packageJson = {
       name: 'test-project',
       version: '1.0.0',
@@ -40,18 +39,12 @@ Deno.test('Package.json Detection Tests', async (t) => {
       },
     }
 
-    console.log(`[DEBUG-WIN] Calling createTestProject - ${new Date().toISOString()}`)
     const testDir = await createTestProject('package-json-test', {
       'package.json': packageJson,
     }, { testCategory: 'unit' })
-    console.log(`[DEBUG-WIN] createTestProject returned: ${testDir} - ${new Date().toISOString()}`)
 
     try {
-      console.log(`[DEBUG-WIN] Calling detectProjectManifests - ${new Date().toISOString()}`)
       const manifests = await Effect.runPromise(detectProjectManifests(testDir))
-      console.log(
-        `[DEBUG-WIN] detectProjectManifests returned ${manifests.length} manifests - ${new Date().toISOString()}`,
-      )
       assertEquals(manifests.length, 1)
       const manifest = manifests[0]!
       assertEquals(manifest.type, 'package.json')
@@ -60,11 +53,8 @@ Deno.test('Package.json Detection Tests', async (t) => {
       assertEquals(manifest.dependencies.typescript, '^5.0.0') // peer deps included
       assertEquals(manifest.dependencies['optional-pkg'], '^1.0.0') // optional deps included
       assertEquals(manifest.devDependencies['@types/node'], '^18.0.0')
-      console.log(`[DEBUG-WIN] All assertions passed - ${new Date().toISOString()}`)
     } finally {
-      console.log(`[DEBUG-WIN] Cleaning up test project - ${new Date().toISOString()}`)
       await cleanupTestProject(testDir)
-      console.log(`[DEBUG-WIN] TEST COMPLETE - ${new Date().toISOString()}`)
     }
   })
 

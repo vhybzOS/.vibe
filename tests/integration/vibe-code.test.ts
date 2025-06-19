@@ -44,7 +44,12 @@ async function createTestProject(
       await Deno.stat(resolve(projectRoot, 'deno.json'))
       break
     } catch {
-      projectRoot = resolve(projectRoot, '..')
+      const parentPath = resolve(projectRoot, '..')
+      // Check if we've reached the root (parent path equals current path)
+      if (parentPath === projectRoot) {
+        break
+      }
+      projectRoot = parentPath
     }
   }
 

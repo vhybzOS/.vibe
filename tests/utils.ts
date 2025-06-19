@@ -44,23 +44,17 @@ export function safeGetCwd(fallbackUrl?: string): string {
  * Works regardless of current working directory state
  */
 export async function findProjectRoot(startPath?: string): Promise<string> {
-  console.log(`[DEBUG-WIN] findProjectRoot START - ${startPath} - ${new Date().toISOString()}`)
   let projectRoot = startPath || safeGetCwd()
-  console.log(`[DEBUG-WIN] Initial project root: ${projectRoot} - ${new Date().toISOString()}`)
 
   while (projectRoot !== '/' && projectRoot !== '.') {
     try {
-      console.log(`[DEBUG-WIN] Checking for deno.json in: ${projectRoot} - ${new Date().toISOString()}`)
       await Deno.stat(resolve(projectRoot, 'deno.json'))
-      console.log(`[DEBUG-WIN] Found deno.json, returning: ${projectRoot} - ${new Date().toISOString()}`)
       return projectRoot
     } catch {
       const parentPath = resolve(projectRoot, '..')
-      console.log(`[DEBUG-WIN] Moving up to parent: ${parentPath} - ${new Date().toISOString()}`)
 
       // Check if we've reached the root (parent path equals current path)
       if (parentPath === projectRoot) {
-        console.log(`[DEBUG-WIN] Reached filesystem root, breaking loop - ${new Date().toISOString()}`)
         break
       }
 
@@ -69,9 +63,7 @@ export async function findProjectRoot(startPath?: string): Promise<string> {
   }
 
   // If we can't find deno.json, return the start path as fallback
-  const fallback = startPath || safeGetCwd()
-  console.log(`[DEBUG-WIN] Using fallback: ${fallback} - ${new Date().toISOString()}`)
-  return fallback
+  return startPath || safeGetCwd()
 }
 
 /**
@@ -86,32 +78,22 @@ export async function createTestProject(
     isolateDirectory?: boolean
   } = {},
 ): Promise<string> {
-  console.log(`[DEBUG-WIN] createTestProject START - ${testName} - ${new Date().toISOString()}`)
   const { testCategory = 'unit', isolateDirectory = false } = options
 
-  console.log(`[DEBUG-WIN] Finding project root - ${new Date().toISOString()}`)
   const projectRoot = await findProjectRoot()
-  console.log(`[DEBUG-WIN] Project root found: ${projectRoot} - ${new Date().toISOString()}`)
 
   const testDir = isolateDirectory
     ? resolve('/tmp', 'vibe-tests', testCategory, testName)
     : resolve(projectRoot, 'tests', 'tmp', testCategory, testName)
-  console.log(`[DEBUG-WIN] Test directory resolved: ${testDir} - ${new Date().toISOString()}`)
 
-  console.log(`[DEBUG-WIN] Creating directory - ${new Date().toISOString()}`)
   await Effect.runPromise(ensureDir(testDir))
-  console.log(`[DEBUG-WIN] Directory created successfully - ${new Date().toISOString()}`)
 
-  console.log(`[DEBUG-WIN] Writing ${Object.keys(files).length} files - ${new Date().toISOString()}`)
   for (const [filename, content] of Object.entries(files)) {
     const filePath = resolve(testDir, filename)
-    console.log(`[DEBUG-WIN] Writing file: ${filePath} - ${new Date().toISOString()}`)
     await Effect.runPromise(ensureDir(dirname(filePath))) // Ensure parent directory exists
     await Deno.writeTextFile(filePath, JSON.stringify(content, null, 2))
-    console.log(`[DEBUG-WIN] File written successfully: ${filename} - ${new Date().toISOString()}`)
   }
 
-  console.log(`[DEBUG-WIN] createTestProject COMPLETE - ${testDir} - ${new Date().toISOString()}`)
   return testDir
 }
 

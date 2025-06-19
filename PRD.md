@@ -377,6 +377,74 @@ user-project/
 - **File-Based**: Local storage, no cloud dependencies
 - **Merge-Safe**: Never overwrite existing implementations
 
+## 🚧 CURRENT BLOCKER: Platform-Specific Installer Architecture Issue
+
+### **Problem Status (Session End - December 19, 2024)**
+
+**✅ FIXED: Workflow Dependencies**
+- Release workflow now properly waits for test workflow completion
+- Cache miss errors resolved - workflows run in sequence
+- `workflow_run` trigger working correctly
+
+**❌ BLOCKER: Cross-Platform Build Directory Mismatch**
+
+**Issue**: Installer compilation fails with "No such file or directory" for `installers/embedded-unix`
+
+**Root Cause Analysis:**
+```
+CI Output Shows:
+✅ Cross-platform build: "Binaries available in: installers/embedded/binaries"  
+❌ Installer build: Looking for "installers/embedded-unix/" (doesn't exist)
+```
+
+**Architecture Conflict:**
+1. **build-cross-platform.ts**: Should create `embedded-unix/` and `embedded-windows/` directories
+2. **CI Reality**: Still creating old `embedded/binaries/` directory 
+3. **deno.json tasks**: Expecting new platform-specific paths
+4. **Result**: Path mismatch causes compilation failure
+
+**Possible Causes:**
+- build-cross-platform.ts changes didn't take effect (git issue?)
+- Logic bug in platform-specific directory creation
+- Task override or caching issue in CI
+- Directory creation happening but in wrong location
+
+**Debug Steps Needed (Tomorrow):**
+1. Verify build-cross-platform.ts changes are actually committed and deployed
+2. Add debug logging to see exact directory creation paths
+3. Check if `copyScripts()` function is running and succeeding
+4. Verify platform detection logic in build script
+5. Test locally with fresh clone to reproduce issue
+
+**Files to Check:**
+- `scripts/build-cross-platform.ts` (main implementation)
+- `deno.json` (task definitions)  
+- `.github/workflows/test.yml` (CI configuration)
+
+**Expected Fix:**
+Directory creation should produce:
+```
+installers/
+├── embedded-unix/
+│   ├── binaries/ (Linux + macOS binaries)
+│   └── scripts/
+└── embedded-windows/  
+    ├── binaries/ (Windows binaries)
+    └── scripts/
+```
+
+**Impact:**
+- Self-contained installers cannot be built
+- Release workflow cannot complete
+- Native binary architecture 70% complete but blocked
+
+### **Completed Work (This Session)**
+✅ Native binary caching in test workflow (3 platforms)
+✅ Platform-specific installer architecture design
+✅ Workflow dependency sequencing fix
+✅ Release workflow asset preparation
+✅ 42% installer size reduction (when working: 727MB → 516MB/318MB)
+
 ## Success Definition
 
 **Phase 1 Success**: A developer can run `vibe code <package>` for any dependency in their project and get fresh, authoritative documentation printed to stdout, with intelligent caching for fast subsequent access.

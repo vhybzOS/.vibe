@@ -49,7 +49,7 @@ async function runCoverageScript(args: string[] = []): Promise<{
   code: number
 }> {
   const cmd = new Deno.Command('deno', {
-    args: ['run', '--allow-read', '--allow-env', 'scripts/coverage.ts', ...args],
+    args: ['run', '--allow-read', 'scripts/coverage.ts', ...args],
     stdout: 'piped',
     stderr: 'piped',
   })

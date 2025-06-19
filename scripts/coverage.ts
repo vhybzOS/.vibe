@@ -123,8 +123,8 @@ async function analyzeCoverage(options: CoverageOptions): Promise<CoverageResult
   const implementationFiles = await findImplementationFiles(options)
   console.log(`📁 Found ${implementationFiles.length} implementation files`)
 
-  // DEBUG: Log all discovered files for CI vs local comparison
-  if (Deno.env.get('CI') || Deno.args.includes('--debug')) {
+  // DEBUG: Log all discovered files when --debug flag is used
+  if (Deno.args.includes('--debug')) {
     console.log('\n🔍 DEBUG: All discovered implementation files:')
     implementationFiles.forEach((file, index) => {
       console.log(`   ${index + 1}. ${file}`)
@@ -150,8 +150,8 @@ async function analyzeCoverage(options: CoverageOptions): Promise<CoverageResult
     ? Math.round((coveredCount / implementationFiles.length) * 100)
     : 100
 
-  // DEBUG: Log coverage calculation details for CI debugging
-  if (Deno.env.get('CI') || Deno.args.includes('--debug')) {
+  // DEBUG: Log coverage calculation details when --debug flag is used
+  if (Deno.args.includes('--debug')) {
     console.log('\n🔍 DEBUG: Coverage calculation details:')
     console.log(`   Total files: ${implementationFiles.length}`)
     console.log(`   Covered files: ${coveredCount}`)

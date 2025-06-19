@@ -104,7 +104,7 @@ Dismissing what young people do is a trait we picked up from some of our boomer 
 
 ## Try It Yourself
 
-AI coding tools are ready. The techniques work. The only thing standing between you and a feeling you probably had on the early days of coding is the voice in your head saying "but real programmers don't do it this way."
+AI coding tools are ready. The techniques work. The only thing standing between you and a feeling you probably had on the early days of programming is the voice in your head saying "but real programmers don't do it this way."
 
 That voice is wrong, and it's holding you back.
 

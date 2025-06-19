@@ -1,254 +1,73 @@
-# Vibe Installation Guide
+# .vibe Installation Architecture
 
-This directory contains cross-platform installation scripts for Vibe and its daemon service.
+## Self-Contained Installers (Primary)
 
-## Quick Install
+**Build**: `deno task build:installers`
+**Output**: `build/install-dotvibe`, `build/install-dotvibe.exe`
 
-### Linux / macOS
+### Components
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/yourusername/vibe/main/install/install.sh | sudo bash
-```
+- `installers/install-dotvibe.ts` - Unix installer (Linux/macOS)
+- `installers/install-dotvibe-windows.ts` - Windows installer
+- `installers/embedded/` - All binaries + scripts embedded in compiled installers
+- `scripts/build-cross-platform.ts` - Builds binaries for all platforms
 
-### Windows
+### Features
 
-```powershell
-# Run as Administrator
-Invoke-Expression (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/yourusername/vibe/main/install/install.ps1" -UseBasicParsing).Content
-```
+- Zero network dependency
+- Platform auto-detection
+- Current User vs System-wide scope selection
+- OS native uninstall registration
 
-## Manual Installation
+## Legacy Scripts (Fallback)
 
-### 1. Download Installation Scripts
+**Files**: `install.sh`, `install.ps1`, `uninstall.sh`, `uninstall.ps1`
+**Mode**: Developer (builds from source) or User (downloads from GitHub)
 
-**Linux/macOS:**
+### Functions
 
-```bash
-curl -O https://raw.githubusercontent.com/yourusername/vibe/main/install/install.sh
-chmod +x install.sh
-sudo ./install.sh
-```
+- `detect_platform()` - Linux/macOS detection
+- `check_source()` - Developer vs User mode
+- `get_latest_version()` - GitHub API release fetching
+- `setup_service()` - systemd/launchd/Windows Service
 
-**Windows:**
+## OS Integration
 
-```powershell
-# Run PowerShell as Administrator
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/yourusername/vibe/main/install/install.ps1" -OutFile "install.ps1"
-.\install.ps1
-```
+**Windows**: `installers/os-integration/windows-registry.ts`
 
-### 2. Install Specific Version
+- `registerWithAddRemovePrograms()` - Add/Remove Programs entry
+- `createUninstallerWrapper()` - Batch file wrapper
 
-```bash
-# Linux/macOS
-sudo ./install.sh v1.2.3
+**macOS**: `installers/os-integration/macos-package.ts`
 
-# Windows
-.\install.ps1 -Version "v1.2.3"
-```
+- `createUninstallerApp()` - Native app bundle
+- `createPackageReceipt()` - Receipt tracking
 
-## What Gets Installed
+**Linux**: `installers/os-integration/linux-desktop.ts`
 
-### Binaries
+- `createUninstallerDesktopEntry()` - .desktop entry
+- `createGUIUninstaller()` - zenity/kdialog support
 
-- **`vibe`** - Main CLI tool
-- **`vibectl`** - Daemon control tool
+## Build Workflow
 
-### Installation Locations
+1. `build:cross-platform` → `installers/embedded/binaries/`
+2. `build:installer-unix` → `build/install-dotvibe`
+3. `build:installer-windows` → `build/install-dotvibe.exe`
 
-**Linux/macOS:**
+## Installation Paths
 
-- Binaries: `/usr/local/dotvibe/vibe`, `/usr/local/dotvibe/vibectl`
-- Symlinks: `/usr/local/bin/vibe`, `/usr/local/bin/vibectl`
-- Service: `/etc/systemd/system/vibe.service` (Linux) or `~/Library/LaunchAgents/dev.dotvibe.daemon.plist` (macOS)
+**Current User**:
 
-**Windows:**
+- Unix: `~/.local/share/dotvibe`, `~/.local/bin`
+- Windows: `%LOCALAPPDATA%\dotvibe`
 
-- Binaries: `%PROGRAMFILES%\dotvibe\vibe.exe`, `%PROGRAMFILES%\dotvibe\vibectl.exe`
-- PATH: `%PROGRAMFILES%\dotvibe` added to system PATH
-- Service: Windows Service named "DotVibeDaemon"
+**System-wide**:
 
-### System Services
+- Unix: `/usr/local/share/dotvibe`, `/usr/local/bin`
+- Windows: `%PROGRAMFILES%\dotvibe`
 
-The installation automatically sets up a daemon service that:
+## Services
 
-- Starts automatically on system boot
-- Runs in the background
-- Provides development workflow automation
-- Manages project discovery and monitoring
-
-## Verification
-
-After installation, verify everything is working:
-
-```bash
-# Check command availability
-vibe --version
-vibectl --version
-
-# Check daemon status
-# Linux
-systemctl status vibe.service
-
-# macOS
-launchctl list | grep dev.dotvibe.daemon
-
-# Windows
-Get-Service DotVibeDaemon
-```
-
-## Uninstallation
-
-### Linux/macOS
-
-```bash
-curl -O https://raw.githubusercontent.com/yourusername/vibe/main/install/uninstall.sh
-chmod +x uninstall.sh
-sudo ./uninstall.sh
-```
-
-### Windows
-
-```powershell
-# Run as Administrator
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/yourusername/vibe/main/install/uninstall.ps1" -OutFile "uninstall.ps1"
-.\uninstall.ps1
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**Permission Errors:**
-
-- Ensure you're running as administrator/root
-- Check file permissions on installation scripts
-
-**Service Not Starting:**
-
-- Check system logs for error messages
-- Verify binary permissions and paths
-- Ensure required dependencies are installed
-
-**Command Not Found:**
-
-- Restart your terminal/shell
-- Check that installation directory is in PATH
-- Verify symlinks are created correctly
-
-### Platform-Specific Issues
-
-**Linux:**
-
-```bash
-# Check service status
-systemctl status vibe.service
-
-# View service logs
-journalctl -u vibe.service -f
-
-# Manual service management
-sudo systemctl start vibe.service
-sudo systemctl stop vibe.service
-sudo systemctl restart vibe.service
-```
-
-**macOS:**
-
-```bash
-# Check LaunchAgent status
-launchctl list | grep dev.dotvibe.daemon
-
-# View logs
-tail -f /usr/local/var/log/vibe-daemon.log
-
-# Manual service management
-launchctl load ~/Library/LaunchAgents/dev.dotvibe.daemon.plist
-launchctl unload ~/Library/LaunchAgents/dev.dotvibe.daemon.plist
-```
-
-**Windows:**
-
-```powershell
-# Check service status
-Get-Service DotVibeDaemon
-
-# View event logs
-Get-EventLog -LogName Application -Source "DotVibeDaemon" -Newest 10
-
-# Manual service management
-Start-Service DotVibeDaemon
-Stop-Service DotVibeDaemon
-Restart-Service DotVibeDaemon
-```
-
-## Advanced Installation
-
-### Custom Installation Directory
-
-**Linux/macOS:**
-
-```bash
-# Edit the script and modify INSTALL_DIR variable
-sudo INSTALL_DIR="/opt/vibe" ./install.sh
-```
-
-**Windows:**
-
-```powershell
-# Not supported - uses standard Program Files location
-```
-
-### Service Configuration
-
-Service templates are located in `service-templates/`:
-
-- `vibe.service` - Linux systemd service
-- `dev.dotvibe.daemon.plist` - macOS LaunchAgent
-- `vibe-service.xml` - Windows Service configuration
-
-You can customize these templates before installation if needed.
-
-## Dependencies
-
-### Required
-
-- **Deno** - Runtime for the application
-- **curl** - For downloading installation files
-- **System permissions** - Administrator/root access for system-wide installation
-
-### Platform-Specific
-
-- **Linux**: systemd (for service management)
-- **macOS**: launchd (built-in)
-- **Windows**: Windows Service Manager (built-in)
-
-## Security Considerations
-
-- Installation requires administrator privileges
-- Binaries are installed to system directories
-- Service runs with system privileges
-- All network communication is local-only by default
-
-## Support
-
-For installation issues:
-
-1. Check the troubleshooting section above
-2. Review system-specific logs
-3. Open an issue at: https://github.com/yourusername/vibe/issues
-
-## File Structure
-
-```
-install/
-├── install.sh              # Unix installation script
-├── install.ps1             # Windows installation script
-├── uninstall.sh            # Unix removal script
-├── uninstall.ps1           # Windows removal script
-├── service-templates/      # Service configuration templates
-│   ├── vibe.service        # Linux systemd service
-│   ├── dev.dotvibe.daemon.plist # macOS LaunchAgent
-│   └── vibe-service.xml    # Windows Service config
-└── README.md              # This documentation
-```
+**Linux**: systemd (user: `~/.config/systemd/user`, system: `/etc/systemd/system`)
+**macOS**: launchd (user: `~/Library/LaunchAgents`, system: `/Library/LaunchDaemons`)
+**Windows**: Windows Service (system-wide only)

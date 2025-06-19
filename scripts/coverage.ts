@@ -49,6 +49,7 @@ function shouldSkipFile(filePath: string, skipPatterns: string[]): boolean {
     'tests/', // Also match paths starting with tests/
     '/node_modules/',
     '/build/',
+    '/vibe-coding-project-starters/', // Template files don't need @tested_by annotations
     '.test.ts',
     '.spec.ts',
   ]

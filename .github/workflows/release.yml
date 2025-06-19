@@ -81,19 +81,20 @@ jobs:
       - name: 📥 Cache dependencies
         run: deno cache --frozen cli.ts daemon.ts
 
-      - name: 🔨 Build Linux binaries
+      - name: 🔨 Build cross-platform binaries
+        run: deno task build:cross-platform
+
+      - name: 🔨 Build self-contained installers
+        run: deno task build:installers
+
+      - name: 🔨 Build versioned binaries for release
         run: |
-          deno compile --allow-all --target x86_64-unknown-linux-gnu --output build/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64 cli.ts
+          # Build individual binaries with version names for backward compatibility
+          deno compile --allow-all --target x86_64-unknown-linux-gnu --include vibe-coding-project-starters/ --output build/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64 cli.ts
           deno compile --allow-all --target x86_64-unknown-linux-gnu --output build/vibectl-${{ needs.check-version.outputs.new-version }}-linux-x86_64 daemon.ts
-
-      - name: 🔨 Build macOS binaries
-        run: |
-          deno compile --allow-all --target x86_64-apple-darwin --output build/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64 cli.ts
+          deno compile --allow-all --target x86_64-apple-darwin --include vibe-coding-project-starters/ --output build/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64 cli.ts
           deno compile --allow-all --target x86_64-apple-darwin --output build/vibectl-${{ needs.check-version.outputs.new-version }}-macos-x86_64 daemon.ts
-
-      - name: 🔨 Build Windows binaries
-        run: |
-          deno compile --allow-all --target x86_64-pc-windows-msvc --output build/vibe-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe cli.ts
+          deno compile --allow-all --target x86_64-pc-windows-msvc --include vibe-coding-project-starters/ --output build/vibe-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe cli.ts
           deno compile --allow-all --target x86_64-pc-windows-msvc --output build/vibectl-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe daemon.ts
 
       - name: 📦 Verify binaries created
@@ -138,6 +139,8 @@ jobs:
           generate_release_notes: ${{ steps.release-notes.outputs.use-auto-notes == 'true' }}
           body_path: ${{ steps.release-notes.outputs.use-auto-notes == 'false' && 'release_notes.md' || '' }}
           files: |
+            build/install-dotvibe
+            build/install-dotvibe.exe
             build/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64
             build/vibectl-${{ needs.check-version.outputs.new-version }}-linux-x86_64
             build/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64

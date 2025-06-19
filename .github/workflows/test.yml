@@ -131,7 +131,14 @@ jobs:
         run: deno task build:cross-platform
 
       - name: 🔨 Build platform-specific installers
-        run: deno task build:installers
+        run: |
+          echo "Checking embedded directories after cross-platform build:"
+          ls -la installers/ || echo "No installers directory"
+          ls -la installers/embedded-unix/ || echo "No embedded-unix directory"
+          ls -la installers/embedded-windows/ || echo "No embedded-windows directory"
+
+          # Build installers
+          deno task build:installers
 
       - name: 📦 Cache Self-Contained Installers
         uses: actions/cache/save@v4

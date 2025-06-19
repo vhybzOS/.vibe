@@ -11,7 +11,7 @@ This starter template gives you:
   protocols
 - **📋 PROTOCOLS.md** - Comprehensive workflow and coding standards reference
   manual
-- **🚀 CLAUDE.md** - Simple setup for AI coding assistants
+- **🚀 CLAUDE.md** - Simple setup for AI coding assistants (change filename to your own if not Claude Code)
 - **📊 PRD.md** - Product Requirements Document template for planning features
 - **🧪 TESTS.md** - Test tracking and strategy documentation template
 

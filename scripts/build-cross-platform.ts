@@ -136,7 +136,7 @@ async function copyScripts(unixDir: string, windowsDir: string) {
   try {
     // Check if scripts source exists
     await Deno.stat(scriptsSource)
-    
+
     // Copy all scripts to both directories
     for await (const entry of Deno.readDir(scriptsSource)) {
       if (entry.isFile) {

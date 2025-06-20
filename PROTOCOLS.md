@@ -155,14 +155,117 @@ EOF
 **State**: [Current implementation state and quality gate status]
 ```
 
+### CI Protocol
+
+**Triggered by:** User queries like "check CI", "GitHub errored", "workflow failed", etc.
+
+**Purpose:** Diagnose and report CI/CD workflow failures systematically
+
+**Step 1: Check Recent Workflow Runs**
+
+```bash
+# Get last 5 workflow runs with status
+curl -s "https://api.github.com/repos/vhybzOS/.vibe/actions/runs?per_page=5" | \
+  grep -E '(status|conclusion|head_sha|run_number|created_at)' | head -20
+```
+
+**Step 2: Identify Failed Workflows**
+
+```bash
+# Get workflow names and details
+curl -s "https://api.github.com/repos/vhybzOS/.vibe/actions/runs?per_page=2" | \
+  grep -A5 -B5 '"name"'
+```
+
+**Step 3: Analyze Specific Failure**
+
+If a workflow failed (conclusion: "failure"):
+
+1. Note the workflow run ID from the API response
+2. Use WebFetch to examine the workflow run page:
+   ```
+   https://github.com/vhybzOS/.vibe/actions/runs/{RUN_ID}
+   ```
+3. Look for:
+   - Red error indicators
+   - Failed job names
+   - Exit codes
+   - Specific error messages
+
+**Step 4: Common CI Failure Patterns**
+
+- **Exit code 1**: General failure - check specific job logs
+- **Formatting issues**: Run `deno task fmt` before committing
+- **Type errors**: Run `deno task check` locally
+- **Lint violations**: Run `deno task lint` locally
+- **Test failures**: Check which test suite failed
+- **Cache miss**: Verify cache keys align between jobs
+
+**Step 5: Report Findings**
+
+Provide:
+
+1. Which workflow failed
+2. Specific job that failed
+3. Root cause (if identifiable)
+4. Suggested fix
+
 ### Release Protocol
 
-**When preparing a release:**
+**Triggered by:** Version bump in deno.json (automatic check after push)
 
-1. **Update CHANGELOG.md** - Generate from PRD.md completed features
-2. **Version Bump** - Update deno.json version according to semver rules
-3. **Extract Release Notes** - Pull feature highlights from PRD.md phases
-4. **Format for Users** - Convert technical specs to user-friendly features
+**Purpose:** Ensure successful release creation and asset uploads
+
+**Step 1: Invoke CI Protocol**
+
+First, run the CI Protocol to check if the Build and Release workflow succeeded.
+
+**Step 2: Check Version Change Detection**
+
+```bash
+# Verify version was detected
+curl -s "https://api.github.com/repos/vhybzOS/.vibe/actions/runs?per_page=1" | \
+  grep -B5 -A5 "check-version"
+```
+
+**Step 3: Verify Release Creation**
+
+```bash
+# Check latest release
+curl -s "https://api.github.com/repos/vhybzOS/.vibe/releases/latest" | \
+  grep -E '(tag_name|name|created_at|assets)' | head -20
+
+# Check recent releases
+curl -s "https://api.github.com/repos/vhybzOS/.vibe/releases?per_page=5" | \
+  grep -E '(tag_name|created_at)' | head -20
+```
+
+**Step 4: Validate Release Assets**
+
+Expected assets for each release:
+
+- `install-dotvibe` (Unix installer)
+- `install-dotvibe.exe` (Windows installer)
+- `vibe-{VERSION}-linux-x86_64` (Linux binary)
+- `vibe-{VERSION}-macos-x86_64` (macOS binary)
+- `vibe-{VERSION}-windows-x86_64.exe` (Windows binary)
+
+**Step 5: Common Release Failures**
+
+- **No release created**: Version change not detected
+- **Missing assets**: Cache path mismatches between jobs
+- **Partial assets**: Build job failed for specific platform
+- **Wrong version**: Version in deno.json doesn't match tag
+
+**Release Preparation Checklist:**
+
+1. **Format code**: `deno task fmt`
+2. **Update CHANGELOG.md** - Generate from PRD.md completed features
+3. **Version Bump** - Update deno.json version according to semver rules
+4. **Extract Release Notes** - Pull feature highlights from PRD.md phases
+5. **Format for Users** - Convert technical specs to user-friendly features
+6. **Commit and Push** - Triggers automatic release workflow
+7. **Monitor Release** - Use this protocol to verify success
 
 **CHANGELOG.md Generation:**
 

@@ -26,6 +26,17 @@ jobs:
       version-changed: ${{ steps.version-check.outputs.version-changed }}
       new-version: ${{ steps.version-check.outputs.new-version }}
     steps:
+      - name: 🐛 Debug Workflow Context
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Workflow run conclusion: ${{ github.event.workflow_run.conclusion }}"
+          echo "Head SHA: ${{ github.event.workflow_run.head_sha }}"
+          echo "Current SHA: ${{ github.sha }}"
+          echo "Event details:"
+          cat << 'EOF'
+          ${{ toJson(github.event) }}
+          EOF
+
       - name: 📥 Checkout code
         uses: actions/checkout@v4
         with:
@@ -104,6 +115,11 @@ jobs:
 
           cp macos-binaries/vibe-macos-x86_64 release-assets/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64
           cp macos-binaries/vibectl-macos-x86_64 release-assets/vibectl-${{ needs.check-version.outputs.new-version }}-macos-x86_64
+
+      - name: 🐛 Debug Cache Key
+        run: |
+          echo "Looking for cache key: installers-${{ github.event.workflow_run.head_sha }}"
+          echo "Head SHA: ${{ github.event.workflow_run.head_sha }}"
 
       - name: 📥 Get Self-Contained Installers
         uses: actions/cache/restore@v4

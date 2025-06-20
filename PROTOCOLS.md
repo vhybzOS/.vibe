@@ -169,6 +169,8 @@ curl -s "https://api.github.com/repos/vhybzOS/.vibe/actions/runs?per_page=5" | \
   grep -E '(status|conclusion|head_sha|run_number|created_at)' | head -20
 ```
 
+**Note:** Workflows typically take about 2 minutes to complete. If status shows "queued" or "in_progress", wait 2 minutes before checking again.
+
 **Step 2: Identify Failed Workflows**
 
 ```bash
@@ -218,7 +220,7 @@ Provide:
 
 **Step 1: Invoke CI Protocol**
 
-First, run the CI Protocol to check if the Build and Release workflow succeeded.
+First, run the CI Protocol to check if the Build and Release workflow succeeded. Remember to wait about 2 minutes for workflows to complete if they show as "in_progress".
 
 **Step 2: Check Version Change Detection**
 

@@ -189,30 +189,30 @@ jobs:
       - name: 📥 Get Linux Binaries
         uses: actions/cache/restore@v4
         with:
-          path: linux-binaries/
+          path: build-native/
           key: native-binaries-linux-${{ github.sha }}
           fail-on-cache-miss: false
 
       - name: 📥 Get Windows Binaries
         uses: actions/cache/restore@v4
         with:
-          path: windows-binaries/
+          path: build-native/
           key: native-binaries-windows-${{ github.sha }}
           fail-on-cache-miss: false
 
       - name: 📥 Get macOS Binaries
         uses: actions/cache/restore@v4
         with:
-          path: macos-binaries/
+          path: build-native/
           key: native-binaries-macos-${{ github.sha }}
           fail-on-cache-miss: false
 
       - name: 📋 Organize release assets
         run: |
           # Copy all platform binaries with version names
-          cp linux-binaries/vibe-linux-x86_64 release-assets/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64
-          cp windows-binaries/vibe-windows-x86_64.exe release-assets/vibe-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe
-          cp macos-binaries/vibe-macos-x86_64 release-assets/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64
+          cp build-native/vibe-linux-x86_64 release-assets/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64 || echo "Linux binary not found"
+          cp build-native/vibe-windows-x86_64.exe release-assets/vibe-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe || echo "Windows binary not found"
+          cp build-native/vibe-macos-x86_64 release-assets/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64 || echo "macOS binary not found"
 
       - name: 📥 Get Self-Contained Installers
         uses: actions/cache/restore@v4

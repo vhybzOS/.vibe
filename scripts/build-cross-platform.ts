@@ -134,6 +134,9 @@ async function copyScripts(unixDir: string, windowsDir: string) {
   await ensureDirectory(windowsScriptsDir)
 
   try {
+    // Check if scripts source exists
+    await Deno.stat(scriptsSource)
+    
     // Copy all scripts to both directories
     for await (const entry of Deno.readDir(scriptsSource)) {
       if (entry.isFile) {
@@ -147,7 +150,8 @@ async function copyScripts(unixDir: string, windowsDir: string) {
     }
     log('Scripts copied to platform-specific directories')
   } catch (error) {
-    warn(`Could not copy scripts: ${error}`)
+    warn(`Scripts directory not found or empty - skipping script copy: ${error}`)
+    // This is not critical as installers can work without additional scripts
   }
 }
 

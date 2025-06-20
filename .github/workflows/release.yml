@@ -1,11 +1,14 @@
 name: Build and Release
 
 on:
-  workflow_run:
-    workflows: ['Build and Test']
-    types:
-      - completed
+  push:
     branches: [main]
+    paths:
+      - '**/*.ts'
+      - '!docs/**'
+      - 'deno.json'
+      - 'deno.lock'
+      - '.github/workflows/**'
   workflow_dispatch:
     inputs:
       tag:
@@ -17,31 +20,134 @@ env:
   DENO_VERSION: 'v2.3.6'
 
 jobs:
+  test:
+    name: 'Test and Build on ${{ matrix.os }}'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Configure Git for consistent line endings
+        run: |
+          git config core.autocrlf false
+          git config core.eol lf
+
+      - name: 🦕 Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: 📦 Cache Deno dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/deno
+            ~/.deno
+          key: ${{ runner.os }}-deno-${{ env.DENO_VERSION }}-${{ hashFiles('**/deno.lock', '**/deno.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-${{ env.DENO_VERSION }}-
+            ${{ runner.os }}-deno-
+
+      - name: 📥 Verify lock file and cache dependencies
+        run: deno cache --frozen cli.ts daemon.ts
+
+      - name: 🔬 Lint and Format Check
+        run: |
+          deno task lint
+          deno task fmt --check
+
+      - name: 📝 Type Check
+        run: deno task check
+
+      - name: 🧪 Run Full Test Suite
+        run: deno task test --no-check
+
+      - name: 📊 Analyze Test Coverage (Linux only)
+        if: matrix.os == 'ubuntu-latest'
+        run: deno task coverage
+
+      - name: 🔨 Build Native Platform Binaries
+        shell: bash
+        run: |
+          mkdir -p build-native
+
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            echo "Building Windows binaries..."
+            deno compile --allow-all --include vibe-coding-project-starters/ --output build-native/vibe-windows-x86_64.exe cli.ts
+            deno compile --allow-all --output build-native/vibectl-windows-x86_64.exe daemon.ts
+          elif [ "${{ matrix.platform }}" = "macos" ]; then
+            echo "Building macOS binaries..."
+            deno compile --allow-all --include vibe-coding-project-starters/ --output build-native/vibe-macos-x86_64 cli.ts
+            deno compile --allow-all --output build-native/vibectl-macos-x86_64 daemon.ts
+          else
+            echo "Building Linux binaries..."
+            deno compile --allow-all --include vibe-coding-project-starters/ --output build-native/vibe-linux-x86_64 cli.ts
+            deno compile --allow-all --output build-native/vibectl-linux-x86_64 daemon.ts
+          fi
+
+          ls -la build-native/
+
+      - name: 📦 Cache Native Platform Binaries
+        uses: actions/cache/save@v4
+        with:
+          path: build-native/
+          key: native-binaries-${{ matrix.platform }}-${{ github.sha }}
+
+  build-installers:
+    name: 'Build Self-Contained Installers'
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🦕 Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: 📥 Cache dependencies
+        run: deno cache --frozen cli.ts daemon.ts
+
+      - name: 🔨 Build cross-platform binaries for embedding
+        run: deno task build:cross-platform
+
+      - name: 🔨 Build platform-specific installers
+        run: deno task build:installers
+
+      - name: 📦 Cache Self-Contained Installers
+        uses: actions/cache/save@v4
+        with:
+          path: build/install-dotvibe*
+          key: installers-${{ github.sha }}
+
+      - name: 📊 Show installer sizes
+        run: |
+          echo "Installer sizes:"
+          ls -lh build/install-dotvibe* || echo "No installers found"
+
   check-version:
     name: 'Check Version Change'
     runs-on: ubuntu-latest
-    # Only run if test workflow completed successfully (or manual trigger)
-    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
     outputs:
       version-changed: ${{ steps.version-check.outputs.version-changed }}
       new-version: ${{ steps.version-check.outputs.new-version }}
     steps:
-      - name: 🐛 Debug Workflow Context
-        run: |
-          echo "Event name: ${{ github.event_name }}"
-          echo "Workflow run conclusion: ${{ github.event.workflow_run.conclusion }}"
-          echo "Head SHA: ${{ github.event.workflow_run.head_sha }}"
-          echo "Current SHA: ${{ github.sha }}"
-          echo "Event details:"
-          cat << 'EOF'
-          ${{ toJson(github.event) }}
-          EOF
-
       - name: 📥 Checkout code
         uses: actions/checkout@v4
         with:
-          # For workflow_run, we need to checkout the commit that triggered the test workflow
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 2
 
       - name: 🔍 Check if version changed
@@ -68,7 +174,7 @@ jobs:
   release:
     name: 'Publish Release with Native Binaries'
     runs-on: ubuntu-latest
-    needs: check-version
+    needs: [test, build-installers, check-version]
     if: needs.check-version.outputs.version-changed == 'true'
 
     steps:
@@ -87,21 +193,21 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: linux-binaries/
-          key: native-binaries-linux-${{ github.event.workflow_run.head_sha }}
+          key: native-binaries-linux-${{ github.sha }}
           fail-on-cache-miss: false
 
       - name: 📥 Get Windows Binaries
         uses: actions/cache/restore@v4
         with:
           path: windows-binaries/
-          key: native-binaries-windows-${{ github.event.workflow_run.head_sha }}
+          key: native-binaries-windows-${{ github.sha }}
           fail-on-cache-miss: false
 
       - name: 📥 Get macOS Binaries
         uses: actions/cache/restore@v4
         with:
           path: macos-binaries/
-          key: native-binaries-macos-${{ github.event.workflow_run.head_sha }}
+          key: native-binaries-macos-${{ github.sha }}
           fail-on-cache-miss: false
 
       - name: 📋 Organize release assets
@@ -116,16 +222,11 @@ jobs:
           cp macos-binaries/vibe-macos-x86_64 release-assets/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64
           cp macos-binaries/vibectl-macos-x86_64 release-assets/vibectl-${{ needs.check-version.outputs.new-version }}-macos-x86_64
 
-      - name: 🐛 Debug Cache Key
-        run: |
-          echo "Looking for cache key: installers-${{ github.event.workflow_run.head_sha }}"
-          echo "Head SHA: ${{ github.event.workflow_run.head_sha }}"
-
       - name: 📥 Get Self-Contained Installers
         uses: actions/cache/restore@v4
         with:
           path: build/
-          key: installers-${{ github.event.workflow_run.head_sha }}
+          key: installers-${{ github.sha }}
           fail-on-cache-miss: true
 
       - name: 📋 Add installers to release

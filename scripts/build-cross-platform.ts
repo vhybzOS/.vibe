@@ -125,12 +125,42 @@ async function validateBinary(binaryPath: string, platform: { name: string }) {
   }
 }
 
+async function copyScripts(unixDir: string, windowsDir: string) {
+  // Copy scripts to both platform directories
+  const scriptsSource = resolve('installers', 'embedded', 'scripts')
+  const unixScriptsDir = resolve(unixDir, '..', 'scripts')
+  const windowsScriptsDir = resolve(windowsDir, '..', 'scripts')
+
+  await ensureDirectory(unixScriptsDir)
+  await ensureDirectory(windowsScriptsDir)
+
+  try {
+    // Copy all scripts to both directories
+    for await (const entry of Deno.readDir(scriptsSource)) {
+      if (entry.isFile) {
+        const sourceFile = resolve(scriptsSource, entry.name)
+        const unixTarget = resolve(unixScriptsDir, entry.name)
+        const windowsTarget = resolve(windowsScriptsDir, entry.name)
+
+        await Deno.copyFile(sourceFile, unixTarget)
+        await Deno.copyFile(sourceFile, windowsTarget)
+      }
+    }
+    log('Scripts copied to platform-specific directories')
+  } catch (error) {
+    warn(`Could not copy scripts: ${error}`)
+  }
+}
+
 async function main() {
   log('Starting cross-platform build process...')
 
-  // Ensure output directory exists
-  const outputDir = resolve('installers', 'embedded', 'binaries')
-  await ensureDirectory(outputDir)
+  // Create platform-specific embedded directories
+  const unixDir = resolve('installers', 'embedded-unix', 'binaries')
+  const windowsDir = resolve('installers', 'embedded-windows', 'binaries')
+
+  await ensureDirectory(unixDir)
+  await ensureDirectory(windowsDir)
 
   let totalBuilds = 0
   let successfulBuilds = 0
@@ -141,6 +171,10 @@ async function main() {
 
     for (const platform of platforms) {
       totalBuilds++
+
+      // Determine output directory based on platform
+      const outputDir = platform.name === 'Windows' ? windowsDir : unixDir
+
       const success = await buildBinary(target, platform, outputDir)
       if (success) {
         successfulBuilds++
@@ -163,7 +197,13 @@ async function main() {
 
   if (successfulBuilds === totalBuilds) {
     success('All binaries built successfully!')
-    console.log(`\nBinaries available in: ${colors.cyan}${outputDir}${colors.reset}`)
+
+    // Copy scripts to both platform-specific directories
+    log('Copying installation scripts...')
+    await copyScripts(unixDir, windowsDir)
+
+    console.log(`\nUnix binaries: ${colors.cyan}${unixDir}${colors.reset}`)
+    console.log(`Windows binaries: ${colors.cyan}${windowsDir}${colors.reset}`)
   } else {
     error(`${totalBuilds - successfulBuilds} builds failed`)
     Deno.exit(1)

@@ -104,7 +104,7 @@ function getInstallConfig(scope: InstallScope, platform: Platform): InstallConfi
 async function extractEmbeddedBinary(binaryName: string, outputPath: string): Promise<void> {
   try {
     // In a compiled Deno binary, embedded files are accessible via import.meta.resolve
-    const binaryData = await Deno.readFile(new URL(`../embedded/binaries/${binaryName}`, import.meta.url))
+    const binaryData = await Deno.readFile(new URL(`../embedded-unix/binaries/${binaryName}`, import.meta.url))
     await Deno.writeFile(outputPath, binaryData)
     await Deno.chmod(outputPath, 0o755)
     log(`Extracted ${binaryName} to ${outputPath}`)
@@ -116,7 +116,7 @@ async function extractEmbeddedBinary(binaryName: string, outputPath: string): Pr
 
 async function extractInstallScript(scriptName: string, outputPath: string): Promise<void> {
   try {
-    const scriptData = await Deno.readTextFile(new URL(`../embedded/scripts/${scriptName}`, import.meta.url))
+    const scriptData = await Deno.readTextFile(new URL(`../embedded-unix/scripts/${scriptName}`, import.meta.url))
     await Deno.writeTextFile(outputPath, scriptData)
     await Deno.chmod(outputPath, 0o755)
     log(`Extracted install script to ${outputPath}`)

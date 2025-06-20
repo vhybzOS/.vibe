@@ -109,7 +109,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: build/
-          key: installers-${{ github.event.workflow_run.head_sha || github.sha }}
+          key: installers-${{ github.event.workflow_run.head_sha }}
           fail-on-cache-miss: true
 
       - name: 📋 Add installers to release

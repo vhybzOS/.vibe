@@ -377,17 +377,97 @@ user-project/
 - **File-Based**: Local storage, no cloud dependencies
 - **Merge-Safe**: Never overwrite existing implementations
 
-## 🚧 CURRENT BLOCKER: Platform-Specific Installer Architecture Issue
+## 🚧 ACTIVE DEVELOPMENT: Single Binary Architecture Migration
+
+### **Thread**: Single Binary Architecture Migration
+
+**Trigger**: GitHub Actions cache scoping issue resolved, daemon.ts is empty placeholder, perfect timing for binary consolidation
+
+**Scope**: Merge `vibe` and `vibectl` into single binary with `vibe daemon` subcommand, update all installation infrastructure for 50% size reduction
+
+**Exit Criteria**:
+
+- Single `vibe` binary with daemon subcommand functionality
+- All service templates updated to use `vibe daemon`
+- Installation scripts handle only single binary
+- GitHub workflow builds 3 binaries instead of 6
+- 50% reduction in installer sizes achieved
+
+**✅ Step 1: Write Tests First** - Define daemon command behavior in CLI test suite
+
+- ✅ Add daemon command tests to CLI integration tests
+- ✅ Test `vibe daemon` subcommand functionality
+- ✅ Verify daemon starts and handles basic lifecycle
+
+**✅ Step 2: Write Minimal Code** - Add daemon command to CLI
+
+- ✅ Add `daemon` command to cli.ts commander setup
+- ✅ Import daemon logic from daemon.ts
+- ✅ Basic daemon command routing implementation
+
+**✅ Step 3: Extend Code Incrementally** - Update service templates
+
+- ✅ Update Linux systemd: `vibectl` → `vibe daemon`
+- ✅ Update macOS launchd: `vibectl` → `vibe daemon`
+- ✅ Update Windows service: `vibectl.exe` → `vibe.exe daemon`
+- ✅ Update self-contained installers for single binary extraction
+- ✅ Remove all vibectl references from installation infrastructure
+
+**✅ Step 4: Runtime Verification** - Test daemon command locally
+
+- ✅ Run `./vibe daemon` and verify startup
+- ✅ Test service template generation with new paths
+
+**⭕ Step 5: Test Evolution** - Update installer tests for single binary
+
+- ⭕ Remove vibectl references from installer tests
+- ⭕ Update binary extraction tests for single file
+
+**⭕ Step 6: Re-verify Runtime** - Test complete installation flow
+
+- ⭕ Test self-contained installer with single binary
+- ⭕ Verify service registration with `vibe daemon`
+
+**⭕ Step 7: Quality Gates** - Pass all quality checks
+
+- ⭕ Type check passes (`deno task check`)
+- ⭕ Lint validation passes (`deno task lint`)
+- ⭕ All tests passing
+
+**✅ Step 8: Loop** - Update GitHub workflow for single binary builds
+
+- ✅ Remove vibectl from build matrix
+- ✅ Update cache keys and asset names
+- ✅ Update build scripts to compile only vibe binary
+- ✅ Remove vibectl references from deno.json tasks
+- ⭕ Test complete CI/CD pipeline
+
+**📊 Expected Benefits:**
+
+- **Binary Count**: 6 → 3 (50% reduction)
+- **Build Cache**: ~666MB → ~333MB total
+- **Unix Installer**: 409MB → ~205MB (50% reduction)
+- **Windows Installer**: 212MB → 106MB (50% reduction)
+- **Architecture**: Simpler, single binary to maintain
+
+## 🚧 RESOLVED BLOCKER: Platform-Specific Installer Architecture Issue
 
 ### **Problem Status (Session End - December 19, 2024)**
+
+**✅ FIXED: GitHub Actions Cache Scoping**
+
+- Reverted to single workflow with proper job dependencies
+- Cache sharing works within unified release.yml workflow
+- Release workflow now properly sequences: test → build-installers → release
+- `workflow_run` trigger removed to eliminate cache scoping issues
 
 **✅ FIXED: Workflow Dependencies**
 
 - Release workflow now properly waits for test workflow completion
 - Cache miss errors resolved - workflows run in sequence
-- `workflow_run` trigger working correctly
+- Job dependency chain established with `needs: [test, build-installers, check-version]`
 
-**❌ BLOCKER: Cross-Platform Build Directory Mismatch**
+**❌ HISTORICAL ISSUE: Cross-Platform Build Directory Mismatch**
 
 **Issue**: Installer compilation fails with "No such file or directory" for `installers/embedded-unix`
 

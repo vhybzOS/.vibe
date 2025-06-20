@@ -16,6 +16,7 @@ import { initCommand } from './commands/init.ts'
 import { executeVibeCode } from './commands/vibe-code.ts'
 import { executeTemplateScaffolding } from './services/template-scaffolding.ts'
 import { InitOptionsSchema } from './schemas/config.ts'
+import { startDaemon } from './daemon.ts'
 
 const program = new Command()
 
@@ -53,7 +54,19 @@ program
     Effect.runPromise(runCommand(executeVibeCode(packageName)))
   })
 
+// Daemon command
+program
+  .command('daemon')
+  .description('🚀 Start the Vibe daemon service for background operations')
+  .action(() => {
+    // Run the daemon with proper error handling
+    Effect.runPromise(runCommand(startDaemon()))
+  })
+
 // Parse command line arguments
 if (import.meta.main) {
   program.parse()
 }
+
+// Export program for testing
+export { program }

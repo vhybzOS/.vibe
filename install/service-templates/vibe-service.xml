@@ -3,7 +3,8 @@
     <id>DotVibeDaemon</id>
     <name>DotVibeDaemon</name>
     <description>Vibe Daemon Service (dotvibe.dev)</description>
-    <executable>%PROGRAMFILES%\dotvibe\vibectl.exe</executable>
+    <executable>%PROGRAMFILES%\dotvibe\vibe.exe</executable>
+    <arguments>daemon</arguments>
     <workingdirectory>%PROGRAMDATA%\dotvibe</workingdirectory>
     
     <logpath>%PROGRAMDATA%\dotvibe\logs</logpath>

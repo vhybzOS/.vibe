@@ -7,7 +7,8 @@
     
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/local/dotvibe/vibectl</string>
+        <string>/usr/local/dotvibe/vibe</string>
+        <string>daemon</string>
     </array>
     
     <key>RunAtLoad</key>

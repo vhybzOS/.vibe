@@ -62,7 +62,7 @@ function detectPlatform(): Platform {
   }
 }
 
-function getBinaryName(tool: 'vibe' | 'vibectl', platform: Platform): string {
+function getBinaryName(tool: 'vibe', platform: Platform): string {
   return `${tool}-${platform}-x86_64`
 }
 
@@ -169,20 +169,15 @@ async function installBinaries(config: InstallConfig): Promise<void> {
   try {
     // Extract binaries to temp directory first
     const vibeBinary = getBinaryName('vibe', config.platform)
-    const vibectlBinary = getBinaryName('vibectl', config.platform)
 
     const tempVibePath = join(config.tempDir, 'vibe')
-    const tempVibectlPath = join(config.tempDir, 'vibectl')
 
     await extractEmbeddedBinary(vibeBinary, tempVibePath)
-    await extractEmbeddedBinary(vibectlBinary, tempVibectlPath)
 
     // Move binaries to final location
     const finalVibePath = join(config.binDir, 'vibe')
-    const finalVibectlPath = join(config.binDir, 'vibectl')
 
     await Deno.rename(tempVibePath, finalVibePath)
-    await Deno.rename(tempVibectlPath, finalVibectlPath)
 
     success(`Binaries installed to ${config.binDir}`)
   } finally {
@@ -252,7 +247,7 @@ async function setupService(config: InstallConfig): Promise<void> {
 }
 
 async function setupLinuxService(config: InstallConfig): Promise<void> {
-  const vibectlPath = join(config.binDir, 'vibectl')
+  const vibePath = join(config.binDir, 'vibe')
 
   if (config.scope === 'CurrentUser') {
     const serviceDir = join(Deno.env.get('HOME')!, '.config', 'systemd', 'user')
@@ -263,7 +258,7 @@ Description=Vibe Daemon
 After=network.target
 
 [Service]
-ExecStart=${vibectlPath}
+ExecStart=${vibePath} daemon
 Restart=always
 
 [Install]
@@ -287,7 +282,7 @@ Description=Vibe Daemon
 After=network.target
 
 [Service]
-ExecStart=${vibectlPath}
+ExecStart=${vibePath} daemon
 Restart=always
 User=root
 
@@ -310,7 +305,7 @@ WantedBy=multi-user.target
 }
 
 async function setupMacOSService(config: InstallConfig): Promise<void> {
-  const vibectlPath = join(config.binDir, 'vibectl')
+  const vibePath = join(config.binDir, 'vibe')
   const label = 'dev.dotvibe.daemon'
 
   let plistPath: string
@@ -329,7 +324,8 @@ async function setupMacOSService(config: InstallConfig): Promise<void> {
     <string>${label}</string>
     <key>ProgramArguments</key>
     <array>
-        <string>${vibectlPath}</string>
+        <string>${vibePath}</string>
+        <string>daemon</string>
     </array>
     <key>RunAtLoad</key>
     <true/>

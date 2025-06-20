@@ -169,17 +169,13 @@ async function installBinaries(config: InstallConfig): Promise<void> {
   try {
     // Extract Windows binaries to temp directory first
     const tempVibePath = join(config.tempDir, 'vibe.exe')
-    const tempVibectlPath = join(config.tempDir, 'vibectl.exe')
 
     await extractEmbeddedBinary('vibe-windows-x86_64.exe', tempVibePath)
-    await extractEmbeddedBinary('vibectl-windows-x86_64.exe', tempVibectlPath)
 
     // Move binaries to final location
     const finalVibePath = join(config.binDir, 'vibe.exe')
-    const finalVibectlPath = join(config.binDir, 'vibectl.exe')
 
     await Deno.rename(tempVibePath, finalVibePath)
-    await Deno.rename(tempVibectlPath, finalVibectlPath)
 
     success(`Binaries installed to ${config.binDir}`)
   } finally {
@@ -234,12 +230,12 @@ if ($currentPath -notlike "*$binDir*") {
 async function setupWindowsService(config: InstallConfig): Promise<void> {
   if (config.scope !== 'AllUsers') {
     log('Windows Service only available for system-wide installations')
-    warn('For Current User installations, run vibectl manually when needed')
+    warn('For Current User installations, run "vibe daemon" manually when needed')
     return
   }
 
   const serviceName = 'DotVibeDaemon'
-  const vibectlPath = join(config.binDir, 'vibectl.exe')
+  const vibePath = join(config.binDir, 'vibe.exe')
 
   try {
     // Check if service already exists and remove it
@@ -264,7 +260,7 @@ async function setupWindowsService(config: InstallConfig): Promise<void> {
         'create',
         serviceName,
         'binpath=',
-        `"${vibectlPath}"`,
+        `"${vibePath}" daemon`,
         'displayname=',
         'Vibe Daemon',
         'start=',
@@ -381,7 +377,7 @@ async function main(): Promise<void> {
 
     if (scope === 'CurrentUser') {
       warn('The daemon service is not installed for Current User mode.')
-      warn('You will need to run "vibectl" manually when you want to use daemon features.')
+      warn('You will need to run "vibe daemon" manually when you want to use daemon features.')
     }
 
     warn('IMPORTANT: You must open a new terminal for PATH changes to take effect.')

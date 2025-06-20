@@ -6,7 +6,7 @@ Wants=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/dotvibe/vibectl
+ExecStart=/usr/local/dotvibe/vibe daemon
 Restart=always
 RestartSec=10
 User=root

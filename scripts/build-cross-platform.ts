@@ -3,7 +3,7 @@
 /**
  * Cross-Platform Build Script
  *
- * Builds vibe and vibectl binaries for all supported platforms:
+ * Builds vibe binary for all supported platforms:
  * - Linux x86_64
  * - macOS x86_64 (Intel and Apple Silicon compatible)
  * - Windows x86_64
@@ -51,8 +51,7 @@ const platforms = [
 
 // Build targets
 const buildTargets = [
-  { name: 'vibe', source: 'cli.ts', description: 'Main CLI tool' },
-  { name: 'vibectl', source: 'daemon.ts', description: 'Daemon control tool' },
+  { name: 'vibe', source: 'cli.ts', description: 'Main CLI tool with daemon support' },
 ]
 
 async function ensureDirectory(path: string) {

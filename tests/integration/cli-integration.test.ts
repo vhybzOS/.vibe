@@ -34,6 +34,38 @@ describe('CLI Integration Tests', () => {
     await cleanupDir(testDir)
   })
 
+  describe('Daemon Command', () => {
+    it('should accept daemon subcommand', async () => {
+      // Test that daemon command is registered and accessible
+      const { program } = await import('../../cli.ts')
+
+      // Verify daemon command exists in registered commands
+      const commands = program.commands.map((cmd: any) => cmd.name())
+      assert(commands.includes('daemon'), 'daemon command should be registered')
+    })
+
+    it('should start daemon with basic lifecycle', async () => {
+      // Import daemon functionality
+      const { startDaemon } = await import('../../daemon.ts')
+
+      // Test daemon can be started (mock implementation)
+      const result = await Effect.runPromise(startDaemon())
+
+      // Daemon should complete startup without error
+      assertEquals(result, undefined, 'daemon should start successfully')
+    })
+
+    it('should be callable via CLI integration', async () => {
+      // Test daemon command through CLI runner
+      const { runCommand } = await import('../../lib/cli.ts')
+      const { startDaemon } = await import('../../daemon.ts')
+
+      // Should be able to run daemon command via CLI runner
+      const result = await Effect.runPromise(runCommand(startDaemon()))
+      assertEquals(result, undefined, 'daemon should run via CLI integration')
+    })
+  })
+
   describe('CLI Command Runner', () => {
     it('should be callable from CLI runner', async () => {
       // This tests the CLI integration without running the actual CLI

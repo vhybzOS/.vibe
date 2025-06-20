@@ -1,6 +1,6 @@
 {
   "name": "dotvibe",
-  "version": "0.7.17",
+  "version": "0.7.18",
   "homepage": "https://dotvibe.dev",
   "repository": "https://github.com/vhybzOS/.vibe",
   "exports": {
@@ -18,8 +18,7 @@
     "lint": "deno lint",
     "fmt": "deno fmt",
     "build": "deno compile --allow-all --include vibe-coding-project-starters/ --output build/vibe cli.ts",
-    "build:daemon": "deno compile --allow-all --output build/vibectl daemon.ts",
-    "build:all": "deno task build && deno task build:daemon",
+    "build:all": "deno task build",
     "build:cross-platform": "deno run --allow-all scripts/build-cross-platform.ts",
     "build:installer-unix": "deno compile --allow-all --include installers/embedded-unix/ --output build/install-dotvibe installers/install-dotvibe.ts",
     "build:installer-windows": "deno compile --allow-all --include installers/embedded-windows/ --output build/install-dotvibe.exe installers/install-dotvibe-windows.ts",

@@ -262,51 +262,56 @@ Expected assets for each release:
 **Release Preparation Checklist:**
 
 1. **Format code**: `deno task fmt`
-2. **Update CHANGELOG.md** - Generate from PRD.md completed features
+2. **Update CHANGELOG.md** - Add new version section BEFORE version bump
+   - Follow exact format: `## [X.Y.Z] - YYYY-MM-DD`
+   - Extract highlights from recent commits and PRD.md completed features
+   - Use template structure below for consistency
 3. **Version Bump** - Update deno.json version according to semver rules
-4. **Extract Release Notes** - Pull feature highlights from PRD.md phases
-5. **Format for Users** - Convert technical specs to user-friendly features
-6. **Commit and Push** - Triggers automatic release workflow
-7. **Monitor Release** - Use this protocol to verify success
+4. **Commit and Push** - Triggers automatic release workflow
+5. **Monitor Release** - Use this protocol to verify success
 
-**CHANGELOG.md Generation:**
-
-```bash
-# Extract completed features from PRD.md
-grep -A 20 "✅.*COMPLETE" PRD.md | format_for_changelog
-
-# Include:
-- Major features from completed phases
-- New CLI commands with examples  
-- Breaking changes (if any)
-- Technical improvements that affect users
-```
-
-**Release Notes Template:**
+**CHANGELOG.md Entry Template:**
 
 ```markdown
-## v{VERSION} - {DATE}
+## [X.Y.Z] - YYYY-MM-DD
 
 ### 🎯 Highlights
 
-- {Main feature from PRD phase}
-- {Key improvement}
+- {Main architectural improvement or feature}
+- {Key user-facing enhancement}
+- {Critical fix or optimization}
 
 ### ✨ New Features
 
 - **{Feature Name}**: {Brief user-facing description}
-  - Example: `vibe init node myproject`
+  - {Specific capability or command example}
+  - {Additional benefits}
 
 ### 🔧 Technical Improvements
 
-- {Internal improvement that benefits users}
+- **{Technical Change}**: {User benefit description}
+- **{Performance/Architecture}**: {Impact on users}
+- **{Infrastructure}**: {Developer experience improvement}
 
 ### 📚 Documentation
 
-- {Any new docs or examples}
-
-Full changelog: [{PREV_VERSION}...v{VERSION}]
+- **{Protocol/Guide}**: {What was added/improved}
+- {Other documentation updates}
 ```
+
+**CHANGELOG.md Population Process:**
+
+1. **Review Recent Commits**: Check git log since last release for major changes
+2. **Extract from PRD.md**: Look for completed phases and their "Core Success" bullets
+3. **Transform Technical to User Benefits**: Convert implementation details to user value
+4. **Follow Format Exactly**: Use `## [X.Y.Z] - YYYY-MM-DD` for version header
+5. **Add to CHANGELOG.md**: Insert new section after `## [Unreleased]` section
+
+**Critical Format Requirements:**
+
+- Version format: `## [0.7.21] - 2025-06-20` (brackets required, ISO date)
+- Must be added BEFORE version bump in deno.json
+- Must be committed WITH the version bump for release workflow to find it
 
 **Extracting from PRD.md:**
 

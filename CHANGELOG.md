@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.21] - 2025-06-20
+
+### 🎯 Highlights
+
+- Fixed missing Windows binary in releases  
+- Enhanced Release Protocol with proper CHANGELOG.md workflow
+- Platform-specific cache paths prevent binary overwriting
+
+### 🔧 Technical Improvements
+
+- **Windows Binary Fix**: Separate cache restoration paths for each platform
+- **Release Protocol Enhancement**: Mandatory CHANGELOG.md population before version bumps
+- **Cache Architecture**: Build native binaries to separate directories (build-native-linux/, build-native-windows/, build-native-macos/)
+
+### 📚 Documentation
+
+- **Release Protocol**: Clear instructions for CHANGELOG.md maintenance
+- **Template Format**: Standardized changelog entry structure with examples
+- **Critical Format Requirements**: Exact version format specifications for workflow compatibility
+
+## [0.7.20] - 2025-06-20
+
+### 🎯 Highlights
+
+- Single binary architecture with 50% size reduction
+- Fixed GitHub Actions release workflow for reliable CI/CD
+- Comprehensive CI/Release monitoring protocols
+
+### ✨ New Features
+
+- **Unified Binary**: Merged `vibe` and `vibectl` into single binary with `vibe daemon` subcommand
+  - Simplified installation and deployment
+  - All service templates updated to use `vibe daemon`
+  - Consistent user experience across platforms
+
+### 🔧 Technical Improvements
+
+- **50% Binary Reduction**: From 6 binaries to 3 (Linux, macOS, Windows)
+- **Installer Size Optimization**: Unix installer ~312MB, Windows installer ~213MB
+- **Fixed GitHub Release Workflow**: Resolved cache timing issues between workflow jobs
+- **Platform-specific Binary Caching**: Separate cache paths prevent overwriting
+
+### 📚 Documentation
+
+- **CI Protocol**: Systematic GitHub Actions failure diagnosis with API monitoring
+- **Release Protocol**: Automated release verification and asset validation
+- Updated monitoring timings to 2-minute workflow expectations
+
 ## [0.6.0] - 2024-06-19
 
 ### 🎯 Highlights

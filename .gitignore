@@ -1,1 +1,3 @@
 build/*
+installers/embedded-unix/
+installers/embedded-windows/

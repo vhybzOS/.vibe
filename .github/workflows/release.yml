@@ -108,14 +108,14 @@ jobs:
       - name: 📥 Get Self-Contained Installers
         uses: actions/cache/restore@v4
         with:
-          path: installer-build/
+          path: build/
           key: installers-${{ github.event.workflow_run.head_sha || github.sha }}
           fail-on-cache-miss: true
 
       - name: 📋 Add installers to release
         run: |
-          cp installer-build/install-dotvibe release-assets/install-dotvibe
-          cp installer-build/install-dotvibe.exe release-assets/install-dotvibe.exe
+          cp build/install-dotvibe release-assets/install-dotvibe
+          cp build/install-dotvibe.exe release-assets/install-dotvibe.exe
 
       - name: 📦 Verify release assets
         run: |

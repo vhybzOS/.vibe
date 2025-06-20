@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.22] - 2025-06-20
+
+### 🔧 Technical Improvements
+
+- **Formatting Fix**: Resolved CHANGELOG.md formatting issue causing CI failures
+- **Release Protocol**: Enhanced with mandatory formatting step before commits
+
 ## [0.7.21] - 2025-06-20
 
 ### 🎯 Highlights
 
-- Fixed missing Windows binary in releases  
+- Fixed missing Windows binary in releases
 - Enhanced Release Protocol with proper CHANGELOG.md workflow
 - Platform-specific cache paths prevent binary overwriting
 

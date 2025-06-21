@@ -112,7 +112,7 @@ jobs:
 
           echo "✅ Build completed for ${{ matrix.platform }}"
           ls -la build-native-${{ matrix.platform }}/
-          
+
           # Verify binary was actually created
           if [ "${{ matrix.platform }}" = "windows" ]; then
             if [ ! -f "build-native-${{ matrix.platform }}/vibe-windows-x86_64.exe" ]; then

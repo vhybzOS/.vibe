@@ -5,9 +5,10 @@
 Before any work, you MUST:
 
 1. Read `AGENTS.md` completely
-2. Follow the [planning mode protocol](PROTOCOLS.md#planning-mode-protocol)
-3. Ask: "What user flow should we implement first?"
-4. Get explicit approval before any implementation
+2. Check `.vibe/PRD.md` for active work
+3. Follow the [planning mode protocol](.vibe/PROTOCOLS.md#planning-mode-protocol)
+4. Ask: "What user flow should we implement first?"
+5. Get explicit approval before any implementation
 
 ## **Project Context**
 
@@ -26,16 +27,20 @@ This is `.vibe` - a local-first, autonomous AI development environment built wit
 For complete development protocols, coding standards, and implementation guidance:
 
 👉 **See [AGENTS.md](AGENTS.md)** - Main development entrypoint\
-👉 **See [PROTOCOLS.md](PROTOCOLS.md)** - Detailed implementation protocols
+👉 **See [.vibe/PROTOCOLS.md](.vibe/PROTOCOLS.md)** - Detailed implementation protocols\
+👉 **See [.vibe/PRD.md](.vibe/PRD.md)** - Active tasks and planned features\
+👉 **See [.vibe/FEATURES.md](.vibe/FEATURES.md)** - Completed features reference\
+👉 **See [.vibe/TESTS.md](.vibe/TESTS.md)** - Current test strategy
 
 **Key Reference Points:**
 
-- **Before coding**: [Fetch coding guidelines](PROTOCOLS.md#coding-protocols)
-- **Planning**: [Follow planning mode protocol](PROTOCOLS.md#planning-mode-protocol)
-- **Implementation**: [Use 8-step cycle](PROTOCOLS.md#8-step-implementation-cycle)
-- **Testing**: [Follow TDD protocol](PROTOCOLS.md#test-driven-development)
-- **Quality**: [Check quality gates](PROTOCOLS.md#quality-gates)
-- **Commits**: [Use commit protocol](PROTOCOLS.md#commit-protocol)
+- **Before coding**: [Fetch coding guidelines](.vibe/PROTOCOLS.md#coding-protocols)
+- **Planning**: [Follow planning mode protocol](.vibe/PROTOCOLS.md#planning-mode-protocol)
+- **Implementation**: [Use 8-step cycle](.vibe/PROTOCOLS.md#8-step-implementation-cycle)
+- **Testing**: [Follow TDD protocol](.vibe/PROTOCOLS.md#test-driven-development)
+- **Quality**: [Check quality gates](.vibe/PROTOCOLS.md#quality-gates)
+- **Commits**: [Use commit protocol](.vibe/PROTOCOLS.md#commit-protocol)
+- **Completion**: [Run Flush Protocol](.vibe/PROTOCOLS.md#flush-protocol)
 
 # important-instruction-reminders
 

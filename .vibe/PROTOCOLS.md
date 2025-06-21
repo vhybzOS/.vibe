@@ -22,6 +22,118 @@ Reference manual for all development workflows and coding standards. This file i
 - "What's the priority: local memory storage or MCP integration?"
 - "Do you want daemon startup or CLI-only operations first?"
 
+### Flush Protocol
+
+**Purpose**: Archive completed work from PRD.md to appropriate locations after 8-step cycle completion.
+
+**Trigger**: Agent determines feature is COMPLETE and PRODUCTION READY based on all quality gates passing and user acceptance.
+
+**Process**:
+
+1. **Extract Completed Work from PRD.md**
+   - Identify completed thread/feature section
+   - Capture implementation details, architecture decisions, file changes
+   - Note user-facing benefits and technical achievements
+
+2. **Update FEATURES.md** (Architecture Reference)
+   ```markdown
+   ## [YYYY-MM-DD] Feature Name
+
+   **Overview**: Brief architectural description of what was built
+
+   **Files Created/Modified**:
+
+   - `path/to/file.ts:line-range` - What this file does in the system
+   - `path/to/config.json:lines` - Configuration changes made
+
+   **Architecture Decisions**:
+
+   - Key patterns used (Effect-TS, functional composition, etc.)
+   - Why specific approaches were chosen
+   - Trade-offs made and benefits gained
+
+   **Entry Points**:
+
+   - CLI commands added/modified
+   - APIs exposed
+   - User workflows enabled
+
+   **Success**: Concrete evidence of completion (test results, production usage)
+   ```
+
+3. **Update CHANGELOG.md** (User-Facing Changes)
+   - Only if feature provides user-facing value
+   - Skip if purely internal/technical improvements
+   ```markdown
+   ### ✨ New Features
+
+   - **Feature Name**: User benefit description
+     - `command example` - What this enables
+     - Specific capabilities unlocked
+   ```
+
+4. **Clean PRD.md**
+   - Remove completed sections entirely
+   - Preserve project vision and planned features
+   - Ensure total length stays under 150 lines
+   - Move any follow-up work to "Planned Features" section
+
+5. **Update TESTS.md** (if needed)
+   - Move test strategy from "Active" to "Past" section
+   - Update current testing focus if changed
+
+**Exit Criteria**:
+
+- All completed work archived appropriately
+- PRD.md under 150 lines and contains only active/planned work
+- FEATURES.md updated with technical reference
+- CHANGELOG.md updated with user value (if applicable)
+
+**Template for New Active Work in PRD.md**:
+
+```markdown
+## Active Task and Thread(s)
+
+### [Feature Name] - [Status]
+
+**User Story**: As a [user], I want [goal] so that [benefit]
+
+**Acceptance Criteria**:
+
+- [ ] Specific testable outcome 1
+- [ ] Specific testable outcome 2
+
+**Implementation Thread**:
+
+- 🚧 Step 1: Write Tests First
+- ⭕ Step 2: Write Minimal Code
+- ⭕ Steps 3-8: [Continue 8-step cycle]
+
+**Exit Criteria**: [How we know it's complete]
+```
+
+### PRD Management Protocol
+
+**When user defines new work not previously discussed:**
+
+1. **Create Active Task Section** in PRD.md using template above
+2. **Move existing planned work** to "Planned Features" section if needed
+3. **Keep PRD.md focused** - only one major active task at a time
+4. **Use threading** for complex work requiring multiple 8-step cycles
+
+**Template for Moving to Planned Features**:
+
+```markdown
+## Planned Features
+
+### Phase X: [Feature Category]
+
+- **[Feature Name]**: Brief description
+  - Key capabilities to implement
+  - User benefits expected
+  - Dependencies or prerequisites
+```
+
 ### Thread Management Protocol
 
 **When to Open a Thread:**
@@ -38,7 +150,7 @@ Reference manual for all development workflows and coding standards. This file i
 ### **Thread**: [Name]
 
 **Trigger**: [What caused this thread to open]
-**Scope**: [What this thread covers]\
+**Scope**: [What this thread covers]
 **Exit Criteria**: [How we know it's complete]
 [Indented task list with status tracking]
 ```
@@ -87,7 +199,7 @@ Reference manual for all development workflows and coding standards. This file i
 5. **Test Evolution** - Update tests if architectural understanding evolved
 6. **Re-verify Runtime** - Ensure updated tests pass
 7. **Quality Gates** - Pass type check and lint
-8. **Loop** - Repeat for next increment
+8. **Loop** - Repeat for next increment OR invoke Flush Protocol if complete
 
 ### Requirements Gathering Protocol
 
@@ -264,7 +376,7 @@ Expected assets for each release:
 1. **Format code**: `deno task fmt`
 2. **Update CHANGELOG.md** - Add new version section BEFORE version bump
    - Follow exact format: `## [X.Y.Z] - YYYY-MM-DD`
-   - Extract highlights from recent commits and PRD.md completed features
+   - Extract highlights from recent commits and FEATURES.md completed features
    - Use template structure below for consistency
 3. **Version Bump** - Update deno.json version according to semver rules
 4. **Commit and Push** - Triggers automatic release workflow
@@ -302,7 +414,7 @@ Expected assets for each release:
 **CHANGELOG.md Population Process:**
 
 1. **Review Recent Commits**: Check git log since last release for major changes
-2. **Extract from PRD.md**: Look for completed phases and their "Core Success" bullets
+2. **Extract from FEATURES.md**: Look for completed features and their user benefits
 3. **Transform Technical to User Benefits**: Convert implementation details to user value
 4. **Follow Format Exactly**: Use `## [X.Y.Z] - YYYY-MM-DD` for version header
 5. **Add to CHANGELOG.md**: Insert new section after `## [Unreleased]` section
@@ -312,15 +424,6 @@ Expected assets for each release:
 - Version format: `## [0.7.21] - 2025-06-20` (brackets required, ISO date)
 - Must be added BEFORE version bump in deno.json
 - Must be committed WITH the version bump for release workflow to find it
-
-**Extracting from PRD.md:**
-
-When a phase is marked COMPLETE in PRD.md:
-
-1. Copy the "Core Success" bullets as feature highlights
-2. Transform technical implementation details into user benefits
-3. Extract command examples from acceptance criteria
-4. Note any breaking changes or migration needs
 
 ## Coding Protocols
 

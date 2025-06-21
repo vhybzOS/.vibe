@@ -80,25 +80,26 @@ jobs:
       - name: 🔨 Build Native Platform Binaries
         shell: bash
         run: |
-          mkdir -p build-native
+          # Create platform-specific directory to match release job expectations
+          mkdir -p build-native-${{ matrix.platform }}
 
           if [ "${{ matrix.platform }}" = "windows" ]; then
             echo "Building Windows binaries..."
-            deno compile --allow-all --include vibe-coding-project-starters/ --output build-native/vibe-windows-x86_64.exe cli.ts
+            deno compile --allow-all --include vibe-coding-project-starters/ --output build-native-${{ matrix.platform }}/vibe-windows-x86_64.exe cli.ts
           elif [ "${{ matrix.platform }}" = "macos" ]; then
             echo "Building macOS binaries..."
-            deno compile --allow-all --include vibe-coding-project-starters/ --output build-native/vibe-macos-x86_64 cli.ts
+            deno compile --allow-all --include vibe-coding-project-starters/ --output build-native-${{ matrix.platform }}/vibe-macos-x86_64 cli.ts
           else
             echo "Building Linux binaries..."
-            deno compile --allow-all --include vibe-coding-project-starters/ --output build-native/vibe-linux-x86_64 cli.ts
+            deno compile --allow-all --include vibe-coding-project-starters/ --output build-native-${{ matrix.platform }}/vibe-linux-x86_64 cli.ts
           fi
 
-          ls -la build-native/
+          ls -la build-native-${{ matrix.platform }}/
 
       - name: 📦 Cache Native Platform Binaries
         uses: actions/cache/save@v4
         with:
-          path: build-native/
+          path: build-native-${{ matrix.platform }}/
           key: native-binaries-${{ matrix.platform }}-${{ github.sha }}
 
   build-installers:

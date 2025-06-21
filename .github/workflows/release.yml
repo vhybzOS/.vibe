@@ -102,7 +102,7 @@ jobs:
           key: native-binaries-${{ matrix.platform }}-${{ github.sha }}
 
   build-installers:
-    name: 'Build Self-Contained Installers'
+    name: 'Build Go Installers'
     runs-on: ubuntu-latest
     needs: test
 
@@ -110,30 +110,43 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🦕 Setup Deno
-        uses: denoland/setup-deno@v2
+      - name: 🐹 Setup Go
+        uses: actions/setup-go@v5
         with:
-          deno-version: ${{ env.DENO_VERSION }}
+          go-version: '1.21'
 
-      - name: 📥 Cache dependencies
-        run: deno cache --frozen cli.ts daemon.ts
+      - name: 🔨 Build Go installers for all platforms
+        run: |
+          cd installer
 
-      - name: 🔨 Build cross-platform binaries for embedding
-        run: deno task build:cross-platform
+          # Build for Linux (amd64)
+          GOOS=linux GOARCH=amd64 go build -ldflags "-w -s -X main.version=${GITHUB_SHA::7}" -o install-dotvibe-linux-amd64 .
 
-      - name: 🔨 Build platform-specific installers
-        run: deno task build:installers
+          # Build for macOS (amd64)
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-w -s -X main.version=${GITHUB_SHA::7}" -o install-dotvibe-darwin-amd64 .
 
-      - name: 📦 Cache Self-Contained Installers
+          # Build for Windows (amd64)
+          GOOS=windows GOARCH=amd64 go build -ldflags "-w -s -X main.version=${GITHUB_SHA::7}" -o install-dotvibe-windows-amd64.exe .
+
+          # Copy to build directory for consistency
+          mkdir -p ../build
+          cp install-dotvibe-linux-amd64 ../build/install-dotvibe
+          cp install-dotvibe-windows-amd64.exe ../build/install-dotvibe.exe
+
+      - name: 📦 Cache Go Installers
         uses: actions/cache/save@v4
         with:
-          path: build/install-dotvibe*
-          key: installers-${{ github.sha }}
+          path: |
+            build/install-dotvibe
+            build/install-dotvibe.exe
+            installer/install-dotvibe-*
+          key: go-installers-${{ github.sha }}
 
       - name: 📊 Show installer sizes
         run: |
-          echo "Installer sizes:"
+          echo "Go installer sizes:"
           ls -lh build/install-dotvibe* || echo "No installers found"
+          ls -lh installer/install-dotvibe-* || echo "No cross-platform installers found"
 
   check-version:
     name: 'Check Version Change'
@@ -171,7 +184,7 @@ jobs:
   release:
     name: 'Publish Release with Native Binaries'
     runs-on: ubuntu-latest
-    needs: [test, check-version]
+    needs: [test, build-installers, check-version]
     if: needs.check-version.outputs.version-changed == 'true'
 
     steps:
@@ -222,17 +235,22 @@ jobs:
           cp build-native-windows/vibe-windows-x86_64.exe release-assets/vibe-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe || echo "Windows binary not found"
           cp build-native-macos/vibe-macos-x86_64 release-assets/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64 || echo "macOS binary not found"
 
-      - name: 🔨 Build self-contained installers
-        run: |
-          echo "Building installers for release..."
-          deno task build:installers
-          echo "Installer sizes:"
-          ls -lh build/install-dotvibe* || echo "No installers found"
+      - name: 📥 Restore Go Installers
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            build/install-dotvibe
+            build/install-dotvibe.exe
+            installer/install-dotvibe-*
+          key: go-installers-${{ github.sha }}
+          fail-on-cache-miss: true
 
       - name: 📋 Add installers to release
         run: |
           cp build/install-dotvibe release-assets/install-dotvibe || echo "Warning: Unix installer not found"
           cp build/install-dotvibe.exe release-assets/install-dotvibe.exe || echo "Warning: Windows installer not found"
+          echo "Go installer sizes:"
+          ls -lh release-assets/install-dotvibe*
 
       - name: 📦 Verify release assets
         run: |

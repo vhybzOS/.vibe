@@ -83,18 +83,44 @@ jobs:
           # Create platform-specific directory to match release job expectations
           mkdir -p build-native-${{ matrix.platform }}
 
+          # Debug information for Windows build issues
+          echo "🔍 Debug info for ${{ matrix.platform }}:"
+          echo "Current working directory: $(pwd)"
+          echo "Include directory exists: $(test -d vibe-coding-project-starters && echo 'YES' || echo 'NO')"
+          echo "Include directory contents:"
+          ls -la vibe-coding-project-starters/ || echo "Include directory not found"
+
           if [ "${{ matrix.platform }}" = "windows" ]; then
             echo "Building Windows binaries..."
-            deno compile --allow-all --include vibe-coding-project-starters/ --output build-native-${{ matrix.platform }}/vibe-windows-x86_64.exe cli.ts
+            if ! deno compile --allow-all --include vibe-coding-project-starters/ --output build-native-${{ matrix.platform }}/vibe-windows-x86_64.exe cli.ts; then
+              echo "❌ ERROR: Windows build failed"
+              exit 1
+            fi
           elif [ "${{ matrix.platform }}" = "macos" ]; then
             echo "Building macOS binaries..."
-            deno compile --allow-all --include vibe-coding-project-starters/ --output build-native-${{ matrix.platform }}/vibe-macos-x86_64 cli.ts
+            if ! deno compile --allow-all --include vibe-coding-project-starters/ --output build-native-${{ matrix.platform }}/vibe-macos-x86_64 cli.ts; then
+              echo "❌ ERROR: macOS build failed"
+              exit 1
+            fi
           else
             echo "Building Linux binaries..."
-            deno compile --allow-all --include vibe-coding-project-starters/ --output build-native-${{ matrix.platform }}/vibe-linux-x86_64 cli.ts
+            if ! deno compile --allow-all --include vibe-coding-project-starters/ --output build-native-${{ matrix.platform }}/vibe-linux-x86_64 cli.ts; then
+              echo "❌ ERROR: Linux build failed"
+              exit 1
+            fi
           fi
 
+          echo "✅ Build completed for ${{ matrix.platform }}"
           ls -la build-native-${{ matrix.platform }}/
+          
+          # Verify binary was actually created
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            if [ ! -f "build-native-${{ matrix.platform }}/vibe-windows-x86_64.exe" ]; then
+              echo "❌ ERROR: Windows binary not found after build"
+              exit 1
+            fi
+            echo "✅ Windows binary verified: $(ls -lh build-native-${{ matrix.platform }}/vibe-windows-x86_64.exe)"
+          fi
 
       - name: 📦 Cache Native Platform Binaries
         uses: actions/cache/save@v4

@@ -65,7 +65,7 @@ Reference manual for all development workflows and coding standards. This file i
    - Only if feature provides user-facing value
    - Skip if purely internal/technical improvements
    ```markdown
-   ### ✨ New Features
+   ### [YYYY-MM-DD] [Emoji best describing features, e.g. ✨] [Title for New Features]
 
    - **Feature Name**: User benefit description
      - `command example` - What this enables

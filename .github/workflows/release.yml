@@ -127,6 +127,7 @@ jobs:
         with:
           path: build-native-${{ matrix.platform }}/
           key: native-binaries-${{ matrix.platform }}-${{ github.sha }}
+          enableCrossOsArchive: true
 
   build-installers:
     name: 'Build Go Installers'
@@ -240,6 +241,7 @@ jobs:
           path: build-native-linux/
           key: native-binaries-linux-${{ github.sha }}
           fail-on-cache-miss: false
+          enableCrossOsArchive: true
 
       - name: 📥 Get Windows Binaries
         uses: actions/cache/restore@v4
@@ -247,6 +249,7 @@ jobs:
           path: build-native-windows/
           key: native-binaries-windows-${{ github.sha }}
           fail-on-cache-miss: false
+          enableCrossOsArchive: true
 
       - name: 📥 Get macOS Binaries
         uses: actions/cache/restore@v4
@@ -254,6 +257,7 @@ jobs:
           path: build-native-macos/
           key: native-binaries-macos-${{ github.sha }}
           fail-on-cache-miss: false
+          enableCrossOsArchive: true
 
       - name: 📋 Organize release assets
         run: |

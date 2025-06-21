@@ -112,21 +112,21 @@ func getLatestVersion() (string, error) {
 	if err != nil {
 		// Fallback to hardcoded version if API fails  
 		fmt.Printf("⚠️  GitHub API unavailable, using fallback version\n")
-		return "v0.7.26", nil
+		return "v0.7.27", nil
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		// Fallback to hardcoded version if API returns error
 		fmt.Printf("⚠️  GitHub API error (%d), using fallback version\n", resp.StatusCode)
-		return "v0.7.26", nil
+		return "v0.7.27", nil
 	}
 
 	var release GitHubRelease
 	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
 		// Fallback to hardcoded version if JSON decode fails
 		fmt.Printf("⚠️  Failed to parse GitHub API response, using fallback version\n")
-		return "v0.7.26", nil
+		return "v0.7.27", nil
 	}
 
 	return release.TagName, nil

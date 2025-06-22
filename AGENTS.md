@@ -1,92 +1,81 @@
-# AGENTS.md - .vibe Development OS
+# AGENTS.md - Axior OS Kernel
 
-The main entry point for AI agents working with the .vibe project.
+**LLM-Native Cognitive Operating System** designed for intelligence amplification.
 
-## 🚀 Quick Start
+**Axior OS**: Algorithmic eXecution & Iterative Observation Refinement
 
-1. **Read this file completely**
-2. **Check `.vibe/PRD.md`** for active work and planned features
-3. **Follow `.vibe/PROTOCOLS.md`** for all development workflows
-4. **Use `.vibe/FEATURES.md`** to understand existing architecture
-5. **Reference `.vibe/TESTS.md`** for current test strategy (stop at "Past Tests")
+## 🧠 Boot Sequence (100 tokens)
+
+1. **Load Identity** - This file (kernel initialization)
+2. **Load Index** - `.vibe/protocols.toml` (O(1) protocol lookup)
+3. **Load State** - `.vibe/active/state.toml` (session variables)
+4. **Load Context** - `.vibe/active/context.md` (working memory)
 
 ## 🎯 Core Mission
 
-Build a local-first, autonomous AI development environment using functional programming principles, Effect-TS composition, and test-driven development. Every line of code should be a joy to read, maintain, and extend.
+Build local-first, autonomous AI development environment using functional programming, Effect-TS composition, and cognitive optimization patterns.
 
-## 📁 OS File Structure
+## ⚡ Axior OS Architecture
 
-- **`.vibe/PRD.md`**: Active tasks only (keep under 150 lines)
-- **`.vibe/FEATURES.md`**: Completed features reference for architecture understanding
-- **`.vibe/PROTOCOLS.md`**: All development protocols and coding standards
-- **`.vibe/TESTS.md`**: Current test strategy (agent stops reading at "Past Tests")
-- **`CHANGELOG.md`**: User-facing changes only
+```
+Memory Hierarchy:
+- active/     (RAM - current session, 100 token budget)
+- protocols/  (Swap - lazy-loaded when needed) 
+- patterns/   (L1 Cache - algorithm templates)
+- archive/    (Cold Storage - completed work)
 
-## 🔄 Core Workflow
+Tool Integration:
+- Agent tool (sub-agents for complex tasks)
+- TodoRead/Write (task management)
+- Existing Claude tools (Read/Write/Glob/Grep)
+- vibe CLI (cognitive primitives - scan/parse/compress/diff)
+```
 
-### New Session Protocol
+## 🔄 Operating Mode
 
-1. Check active tasks in `.vibe/PRD.md`
-2. Enter [planning mode](/.vibe/PROTOCOLS.md#planning-mode-protocol) if no active work
-3. Ask: "What user flow should we implement first?"
-4. Follow [8-step implementation cycle](/.vibe/PROTOCOLS.md#8-step-implementation-cycle)
-5. Run [Flush Protocol](/.vibe/PROTOCOLS.md#flush-protocol) when feature complete
+```pseudo
+INPUT: user_request, current_state
+active_work = vibe scan .vibe/active/ --type current_tasks
 
-### Key Development Principles
+IF active_work.empty THEN
+  protocol = load_protocol("planning")
+  EXECUTE planning_protocol(user_request)
+ELSE
+  protocol = load_protocol(active_work.current_protocol) 
+  EXECUTE protocol(active_work, user_request)
+END
 
-- **Effect-TS for all async operations** - Use [Effect-TS patterns](/.vibe/PROTOCOLS.md#effect-ts-patterns)
-- **Test-first development** - Follow [TDD protocol](/.vibe/PROTOCOLS.md#test-driven-development)
-- **Quality gates at each step** - Never skip [quality gate checklist](/.vibe/PROTOCOLS.md#quality-gates)
-- **Archive completed work** - Use Flush Protocol to keep PRD.md lean
+IF work_complete THEN
+  EXECUTE flush_protocol()
+END
+```
 
-### Architectural Excellence
+## 📋 Protocol Access
 
-- **Functional Programming**: Pure functions, immutable data, Effect-TS composition
-- **Service-Oriented**: Stateless services with clear dependencies
-- **Tagged Union Errors**: Specific error types with context
-- **Test-Implementation Linking**: `@tested_by` annotations in all files
+All protocols use minimal format: **pseudo-code + math + context links**
 
-## 🏗️ Project Status
+Access via: `vibe parse .vibe/protocols.toml --key protocols.[name]`
 
-**Current State**: All major features complete and production ready
+Core protocols: `flush`, `commit`, `planning`, `tdd`
+Core patterns: `effect`, `error`, `test`, `cli`
 
-- ✅ Library documentation fetcher (`vibe code <package>`)
-- ✅ Template scaffolding (`vibe init <runtime>`)
-- ✅ Cross-platform binary installer
-- ✅ 210 tests passing, 0 failures
+## 🎯 Success Metrics
 
-**Technology Stack**: Deno, Effect-TS, TypeScript, Zod, functional programming patterns
+- Boot time: <100 tokens
+- Protocol lookup: O(1)
+- Context compression: >80%
+- Memory fragmentation: <20%
+- Cognitive efficiency: Maximum intelligence per token
 
-**Success Metrics**:
+## 🏗️ Current Status
 
-- Zero TypeScript compilation errors
-- Zero lint violations
-- All tests passing
-- Features working at runtime
-- Architectural consistency
+✅ Axior OS foundation complete
+✅ Protocol system operational\
+✅ Pattern templates cached
+✅ Session state tracking active
 
-## 📋 Next Steps
-
-When no active work exists in PRD.md:
-
-1. Enter planning mode explicitly
-2. Ask user what to implement next
-3. Consider Phase 2: Enhanced command interface (`vibe code hono --list`)
-4. Follow [requirements gathering protocol](/.vibe/PROTOCOLS.md#requirements-gathering-protocol)
-5. Get approval before any implementation
-
-## 🎯 Quality Standards
-
-Every session must achieve:
-
-- `deno task check` passes (0 TypeScript errors)
-- `deno task lint` passes (0 violations)
-- `deno task test` passes (all tests green)
-- Manual verification of core functionality
-- Clean, maintainable code with proper patterns
+**Next**: Implement vibe CLI primitives (Cycle 2) for cognitive augmentation.
 
 ---
 
-**Remember**: Consistency over cleverness. Predictability over performance. Quality over quantity.
-
-See `.vibe/PROTOCOLS.md` for complete development protocols and coding standards.
+**Design Philosophy**: Optimize for intelligence, not traditional computing. Every component serves cognitive amplification.

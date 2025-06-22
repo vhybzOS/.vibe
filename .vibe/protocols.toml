@@ -1,0 +1,30 @@
+# Axior OS Protocol Index - O(1) Lookup System
+# Each protocol loaded just-in-time when needed
+
+[protocols]
+flush = "protocols/flush.md"
+commit = "protocols/commit.md" 
+planning = "protocols/planning.md"
+tdd = "protocols/tdd.md"
+quality_gates = "protocols/quality.md"
+session_handoff = "protocols/handoff.md"
+
+[patterns]
+effect = "patterns/effect.md"
+error = "patterns/error.md"
+test = "patterns/test.md"
+cli = "patterns/cli.md"
+
+[vibe_primitives]
+scan = "File/directory traversal with pattern matching"
+parse = "Extract structured data from TOML/JSON/text"
+compress = "Summarize context maintaining key information"
+diff = "Compare states and identify changes"
+measure = "Performance and cognitive load tracking"
+template = "Generate boilerplate from patterns"
+
+[meta]
+version = "1.0.0"
+boot_sequence = ["active/state.toml", "active/context.md"]
+token_budget = 100
+last_update = "2024-12-21"

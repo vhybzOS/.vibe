@@ -1,0 +1,7 @@
+build/*
+installers/embedded-unix/
+installers/embedded-windows/
+test-*
+installer/install-dotvibe
+installer/install-dotvibe-*
+installer/test-install/

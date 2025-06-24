@@ -1,6 +1,0 @@
-#!/bin/bash
-# LLM-Native Parse Script - The KISS approach to tree-sitter integration
-# Redirects to tree-sitter CLI for revolutionary context management
-
-cd "$(dirname "$0")"
-tree-sitter parse "$1" --quiet

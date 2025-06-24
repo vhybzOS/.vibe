@@ -1,0 +1,336 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.ts'
+      - '!docs/**'
+      - 'deno.json'
+      - 'deno.lock'
+      - '.github/workflows/**'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release'
+        required: true
+        default: 'v0.2.0'
+
+env:
+  DENO_VERSION: 'v2.3.6'
+
+jobs:
+  test:
+    name: 'Test and Build on ${{ matrix.os }}'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Configure Git for consistent line endings
+        run: |
+          git config core.autocrlf false
+          git config core.eol lf
+
+      - name: 🦕 Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: 📦 Cache Deno dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/deno
+            ~/.deno
+          key: ${{ runner.os }}-deno-${{ env.DENO_VERSION }}-${{ hashFiles('**/deno.lock', '**/deno.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-${{ env.DENO_VERSION }}-
+            ${{ runner.os }}-deno-
+
+      - name: 📥 Verify lock file and cache dependencies
+        run: deno cache --frozen cli.ts daemon.ts
+
+      - name: 🔬 Lint and Format Check
+        run: |
+          deno task lint
+          deno task fmt --check
+
+      - name: 📝 Type Check
+        run: deno task check
+
+      - name: 🧪 Run Full Test Suite
+        run: deno task test --no-check
+
+      - name: 📊 Analyze Test Coverage (Linux only)
+        if: matrix.os == 'ubuntu-latest'
+        run: deno task coverage
+
+      - name: 🔨 Build Native Platform Binaries
+        shell: bash
+        run: |
+          # Create platform-specific directory to match release job expectations
+          mkdir -p build-native-${{ matrix.platform }}
+
+          # Debug information for Windows build issues
+          echo "🔍 Debug info for ${{ matrix.platform }}:"
+          echo "Current working directory: $(pwd)"
+          echo "Include directory exists: $(test -d vibe-coding-project-starters && echo 'YES' || echo 'NO')"
+          echo "Include directory contents:"
+          ls -la vibe-coding-project-starters/ || echo "Include directory not found"
+
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            echo "Building Windows binaries..."
+            if ! deno compile --allow-all --include vibe-coding-project-starters/ --output build-native-${{ matrix.platform }}/vibe-windows-x86_64.exe cli.ts; then
+              echo "❌ ERROR: Windows build failed"
+              exit 1
+            fi
+          elif [ "${{ matrix.platform }}" = "macos" ]; then
+            echo "Building macOS binaries..."
+            if ! deno compile --allow-all --include vibe-coding-project-starters/ --output build-native-${{ matrix.platform }}/vibe-macos-x86_64 cli.ts; then
+              echo "❌ ERROR: macOS build failed"
+              exit 1
+            fi
+          else
+            echo "Building Linux binaries..."
+            if ! deno compile --allow-all --include vibe-coding-project-starters/ --output build-native-${{ matrix.platform }}/vibe-linux-x86_64 cli.ts; then
+              echo "❌ ERROR: Linux build failed"
+              exit 1
+            fi
+          fi
+
+          echo "✅ Build completed for ${{ matrix.platform }}"
+          ls -la build-native-${{ matrix.platform }}/
+
+          # Verify binary was actually created
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            if [ ! -f "build-native-${{ matrix.platform }}/vibe-windows-x86_64.exe" ]; then
+              echo "❌ ERROR: Windows binary not found after build"
+              exit 1
+            fi
+            echo "✅ Windows binary verified: $(ls -lh build-native-${{ matrix.platform }}/vibe-windows-x86_64.exe)"
+          fi
+
+      - name: 📦 Cache Native Platform Binaries
+        uses: actions/cache/save@v4
+        with:
+          path: build-native-${{ matrix.platform }}/
+          key: native-binaries-${{ matrix.platform }}-${{ github.sha }}
+          enableCrossOsArchive: true
+
+  build-installers:
+    name: 'Build Go Installers'
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐹 Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: 🔨 Build Go installers for all platforms
+        run: |
+          cd installer
+
+          # Build for Linux (amd64)
+          GOOS=linux GOARCH=amd64 go build -ldflags "-w -s -X main.version=${GITHUB_SHA::7}" -o install-dotvibe-linux-amd64 .
+
+          # Build for macOS (amd64)
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-w -s -X main.version=${GITHUB_SHA::7}" -o install-dotvibe-darwin-amd64 .
+
+          # Build for Windows (amd64)
+          GOOS=windows GOARCH=amd64 go build -ldflags "-w -s -X main.version=${GITHUB_SHA::7}" -o install-dotvibe-windows-amd64.exe .
+
+          # Copy to build directory for consistency
+          mkdir -p ../build
+          cp install-dotvibe-linux-amd64 ../build/install-dotvibe
+          cp install-dotvibe-windows-amd64.exe ../build/install-dotvibe.exe
+
+      - name: 📦 Cache Go Installers
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            build/install-dotvibe
+            build/install-dotvibe.exe
+            installer/install-dotvibe-*
+          key: go-installers-${{ github.sha }}
+
+      - name: 📊 Show installer sizes
+        run: |
+          echo "Go installer sizes:"
+          ls -lh build/install-dotvibe* || echo "No installers found"
+          ls -lh installer/install-dotvibe-* || echo "No cross-platform installers found"
+
+  check-version:
+    name: 'Check Version Change'
+    runs-on: ubuntu-latest
+    outputs:
+      version-changed: ${{ steps.version-check.outputs.version-changed }}
+      new-version: ${{ steps.version-check.outputs.new-version }}
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 🔍 Check if version changed
+        id: version-check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version-changed=true" >> $GITHUB_OUTPUT
+            echo "new-version=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          CURRENT_VERSION=$(jq -r '.version' deno.json)
+          PREVIOUS_VERSION=$(git show HEAD~1:deno.json | jq -r '.version' 2>/dev/null || echo "")
+
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ] && [ "$CURRENT_VERSION" != "" ]; then
+            echo "version-changed=true" >> $GITHUB_OUTPUT
+            echo "new-version=v$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            echo "🚀 Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION"
+          else
+            echo "version-changed=false" >> $GITHUB_OUTPUT
+            echo "📋 No version change detected"
+          fi
+
+  release:
+    name: 'Publish Release with Native Binaries'
+    runs-on: ubuntu-latest
+    needs: [test, build-installers, check-version]
+    if: needs.check-version.outputs.version-changed == 'true'
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🦕 Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: 📥 Cache dependencies
+        run: deno cache --frozen cli.ts daemon.ts
+
+      - name: 📁 Create release directory
+        run: mkdir -p release-assets
+
+      - name: 📥 Restore All Platform Binaries
+        run: |
+          # Restore each platform's binaries to separate directories
+          echo "Restoring platform binaries..."
+
+      - name: 📥 Get Linux Binaries
+        uses: actions/cache/restore@v4
+        with:
+          path: build-native-linux/
+          key: native-binaries-linux-${{ github.sha }}
+          fail-on-cache-miss: false
+          enableCrossOsArchive: true
+
+      - name: 📥 Get Windows Binaries
+        uses: actions/cache/restore@v4
+        with:
+          path: build-native-windows/
+          key: native-binaries-windows-${{ github.sha }}
+          fail-on-cache-miss: false
+          enableCrossOsArchive: true
+
+      - name: 📥 Get macOS Binaries
+        uses: actions/cache/restore@v4
+        with:
+          path: build-native-macos/
+          key: native-binaries-macos-${{ github.sha }}
+          fail-on-cache-miss: false
+          enableCrossOsArchive: true
+
+      - name: 📋 Organize release assets
+        run: |
+          # Copy all platform binaries with version names
+          cp build-native-linux/vibe-linux-x86_64 release-assets/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64 || echo "Linux binary not found"
+          cp build-native-windows/vibe-windows-x86_64.exe release-assets/vibe-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe || echo "Windows binary not found"
+          cp build-native-macos/vibe-macos-x86_64 release-assets/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64 || echo "macOS binary not found"
+
+      - name: 📥 Restore Go Installers
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            build/install-dotvibe
+            build/install-dotvibe.exe
+            installer/install-dotvibe-*
+          key: go-installers-${{ github.sha }}
+          fail-on-cache-miss: true
+
+      - name: 📋 Add installers to release
+        run: |
+          cp build/install-dotvibe release-assets/install-dotvibe || echo "Warning: Unix installer not found"
+          cp build/install-dotvibe.exe release-assets/install-dotvibe.exe || echo "Warning: Windows installer not found"
+          echo "Go installer sizes:"
+          ls -lh release-assets/install-dotvibe*
+
+      - name: 📦 Verify release assets
+        run: |
+          echo "Release assets prepared:"
+          ls -la release-assets/
+          echo "Asset sizes:"
+          du -sh release-assets/*
+
+      - name: 📝 Extract Release Notes
+        id: release-notes
+        run: |
+          VERSION="${{ needs.check-version.outputs.new-version }}"
+          VERSION_NO_V="${VERSION#v}"
+
+          # Check if CHANGELOG.md exists
+          if [ -f "CHANGELOG.md" ]; then
+            # Extract section for this version from CHANGELOG.md
+            NOTES=$(awk "/^## \[${VERSION_NO_V}\]/ {flag=1; next} /^## \[[0-9]/ {flag=0} flag" CHANGELOG.md)
+
+            if [ -z "$NOTES" ]; then
+              echo "⚠️  No changelog entry found for version ${VERSION_NO_V}"
+              echo "📝 Using auto-generated release notes instead"
+              echo "use-auto-notes=true" >> $GITHUB_OUTPUT
+            else
+              # Save to file for release body
+              echo "$NOTES" > release_notes.md
+              echo "use-auto-notes=false" >> $GITHUB_OUTPUT
+              echo "✅ Found changelog entry for version ${VERSION_NO_V}"
+            fi
+          else
+            echo "⚠️  CHANGELOG.md not found"
+            echo "📝 Using auto-generated release notes"
+            echo "use-auto-notes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🚀 Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.check-version.outputs.new-version }}
+          name: Release ${{ needs.check-version.outputs.new-version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: ${{ steps.release-notes.outputs.use-auto-notes == 'true' }}
+          body_path: ${{ steps.release-notes.outputs.use-auto-notes == 'false' && 'release_notes.md' || '' }}
+          files: |
+            release-assets/install-dotvibe
+            release-assets/install-dotvibe.exe
+            release-assets/vibe-${{ needs.check-version.outputs.new-version }}-linux-x86_64
+            release-assets/vibe-${{ needs.check-version.outputs.new-version }}-macos-x86_64
+            release-assets/vibe-${{ needs.check-version.outputs.new-version }}-windows-x86_64.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}

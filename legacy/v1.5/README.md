@@ -6,7 +6,7 @@
 
 Add a library to your project? Your AI assistant instantly becomes an expert. **Hono** → routing tools. **Zod** → validation patterns. **Effect** → async composition. Every dependency becomes a superpower, available in Cursor, Claude, ChatGPT, and any MCP-compatible AI.
 
-**Zero config. Universal access. Advanced results.**
+**Zero config. Universal access. Revolutionary results.**
 
 ## ⚡ 60-Second Setup
 

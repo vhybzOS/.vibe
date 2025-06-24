@@ -1,7 +1,94 @@
+# Build artifacts
 build/*
-installers/embedded-unix/
-installers/embedded-windows/
-test-*
+*.exe
+*.bin
+
+# Installer artifacts
 installer/install-dotvibe
 installer/install-dotvibe-*
+installer/coverage.out
+installer/coverage.html
 installer/test-install/
+installer/.task/
+
+# Cross-platform build outputs
+installers/embedded-unix/
+installers/embedded-windows/
+
+# Deno artifacts
+deno.lock
+.deno/
+
+# Test artifacts
+test-*
+coverage.out
+coverage.html
+*.lcov
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE artifacts
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Node artifacts (for projects that need them)
+node_modules/
+*.tgz
+package-lock.json
+yarn.lock
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime artifacts
+*.pid
+*.pid.lock
+
+# Tree-sitter generated files
+grammars/*/src/parser.c
+grammars/*/src/tree_sitter/
+grammars/*/src/grammar.json
+grammars/*/src/node-types.json
+grammars/*/test_*
+grammars/*/history.txt
+grammars/*/log.html
+
+# SurrealDB files
+*.db
+*.surql-backup
+
+# Archive and backup files
+*.tar.gz
+*.zip
+*.bak
+*.backup
+
+# V2-specific patterns
+test-proj/.vibe/code.db
+SESSION_HANDOFF.md
+simple-demo.ts
+demo-*.ts
+
+# Protocol workspace files  
+.vibe/protocols/workspace.md

@@ -1,81 +1,32 @@
-# AGENTS.md - Axior OS Kernel
-
-**LLM-Native Cognitive Operating System** designed for intelligence amplification.
+# AGENTS.md - Axior OS v2 Kernel
 
 **Axior OS**: Algorithmic eXecution & Iterative Observation Refinement
 
-## 🧠 Boot Sequence (100 tokens)
+## 🧠 Boot Sequence
 
-1. **Load Identity** - This file (kernel initialization)
-2. **Load Index** - `.vibe/protocols.toml` (O(1) protocol lookup)
-3. **Load State** - `.vibe/active/state.toml` (session variables)
-4. **Load Context** - `.vibe/active/context.md` (working memory)
+1. `vibe index` - Initialize SurrealDB, parse codebase
+2. `vibe session load` - Restore or create session state
+3. Execute `.vibe/algorithms/main.md` - Run current algorithm
 
-## 🎯 Core Mission
+## 🔄 Operating Philosophy
 
-Build local-first, autonomous AI development environment using functional programming, Effect-TS composition, and cognitive optimization patterns.
+Agent-refactorable algorithms stored in `.vibe/algorithms/`
+Context managed via SurrealDB queries\
+Subagents spawn with selective context resumption
 
-## ⚡ Axior OS Architecture
+## 🎯 Core Algorithms
 
-```
-Memory Hierarchy:
-- active/     (RAM - current session, 100 token budget)
-- protocols/  (Swap - lazy-loaded when needed) 
-- patterns/   (L1 Cache - algorithm templates)
-- archive/    (Cold Storage - completed work)
+- `main.md` - Entry point and stage orchestration
+- `specs-stage.md` - Specification generation with expanded context
+- `dev-9step.md` - Enhanced 9-step development cycle
+- `session-mgmt.md` - Smart context resumption
 
-Tool Integration:
-- Agent tool (sub-agents for complex tasks)
-- TodoRead/Write (task management)
-- Existing Claude tools (Read/Write/Glob/Grep)
-- vibe CLI (cognitive primitives - scan/parse/compress/diff)
-```
+## 📊 Success Metrics
 
-## 🔄 Operating Mode
-
-```pseudo
-INPUT: user_request, current_state
-active_work = vibe scan .vibe/active/ --type current_tasks
-
-IF active_work.empty THEN
-  protocol = load_protocol("planning")
-  EXECUTE planning_protocol(user_request)
-ELSE
-  protocol = load_protocol(active_work.current_protocol) 
-  EXECUTE protocol(active_work, user_request)
-END
-
-IF work_complete THEN
-  EXECUTE flush_protocol()
-END
-```
-
-## 📋 Protocol Access
-
-All protocols use minimal format: **pseudo-code + math + context links**
-
-Access via: `vibe parse .vibe/protocols.toml --key protocols.[name]`
-
-Core protocols: `flush`, `commit`, `planning`, `tdd`
-Core patterns: `effect`, `error`, `test`, `cli`
-
-## 🎯 Success Metrics
-
-- Boot time: <100 tokens
-- Protocol lookup: O(1)
-- Context compression: >80%
-- Memory fragmentation: <20%
-- Cognitive efficiency: Maximum intelligence per token
-
-## 🏗️ Current Status
-
-✅ Axior OS foundation complete
-✅ Protocol system operational\
-✅ Pattern templates cached
-✅ Session state tracking active
-
-**Next**: Implement vibe CLI primitives (Cycle 2) for cognitive augmentation.
+- Boot time: <50 tokens (vs v1: 100)
+- Context efficiency: >90% compression ratio
+- Resumption success: 99% accurate context restoration
 
 ---
 
-**Design Philosophy**: Optimize for intelligence, not traditional computing. Every component serves cognitive amplification.
+**Design Philosophy**: Every token serves intelligence. Every algorithm is agent-refactorable. Every resumption preserves cognitive continuity.

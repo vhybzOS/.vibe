@@ -1,0 +1,56 @@
+# Axior OS Protocol Index - O(1) Lookup System
+# Each protocol loaded just-in-time when needed
+
+[protocols]
+flush = "protocols/flush.md"
+commit = "protocols/commit.md" 
+planning = "protocols/planning.md"
+tdd = "protocols/tdd.md"
+workspace = "protocols/workspace.md"
+quality_gates = "protocols/quality.md"
+session_handoff = "protocols/handoff.md"
+
+[patterns]
+effect = "patterns/effect.md"
+error = "patterns/error.md"
+test = "patterns/test.md"
+cli = "patterns/cli.md"
+
+[vibe_primitives]
+scan = "File/directory traversal with pattern matching"
+parse = "Extract structured data from TOML/JSON/text"
+compress = "Summarize context maintaining key information"
+diff = "Compare states and identify changes"
+measure = "Performance and cognitive load tracking"
+template = "Generate boilerplate from patterns"
+index = "Load protocols.toml and return content references"
+state = "Manage session state (load/save/update)"
+context = "Manage working context (load/save/focus/expand)"
+
+[cognitive_tools]
+# Workspace & Experimentation
+temp = "Create temporary workspace, auto-cleaned by flush"
+scratch = "Quick scratchpad for calculations and drafts"
+prototype = "Rapid prototyping space for ideas"
+branch = "Explore concepts without affecting main work"
+merge = "Integrate experimental work back to main"
+
+# Context Intelligence
+focus = "Narrow context to specific domain using Agent tool"
+expand = "Bring related context via pattern recognition"
+cache = "Cache frequently used patterns for quick access"
+relate = "Find connections across codebase intelligently"
+predict = "Predict next steps based on current patterns"
+
+# Process Optimization  
+reason = "Structured reasoning about complex problems"
+validate = "Smart validation against requirements"
+tune = "Customize protocols for specific contexts"
+profile = "Measure cognitive load and optimize workflows"
+synthesize = "Intelligent combination of multiple sources"
+
+[meta]
+version = "1.0.0"
+boot_sequence = ["active/state.toml", "active/context.md"]
+token_budget = 100
+last_update = "2024-12-21"

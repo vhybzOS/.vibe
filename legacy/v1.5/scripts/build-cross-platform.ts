@@ -70,7 +70,7 @@ async function buildBinary(
   outputDir: string,
 ) {
   const outputFile = resolve(outputDir, `${target.name}${platform.suffix}`)
-  const includeFlag = target.name === 'vibe' ? '--include template/' : ''
+  const includeFlag = target.name === 'vibe' ? '--include vibe-coding-project-starters/' : ''
 
   log(`Building ${target.name} for ${platform.name}...`)
 
@@ -78,10 +78,9 @@ async function buildBinary(
     args: [
       'compile',
       '--allow-all',
-      '--no-check',
       '--target',
       platform.target,
-      ...(includeFlag ? ['--include', 'template/'] : []),
+      ...(includeFlag ? ['--include', 'vibe-coding-project-starters/'] : []),
       '--output',
       outputFile,
       target.source,

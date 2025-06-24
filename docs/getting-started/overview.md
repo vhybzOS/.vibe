@@ -1,10 +1,10 @@
-# .vibe: Local-First AI Development Environment
+# .vibe: Agentic Coding Runtime
 
 > **Finally, context compression that actually works.** Stop dumping 1000-line files into AI chat windows. Get exactly the 10 lines you need.
 
 ## 🤖 What is .vibe?
 
-**.vibe** is a local-first development environment that solves the AI context problem. Instead of overwhelming your AI with entire files, it gives you precise code snippets through natural language queries.
+**.vibe** is an agentic coding runtime that solves the AI context problem. Instead of overwhelming your AI with entire files, it gives you precise code snippets through natural language queries.
 
 ### Traditional AI Development
 - **Copy entire files** into AI chat windows

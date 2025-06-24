@@ -1,8 +1,8 @@
-# .vibe - Local-First AI Development Environment
+# .vibe - Agentic Coding Runtime
 
 > **Context compression that actually works. Get 10 relevant lines instead of 1000-line files.**
 
-`.vibe` is a local-first development environment that solves AI context problems through intelligent code indexing. Instead of dumping entire files into your AI, get precisely the 10 lines you need through natural language queries.
+`.vibe` is an agentic coding runtime that solves AI context problems through intelligent code indexing. Instead of dumping entire files into your AI, get precisely the 10 lines you need through natural language queries.
 
 ## 🚀 Quick Start
 
@@ -21,7 +21,7 @@ cd your-project
 ./vibe query "async functions with error handling" --limit 5
 ```
 
-## ⚡ Core Runtime Features
+## ⚡ Agentic Runtime Features
 
 ### 🧠 **Smart Context Management**
 - **100x compression**: Query "async functions with error handling" → get 5 relevant snippets

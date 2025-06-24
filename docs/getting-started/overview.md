@@ -1,22 +1,22 @@
 # .vibe: Agentic Coding Runtime
 
-> **Finally, context compression that actually works.** Stop dumping 1000-line files into AI chat windows. Get exactly the 10 lines you need.
+> **Context compression for coding agents. Humans `vibe init`, agents take over.**
 
 ## 🤖 What is .vibe?
 
-**.vibe** is an agentic coding runtime that solves the AI context problem. Instead of overwhelming your AI with entire files, it gives you precise code snippets through natural language queries.
+**.vibe** is an agentic coding runtime that enables intelligent development workflows. Humans initialize projects, agents execute with precise context through intelligent code indexing.
 
-### Traditional AI Development
-- **Copy entire files** into AI chat windows
-- **Context overload** - AI gets confused by irrelevant code
-- **Manual context management** - you spend time curating what to share
-- **Information scattered** across files, docs, and your brain
+### Traditional Development
+- **Humans copy entire files** into agent chat windows
+- **Context overload** - agents get confused by irrelevant code
+- **Manual context management** - humans spend time curating what to share
+- **Information scattered** across files, docs, and human memory
 
-### .vibe Development
-- **Query for what you need** - "async functions with error handling"
-- **Precise context** - get 10 relevant lines, not 1000 irrelevant ones
-- **Automatic indexing** - your codebase stays queryable as you code
-- **Local-only** - no cloud dependencies, no privacy concerns
+### .vibe Agentic Development
+- **Agents query for what they need** - "async functions with error handling"
+- **Precise context** - agents get 10 relevant lines, not 1000 irrelevant ones
+- **Automatic indexing** - codebase stays queryable as agents code
+- **Seamless handoff** - humans init, agents execute
 
 ## 🧠 The Context Compression Philosophy
 
@@ -39,7 +39,7 @@
 
 ## 🎯 The Transformation
 
-When you `vibe init` a project, you're setting up intelligent context management:
+When humans `vibe init` a project, they're setting up intelligent context management for agents:
 
 ### Before: Manual Context Hell
 ```bash
@@ -52,15 +52,15 @@ cd project
 # Repeat every conversation
 ```
 
-### After: .vibe Smart Context
+### After: .vibe Agentic Context
 ```bash
-# Smart context management
+# Agentic context management
 git clone project
 cd project
-vibe init
-vibe index
-# Now your entire codebase is queryable
-vibe query "authentication middleware"
+vibe init  # Human hands off to agents
+vibe index  # Agents index codebase
+# Now entire codebase is queryable by agents
+vibe query "authentication middleware"  # Agent queries
 # Returns exactly the relevant code snippets
 ```
 
@@ -92,20 +92,20 @@ vibe query "async functions with error handling"
 
 ## 🌟 What You Can Do
 
-`.vibe` enables you to:
+`.vibe` enables agents to:
 
 ### 📖 **Find Code Fast**
-- Query your codebase like you're talking to a person
-- Get relevant snippets instead of scrolling through files
-- Cross-reference patterns across your entire project
+- Query codebase with natural language
+- Get relevant snippets instead of scanning entire files
+- Cross-reference patterns across the entire project
 
-### ✍️ **Give AI Better Context**
-- Stop copy-pasting entire files into chat windows
-- Get precise, relevant code examples for your AI
-- Maintain context without overwhelming your AI assistant
+### ✍️ **Execute with Precise Context**
+- No more overwhelming file dumps in agent context
+- Get precise, relevant code examples
+- Maintain focus without context overload
 
 ### 🔄 **Work Locally**
-- Everything runs on your machine
+- Everything runs on the human's machine
 - No cloud dependencies or privacy concerns
 - Works offline, no account needed
 

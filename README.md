@@ -1,8 +1,8 @@
 # .vibe - Agentic Coding Runtime
 
-> **Context compression that actually works. Get 10 relevant lines instead of 1000-line files.**
+> **Context compression for coding agents. Humans `vibe init`, agents take over.**
 
-`.vibe` is an agentic coding runtime that solves AI context problems through intelligent code indexing. Instead of dumping entire files into your AI, get precisely the 10 lines you need through natural language queries.
+`.vibe` is an agentic coding runtime that enables intelligent development workflows. Humans initialize projects, agents execute with precise context through intelligent code indexing.
 
 ## 🚀 Quick Start
 
@@ -10,24 +10,24 @@
 # 1. Install (one-time setup)
 curl -fsSL https://dotvibe.dev/install.sh | sh
 
-# 2. Initialize any project
+# 2. Initialize project (human hands off to agents)
 cd your-project
 ./vibe init
 
-# 3. Index codebase for intelligent retrieval  
+# 3. Agents index codebase for intelligent retrieval  
 ./vibe index --path src/ --incremental
 
-# 4. Query with natural language
+# 4. Agents query with natural language
 ./vibe query "async functions with error handling" --limit 5
 ```
 
 ## ⚡ Agentic Runtime Features
 
-### 🧠 **Smart Context Management**
-- **100x compression**: Query "async functions with error handling" → get 5 relevant snippets
-- **No context overload**: Stop dumping 1000-line files into AI chat windows
-- **Natural language queries**: Ask for what you need in plain English
-- **Real-time indexing**: Your codebase stays queryable as you code
+### 🧠 **Agent Context Management**
+- **100x compression**: Agents query "async functions with error handling" → get 5 relevant snippets
+- **No context overload**: Agents get precise context, not 1000-line file dumps
+- **Natural language queries**: Agents ask for what they need in plain English
+- **Real-time indexing**: Codebase stays queryable as agents code
 
 ### 🧠 **Context Compression Engine**
 - **100x compression**: Get 10 relevant lines instead of 1000-line files
@@ -59,17 +59,17 @@ cd your-project
 
 ## 🎯 **Use Cases**
 
-### **Real Examples**
+### **Agent Usage Examples**
 ```bash
-# Instead of reading entire auth.ts file (500 lines)
+# Agent needs auth context (not entire 500-line file)
 vibe query "authentication middleware functions"
 # → Returns 3 relevant functions (15 lines total)
 
-# Instead of searching through utils/ directory
+# Agent searches for patterns across codebase
 vibe query "error handling patterns for async functions"
 # → Returns 5 patterns from across the codebase (25 lines)
 
-# Instead of reading docs or README
+# Agent needs implementation examples
 vibe query "how to set up database connections"
 # → Returns the exact setup code (8 lines)
 ```

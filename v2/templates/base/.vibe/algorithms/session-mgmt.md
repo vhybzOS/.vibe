@@ -10,99 +10,133 @@ Handle context interruptions and enable intelligent resumption with minimal cont
 
 ```pseudo
 fn session_mgmt(checkpoint: Checkpoint, target_step: number) -> Result<SessionUpdate, VibeError> {
-  // Step 1: Analyze checkpoint for context requirements
-  let checkpoint_analysis = analyze_checkpoint(checkpoint);
-  let step_dependencies = query_step_dependencies(target_step);
-
-  // Step 2: Determine minimal context needed
-  let required_context = calculate_minimal_context({
-    step: target_step,
-    completed_work: checkpoint.completed_work,
-    dependencies: step_dependencies,
-    specs_reference: checkpoint.specs_file
-  });
-
-  // Step 3: Query for selective context with intelligent pattern matching
-  let context_query = match target_step {
+  // Step 1: Get latest checkpoint data using direct SurrealDB query
+  let checkpoint_query = "SELECT * FROM checkpoint ORDER BY timestamp DESC LIMIT 1";
+  let latest_checkpoint = execute_cli(`echo '${checkpoint_query}' | surreal sql --conn http://localhost:8000 --user root --pass root --ns axior --db code --pretty`);
+  
+  // Step 2: Get session management protocol guidance
+  let session_protocol = execute_cli("vibe query 'session management context resumption protocol' --limit 1");
+  
+  // Step 3: Determine minimal context needed using direct queries
+  let context_queries = match target_step {
     1..3 => {
-      // Early steps need specs + project patterns
-      """
-        SELECT * FROM specs WHERE feature = $current_feature
-        UNION
-        SELECT * FROM code WHERE type = "pattern" AND relevance > 0.8
-        UNION  
-        SELECT * FROM tests WHERE type = "template"
-      """
+      // Early steps - get specs and basic patterns
+      [
+        "vibe query 'current feature specifications' --limit 1",
+        "vibe query 'project development patterns' --complexity high --limit 3",
+        "vibe query 'test template patterns' --limit 2"
+      ]
     },
     
-    6..8 => {
-      // Later steps need implementation context + validation
-      """
-        SELECT * FROM code WHERE modified_in_session = true
-        UNION
-        SELECT * FROM tests WHERE status = "passing" 
-        UNION
-        SELECT api_surface FROM specs WHERE feature = $current_feature
-      """
+    4..6 => {
+      // Middle steps - get implementation context
+      [
+        "vibe query 'current session implementations' --session current --limit 5",
+        "vibe query 'error handling patterns for current feature' --limit 3",
+        "echo 'SELECT code_snippet FROM code_node WHERE session_id = \"current\" AND patterns CONTAINS \"implementation\"' | surreal sql --conn http://localhost:8000 --user root --pass root --ns axior --db code --pretty"
+      ]
     },
     
-    9 => {
-      // Algorithm generation needs full implementation view
-      """
-        SELECT * FROM code WHERE modified_in_session = true
-        UNION
-        SELECT * FROM implementation_patterns 
-        UNION
-        SELECT architecture FROM project_analysis
-      """
+    7..9 => {
+      // Later steps - get validation and completion context
+      [
+        "echo 'SELECT * FROM runtime_result WHERE session_id = \"current\" ORDER BY timestamp DESC LIMIT 3' | surreal sql --conn http://localhost:8000 --user root --pass root --ns axior --db code --pretty",
+        "vibe query 'quality validation patterns' --limit 2",
+        "vibe query 'completion assessment patterns' --limit 2"
+      ]
+    },
+    
+    10 => {
+      // Final step - get archival context
+      [
+        "vibe query 'flush protocol guidance' --limit 1",
+        "echo 'SELECT COUNT(*) as items_to_archive FROM code_node WHERE session_id = \"current\"' | surreal sql --conn http://localhost:8000 --user root --pass root --ns axior --db code --pretty"
+      ]
     }
   };
   
-  let selective_context = query_database(db, context_query);
-
-  // Step 4: Compress context intelligently  
-  let compressed_context = compress_context({
-    selective_context,
-    focus_area: step_dependencies.focus_area,
-    compression_ratio: 0.7  // Target 30% of original size
-  });
-
-  // Step 5: Spawn new subagent with minimal context
-  let resumed_agent = spawn_subagent("development_resume", {
-    context_limit: calculate_needed_limit(compressed_context),
-    initial_context: compressed_context,
-    checkpoint,
-    target_step
-  });
-
-  // Step 6: Resume execution from target step
-  let resumption_result = resumed_agent.continue_from_step(target_step);
-
-  // Step 7: Validate resumption success
-  let validation_metrics = {
-    context_preserved: calculate_context_overlap(checkpoint.context, compressed_context),
-    step_continuity: validate_step_continuity(checkpoint, resumption_result),
-    quality_maintained: compare_output_quality(checkpoint.expected, resumption_result.actual)
-  };
-
-  // Step 8: Update session with resumption data
-  let session_update = SessionUpdate {
+  // Step 4: Execute context queries and collect precise context
+  let collected_context = [];
+  let total_lines = 0;
+  
+  for query in context_queries {
+    let result = execute_cli(query);
+    collected_context.push(result);
+    total_lines += count_lines(result);
+  }
+  
+  // Step 5: Calculate compression metrics
+  let traditional_context_estimate = target_step * 1000; // Estimate full file loading
+  let compression_ratio = total_lines / traditional_context_estimate;
+  let token_savings = (traditional_context_estimate - total_lines) * 4; // ~4 tokens per line
+  
+  // Store compression metrics
+  let metrics_query = `CREATE resumption_metric CONTENT {
+    target_step: ${target_step},
+    context_lines_loaded: ${total_lines},
+    estimated_traditional_lines: ${traditional_context_estimate},
+    compression_ratio: ${compression_ratio},
+    token_savings: ${token_savings},
+    timestamp: time::now()
+  }`;
+  execute_cli(`echo '${metrics_query}' | surreal sql --conn http://localhost:8000 --user root --pass root --ns axior --db code --pretty`);
+  
+  // Step 6: Create new session for resumption
+  let new_session_id = generate_session_id();
+  let session_create = `CREATE session:${new_session_id} CONTENT {
     stage: "development",
     status: "resumed",
-    current_step: target_step,
-    resumption_metrics: validation_metrics,
-    context_efficiency: compressed_context.size / checkpoint.context.size
-  };
-
-  // Step 9: Continue with original algorithm
-  if validation_metrics.step_continuity.valid {
-    // Hand back control to dev-9step.md
-    execute(dev_9step_algorithm, { context: resumption_result.context, target_step });
+    target_step: ${target_step},
+    resumed_from: "${latest_checkpoint.records[0].id}",
+    context_lines: ${total_lines},
+    compression_achieved: ${compression_ratio},
+    created: time::now()
+  }`;
+  execute_cli(`echo '${session_create}' | surreal sql --conn http://localhost:8000 --user root --pass root --ns axior --db code --pretty`);
+  
+  // Step 7: Get continuation algorithm dynamically
+  let continuation_algorithm = execute_cli("vibe query 'dev-10step algorithm continuation from step ${target_step}' --limit 1");
+  
+  // Step 8: Validate resumption readiness
+  let validation_query = "SELECT COUNT(*) as context_items FROM code_node WHERE session_id = 'current' AND indexed_at > time::now() - 1h";
+  let context_availability = execute_cli(`echo '${validation_query}' | surreal sql --conn http://localhost:8000 --user root --pass root --ns axior --db code --pretty`);
+  
+  let resumption_valid = context_availability.records[0].context_items > 0 && compression_ratio < 0.1; // Less than 10% of traditional context
+  
+  if resumption_valid {
+    // Step 9: Execute continuation with efficient context
+    let session_update = SessionUpdate {
+      stage: "development",
+      status: "resumed",
+      current_step: target_step,
+      session_id: new_session_id,
+      context_efficiency: {
+        lines_loaded: total_lines,
+        token_savings: token_savings,
+        compression_ratio: compression_ratio
+      }
+    };
+    
+    // Update current session pointer
+    execute_cli(`echo 'UPDATE session:current SET resumed_session = \"${new_session_id}\", status = \"resumed\"' | surreal sql --conn http://localhost:8000 --user root --pass root --ns axior --db code --pretty`);
+    
+    // Hand back control to dev-10step.md with precise context
+    execute_algorithm("dev-10step", collected_context, target_step);
     Ok(session_update)
+    
   } else {
-    // Resumption failed, need to restart from earlier checkpoint
-    let fallback_checkpoint = find_previous_valid_checkpoint(checkpoint);
-    session_mgmt(fallback_checkpoint, fallback_checkpoint.step)
+    // Step 10: Resumption failed - find earlier checkpoint
+    let fallback_query = "SELECT * FROM checkpoint WHERE step < ${target_step} ORDER BY timestamp DESC LIMIT 1";
+    let fallback_checkpoint = execute_cli(`echo '${fallback_query}' | surreal sql --conn http://localhost:8000 --user root --pass root --ns axior --db code --pretty`);
+    
+    if fallback_checkpoint.records.length > 0 {
+      // Recursive resumption from earlier checkpoint
+      session_mgmt(fallback_checkpoint.records[0], fallback_checkpoint.records[0].step)
+    } else {
+      // No valid checkpoint - restart from beginning
+      let restart_guidance = execute_cli("vibe query 'development restart from specs' --limit 1");
+      Err(VibeError::ResumptionFailed("No valid checkpoint found, restart required"))
+    }
   }
 }
 ```

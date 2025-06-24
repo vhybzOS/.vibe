@@ -1,6 +1,6 @@
 # Axior OS v2 - Implementation Documentation
 
-**Revolutionary LLM-Native Cognitive Operating System - Complete Implementation Guide**
+**LLM-Native Cognitive Operating System - Complete Implementation Guide**
 
 ## 🎯 What We Built
 
@@ -9,9 +9,9 @@
 - **Tree-sitter powered code indexing** → Precise 10-line context instead of 1000-line files
 - **SurrealDB pattern storage** → Queryable codebase knowledge graph
 - **Agent-refactorable algorithms** → Self-modifying system optimized for LLM capabilities
-- **Revolutionary `vibe query`** → Natural language code pattern retrieval
+- **Advanced `vibe query`** → Natural language code pattern retrieval
 
-**Context Revolution**: 100x more precise context loading through intelligent pattern extraction.
+**Context Optimization**: 100x more precise context loading through intelligent pattern extraction.
 
 ## 🏗️ Architecture Overview
 
@@ -23,7 +23,7 @@
 │   ├── algorithms/               # Agent-refactorable execution logic
 │   │   ├── main.md              # Entry point algorithm
 │   │   ├── specs-stage.md       # Specification generation
-│   │   ├── dev-9step.md         # Revolutionary 9-step development
+│   │   ├── dev-9step.md         # Enhanced 9-step development
 │   │   ├── session-mgmt.md      # Smart context resumption
 │   │   └── executor.ts          # Algorithm execution engine (Effect-TS)
 │   ├── lib/                     # Core libraries using proven patterns
@@ -33,7 +33,7 @@
 │   │   ├── grammar.ts           # Specification grammar parsing
 │   │   └── fs-utils.ts          # File system utilities (re-exports)
 │   ├── commands/                # CLI commands
-│   │   └── query.ts             # Revolutionary vibe query command
+│   │   └── query.ts             # Advanced vibe query command
 │   └── tests/                   # Comprehensive test suite
 ├── templates/                   # Project templates for vibe init
 │   └── base/                    # Base Axior OS template
@@ -44,7 +44,7 @@
 └── SPECS.md                    # Complete system specification
 ```
 
-### Revolutionary Components
+### Core Components
 
 #### 1. Tree-sitter Code Indexer (`tree-sitter-indexer.ts`)
 
@@ -58,7 +58,7 @@
 - **Code snippet generation** (10-line precise context vs 1000-line files)
 
 ```typescript
-// Revolutionary: Get 10 relevant lines, not 1000-line files
+// Optimized: Get 10 relevant lines, not 1000-line files
 const nodes = await indexCodebaseWithTreeSitter(projectPath, 'typescript')
 const results = queryCodePatterns(nodes, 'async authentication functions')
 // Returns precise code snippets with line ranges
@@ -495,4 +495,151 @@ Update `tree-sitter-indexer.ts` to detect `.md` algorithm files and route them t
 
 ---
 
-**Axior OS v2 Pseudo-Kernel Grammar: NEXT CRITICAL STEP** 🎯
+**Axior OS v2 Pseudo-Kernel Grammar: COMPLETE** ✅
+
+---
+
+## 🚨 **NEXT IMMEDIATE CRITICAL STEP: Protocol System + 10-Step Revolutionary Cycle**
+
+### **DISCOVERY: V2 Missing Protocols Entirely**
+
+**Critical Gap Found**: V2 has NO protocols directory, NO protocol references, NO reusable patterns that existed in V1. This is blocking the complete revolutionary vision!
+
+**V1 Had**: `.vibe/protocols/` with planning.md, tdd.md, flush.md using `TRIGGER protocol()` patterns  
+**V2 Has**: Only algorithm files, missing the protocol abstraction layer
+
+### **Required Implementation for Complete Axior OS v2**
+
+#### **1. Create v2/protocols/ Directory Structure**
+
+```
+v2/protocols/
+├── specs.md           # Step 0: Specification fetch-or-ask protocol  
+├── tree-indexing.md   # Step 3: Real-time tree-sitter indexing protocol
+├── context-query.md   # Step 4: Revolutionary vibe query protocol  
+├── flush.md           # Cleanup and archival protocol
+└── session-mgmt.md    # Context resumption protocol (move from algorithms/)
+```
+
+#### **2. Revolutionary Protocol Pattern (Pseudo-Kernel Grammar)**
+
+**ALL protocols use**: `#!/grammars/pseudo-kernel parse` + LLM-native functional syntax
+
+**Example - specs.md protocol:**
+```pseudo
+#!/grammars/pseudo-kernel parse
+
+# Specification Protocol - Fetch or Ask Pattern
+
+fn specs_protocol() -> Result<(SpecsContent, Algorithm), VibeError> {
+  let existing_specs = scan_specs(".vibe/specs/");
+  
+  if existing_specs.empty {
+    // Ask: Gather requirements from user
+    let requirements = ask_user("What feature should we implement?");
+    let specs_content = generate_specs_grammar(requirements);
+    let high_level_algorithm = generate_algorithm(specs_content);
+    save_specs(".vibe/specs/", specs_content, high_level_algorithm);
+    Ok((specs_content, high_level_algorithm))
+  } else {
+    // Fetch: Load existing specs  
+    let specs_content = load_specs(existing_specs.latest);
+    let algorithm = load_algorithm(specs_content.algorithm_file);
+    Ok((specs_content, algorithm))
+  }
+}
+```
+
+#### **3. Complete 10-Step Revolutionary Cycle**
+
+**Refactor dev-9step.md → dev-10step.md:**
+
+```pseudo
+fn dev_10step(user_request: string, session_state: SessionState) -> SessionUpdate {
+  // Step 0: Specification Protocol (NEW - fetch or ask)
+  let (specs_content, high_level_algorithm) = execute_protocol("specs");
+  
+  for step in (session_state.step || 1..10) {
+    let step_result = match step {
+      1 => write_tests_first(specs_content, high_level_algorithm),
+      2 => prototype_in_workspace(specs_content),
+      3 => execute_protocol("tree-indexing", prototype_workspace),  // NEW: Real-time indexing
+      4 => execute_protocol("context-query", implementation_needs), // NEW: vibe query usage  
+      5 => verify_runtime(implementation),
+      6 => evolve_tests(runtime_result),
+      7 => quality_gates_validation(),
+      8 => loop_or_complete_decision(), 
+      9 => generate_low_level_algorithm(),
+      10 => execute_protocol("flush", completed_feature)          // NEW: Cleanup protocol
+    };
+  }
+}
+```
+
+#### **4. Revolutionary Features Missing from Current Implementation**
+
+**Step 3 - Real-Time Tree-sitter Indexing Protocol:**
+```pseudo
+fn tree_indexing_protocol(workspace_path: string) -> IndexingResult {
+  // Index prototype code into SurrealDB as we write it
+  vibe_index_incremental(workspace_path);  
+  let patterns_found = count_indexed_patterns();
+  track_context_budget({ indexed_patterns: patterns_found });
+  IndexingResult { patterns_found, ready_for_query: true }
+}
+```
+
+**Step 4 - Context Query Protocol (THE Revolutionary Feature):**
+```pseudo  
+fn context_query_protocol(query_needs: QueryNeeds) -> PreciseContext {
+  // Use vibe query instead of reading full files
+  let relevant_snippets = vibe_query(query_needs.patterns, { limit: 5 });
+  let context_compression = calculate_compression(relevant_snippets);
+  
+  // Result: 50 lines instead of 5000-line files!
+  PreciseContext { 
+    snippets: relevant_snippets, 
+    lines_loaded: 50,
+    lines_saved: 4950,
+    compression_ratio: 0.99,
+    token_savings: 185000  // 200K → 15K revolutionary reduction!
+  }
+}
+```
+
+#### **5. Context Budget Tracking (Revolutionary Metrics)**
+
+```pseudo
+// Track the revolutionary context compression throughout development
+let context_metrics = ContextMetrics {
+  traditional_approach: 200000,  // Full file loading
+  revolutionary_approach: 15000, // Precise vibe query snippets
+  token_savings: 185000,         // 92.5% reduction!
+  compression_ratio: 0.925,
+  precision_gain: 100            // 100x more precise context
+};
+```
+
+### **Expected Revolutionary Results**
+
+✅ **Complete Protocol System**: Reusable LLM-native protocols using pseudo-kernel grammar  
+✅ **True 10-Step Cycle**: All SPECS.md features implemented with protocol calls  
+✅ **Revolutionary Context**: Real vibe query usage with 100x compression  
+✅ **Cold Start Ready**: Any fresh agent can implement using this documentation  
+✅ **Full Integration**: Seamless with existing v2 tree-sitter infrastructure  
+
+### **Implementation Priority**
+
+**IMMEDIATE**: This is the final missing piece for complete Axior OS v2 revolutionary vision. Without protocols, we don't have:
+- Reusable patterns for specification handling
+- Real-time tree-sitter indexing during development  
+- Revolutionary context management with vibe query
+- Proper cleanup and archival of completed work
+
+**Timeline**: Implement protocols first, then refactor algorithms to use them.
+
+---
+
+**Next Agent Instructions**: Start with creating `v2/protocols/specs.md` using the pattern above, then continue with the other protocols and dev-10step.md refactor.
+
+**Axior OS v2 Protocol System: NEXT CRITICAL IMPLEMENTATION** 🎯

@@ -1,0 +1,116 @@
+==================
+Simple assignment
+==================
+
+#!/grammars/pseudo-typescript parse
+
+result = calculate()
+
+---
+
+(source_file
+  (shebang (grammar_name))
+  (assignment (identifier) (function_call (identifier))))
+
+==================
+Input declaration
+==================
+
+#!/grammars/pseudo-typescript parse
+
+INPUT: x: number, name: string
+
+---
+
+(source_file
+  (shebang (grammar_name))
+  (input_declaration
+    (parameter_list
+      (identifier) (type_annotation)
+      (identifier) (type_annotation))))
+
+==================
+Condition with property access
+==================
+
+#!/grammars/pseudo-typescript parse
+
+IF result.valid THEN
+  value = result.data
+END
+
+---
+
+(source_file
+  (shebang (grammar_name))
+  (condition
+    (property_access (identifier) (identifier))
+    (assignment (identifier) (property_access (identifier) (identifier)))))
+
+==================
+Native node with TypeScript
+==================
+
+#!/grammars/pseudo-typescript parse
+
+user_record = tsNode42  // await db.user.findUnique({where: {username}})
+
+---
+
+(source_file
+  (shebang (grammar_name))
+  (native_node
+    (identifier)
+    (number)
+    (typescript_code)))
+
+==================
+Function call with arguments
+==================
+
+#!/grammars/pseudo-typescript parse
+
+result = process(input, options)
+
+---
+
+(source_file
+  (shebang (grammar_name))
+  (assignment
+    (identifier)
+    (function_call
+      (identifier)
+      (identifier)
+      (identifier))))
+
+==================
+Complete algorithm
+==================
+
+#!/grammars/pseudo-typescript parse
+
+INPUT: credentials: AuthRequest
+
+validation_result = validate_credentials(credentials)
+IF validation_result.valid THEN
+  user_record = tsNode42  // await db.user.findUnique()
+  RETURN Success(user_record.token)
+ELSE
+  RETURN Failure(AuthError::InvalidCredentials)
+END
+
+OUTPUT: result
+
+---
+
+(source_file
+  (shebang (grammar_name))
+  (input_declaration
+    (parameter_list (identifier) (type_annotation (identifier))))
+  (assignment (identifier) (function_call (identifier) (identifier)))
+  (condition
+    (property_access (identifier) (identifier))
+    (assignment (identifier) (native_node (identifier) (number) (typescript_code)))
+    (return_statement (function_call (identifier) (property_access (identifier) (identifier))))
+    (return_statement (function_call (identifier) (identifier))))
+  (output_declaration (return_types (type_annotation (identifier)))))

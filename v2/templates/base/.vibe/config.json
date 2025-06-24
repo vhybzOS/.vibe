@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0",
+  "framework": "base",
+  "surrealdb": {
+    "path": ".vibe/code.db",
+    "namespace": "axior",
+    "database": "project"
+  },
+  "algorithms": {
+    "entry_point": "main.md",
+    "specs_stage": "specs-stage.md",
+    "development": "dev-9step.md",
+    "session_management": "session-mgmt.md"
+  },
+  "grammars": {
+    "specs": "grammars/specs.grammar",
+    "pseudo_typescript": "grammars/pseudo-typescript.grammar"
+  },
+  "context": {
+    "main_limit": 50000,
+    "subagent_limit": 200000,
+    "compression_target": 0.7,
+    "checkpoint_frequency": "per_step"
+  },
+  "mri": {
+    "tracking_enabled": true,
+    "granularity": "file_range",
+    "retention_days": 30
+  },
+  "commands": {
+    "index": "Parse codebase into SurrealDB",
+    "query": "Execute SurrealQL queries",
+    "session": "Manage session state",
+    "stage": "Track MRI boundaries"
+  }
+}

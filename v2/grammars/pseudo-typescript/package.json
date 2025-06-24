@@ -1,0 +1,33 @@
+{
+  "name": "tree-sitter-pseudo-typescript",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for pseudo-TypeScript hybrid language",
+  "main": "bindings/node",
+  "keywords": [
+    "parser",
+    "tree-sitter",
+    "pseudo-code",
+    "typescript",
+    "hybrid"
+  ],
+  "author": "vibe",
+  "license": "MIT",
+  "dependencies": {
+    "tree-sitter": "^0.21.0",
+    "tree-sitter-cli": "^0.21.0"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.21.0"
+  },
+  "scripts": {
+    "build": "tree-sitter generate",
+    "test": "tree-sitter test"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.pseudo-typescript",
+      "file-types": ["pts", "pseudo-ts"],
+      "highlights": "queries/highlights.scm"
+    }
+  ]
+}

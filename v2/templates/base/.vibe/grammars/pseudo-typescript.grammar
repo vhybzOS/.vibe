@@ -1,0 +1,85 @@
+# Pseudo-TypeScript Grammar - Hybrid algorithmic + native language
+
+## Grammar Rules
+
+```bnf
+algorithm := header algorithm_body
+
+header := "#!/grammars/pseudo-typescript parse" newline
+
+algorithm_body := input_declaration newline
+                  statement_block newline
+                  output_declaration
+
+input_declaration := "INPUT:" parameter_list
+
+output_declaration := "OUTPUT:" return_types
+
+statement_block := statement+
+
+statement := assignment | condition | loop | function_call | 
+             native_node | spawn_statement | query_statement
+
+assignment := identifier "=" expression
+
+condition := "IF" boolean_expression "THEN" newline
+             statement_block
+             ("ELSE" newline statement_block)?
+             "END"
+
+loop := "FOR" identifier "IN" range "DO" newline
+        statement_block
+        "END"
+
+native_node := identifier "=" "tsNode" number "//" typescript_code
+
+spawn_statement := "spawn_subagent(" string "," context_spec ")"
+
+query_statement := "query_database(" database "," query_string ")"
+```
+
+## Built-in Functions
+- `spawn_subagent(type, context)` - Create specialized agent
+- `query_database(db, query)` - Execute SurrealQL query
+- `load_algorithm(path)` - Load algorithm file
+- `execute_algorithm(algorithm, context)` - Run algorithm
+- `create_checkpoint(step, context)` - Save execution state
+- `compress_context(context, ratio)` - Reduce context size
+- `validate_against_specs(result, specs)` - Check compliance
+
+## Native Language Integration
+Use `tsNodeN` markers for TypeScript code that gets parsed separately:
+
+```pseudo
+user_record = tsNode42  // await db.user.findUnique({where: {username}})
+session_data = tsNode43 // {id: user.id, token: jwt.sign(payload)}
+```
+
+## Control Flow
+- `IF...THEN...ELSE...END` - Conditional execution
+- `FOR...IN...DO...END` - Iteration
+- `CASE...OF...END` - Pattern matching
+- `GOTO` - Jump to labeled section (use sparingly)
+
+## Example Usage
+```pseudo
+#!/grammars/pseudo-typescript parse
+
+INPUT: user_request: string, session_state: SessionState
+
+# Initialize context
+db = initialize_surrealdb(".vibe/code.db")
+active_work = query_database(db, "SELECT * FROM sessions WHERE active = true")
+
+IF active_work.empty THEN
+  specs_agent = spawn_subagent("specs", {context_limit: 200000})
+  specs_result = specs_agent.execute(user_request)
+  session_update = tsNode1  // {stage: "specs", status: "completed"}
+ELSE
+  current_algorithm = load_algorithm(active_work.algorithm_file)
+  result = execute_algorithm(current_algorithm, active_work.context)
+  session_update = tsNode2  // {step: result.next_step, status: result.status}
+END
+
+OUTPUT: session_update, result
+```

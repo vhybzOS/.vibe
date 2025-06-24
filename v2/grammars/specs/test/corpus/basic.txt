@@ -1,0 +1,120 @@
+==================
+Feature declaration
+==================
+
+#!/grammars/specs parse
+
+# Feature: User Authentication
+
+---
+
+(source_file
+  (shebang (grammar_name))
+  (feature_section (feature_name)))
+
+==================
+Intent declaration
+==================
+
+#!/grammars/specs parse
+
+## Intent
+
+AUTHENTICATE user WITH credentials RETURNING session_token
+
+---
+
+(source_file
+  (shebang (grammar_name))
+  (intent_section
+    (intent_declaration
+      (action_verb)
+      (subject (identifier))
+      (parameters (identifier))
+      (return_type (identifier)))))
+
+==================
+Inputs specification
+==================
+
+#!/grammars/specs parse
+
+## Inputs
+
+credentials: {username: string, password: string}
+
+---
+
+(source_file
+  (shebang (grammar_name))
+  (inputs_section
+    (input_spec
+      (identifier)
+      (type_specification
+        (object_type
+          (property_type (identifier) (type_specification (primitive_type)))
+          (property_type (identifier) (type_specification (primitive_type))))))))
+
+==================
+Outputs specification
+==================
+
+#!/grammars/specs parse
+
+## Outputs
+
+SUCCESS: session_token: JWT<UserClaims>
+FAILURE: AuthError = InvalidCredentials | AccountLocked
+
+---
+
+(source_file
+  (shebang (grammar_name))
+  (outputs_section
+    (output_spec (identifier) (type_specification (generic_type (identifier) (type_specification (identifier)))))
+    (output_spec (identifier) (error_types (identifier) (identifier)))))
+
+==================
+Example specification
+==================
+
+#!/grammars/specs parse
+
+## Examples
+
+authenticate({username: "alice", password: "secret123"}) → "eyJ..."
+
+---
+
+(source_file
+  (shebang (grammar_name))
+  (examples_section
+    (example_spec
+      (function_call
+        (identifier)
+        (argument
+          (object_literal
+            (property_assignment (identifier) (value (string_literal)))
+            (property_assignment (identifier) (value (string_literal))))))
+      (expected_result (string_literal)))))
+
+==================
+Constraints specification
+==================
+
+#!/grammars/specs parse
+
+## Constraints
+
+password.length >= 8
+
+---
+
+(source_file
+  (shebang (grammar_name))
+  (constraints_section
+    (constraint_spec
+      (comparison
+        (property_access (identifier) (identifier))
+        (comparison_operator)
+        (value (number))))))

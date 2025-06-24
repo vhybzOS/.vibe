@@ -1,0 +1,33 @@
+{
+  "name": "tree-sitter-specs",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for specification files with shebang grammars",
+  "main": "bindings/node",
+  "keywords": [
+    "parser",
+    "tree-sitter",
+    "specifications",
+    "requirements",
+    "specs"
+  ],
+  "author": "vibe",
+  "license": "MIT",
+  "dependencies": {
+    "tree-sitter": "^0.21.0",
+    "tree-sitter-cli": "^0.21.0"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.21.0"
+  },
+  "scripts": {
+    "build": "tree-sitter generate",
+    "test": "tree-sitter test"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.specs",
+      "file-types": ["specs", "md"],
+      "highlights": "queries/highlights.scm"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+#!/bin/bash
+# parse executable - KISS approach using tree-sitter CLI directly
+cd "$(dirname "$0")"
+tree-sitter parse "$1" --quiet

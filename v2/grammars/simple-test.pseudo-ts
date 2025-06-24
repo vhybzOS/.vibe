@@ -1,0 +1,12 @@
+#!/grammars/pseudo-typescript parse
+
+INPUT: x: number
+
+result = test()
+IF result.valid THEN
+  value = result.data
+ELSE
+  value = 0
+END
+
+OUTPUT: value

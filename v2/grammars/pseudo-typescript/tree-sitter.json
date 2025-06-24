@@ -1,0 +1,12 @@
+{
+  "tree-sitter": [
+    {
+      "scope": "source.pseudo-typescript", 
+      "file-types": ["pseudo-ts", "pts"]
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "description": "Tree-sitter grammar for pseudo-TypeScript hybrid language"
+  }
+}

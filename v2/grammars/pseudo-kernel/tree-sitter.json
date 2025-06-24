@@ -1,0 +1,13 @@
+{
+  "grammars": [
+    {
+      "name": "pseudo-kernel",
+      "scope": "source.pseudo-kernel", 
+      "file-types": ["pseudo-kernel", "pk", "md"]
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "description": "Tree-sitter grammar for LLM-native pseudo-kernel algorithm language"
+  }
+}

@@ -1,0 +1,47 @@
+==========================================
+Simple shebang test
+==========================================
+
+#!/grammars/pseudo-kernel parse
+
+---
+
+(source_file
+  (shebang))
+
+==========================================
+Simple function test
+==========================================
+
+```pseudo
+fn test() {
+  return true
+}
+```
+
+---
+
+(source_file
+  (pseudo_code_block
+    (function_definition
+      (identifier)
+      (block
+        (return_statement
+          (boolean))))))
+
+==========================================
+System function test
+==========================================
+
+```pseudo
+spawn_subagent("test", config)
+```
+
+---
+
+(source_file
+  (pseudo_code_block
+    (expression_statement
+      (system_function_call
+        (string_literal)
+        (identifier)))))

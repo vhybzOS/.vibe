@@ -1,0 +1,12 @@
+{
+  "tree-sitter": [
+    {
+      "scope": "source.specs",
+      "file-types": ["specs", "md"]
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0", 
+    "description": "Tree-sitter grammar for specification files"
+  }
+}

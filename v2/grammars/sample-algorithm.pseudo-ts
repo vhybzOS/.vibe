@@ -1,0 +1,15 @@
+#!/grammars/pseudo-typescript parse
+
+INPUT: credentials: AuthRequest, session_state: SessionState
+
+# Initialize context
+validation_result = validate_credentials(credentials)
+IF validation_result.valid THEN
+  user_record = tsNode42  // await db.user.findUnique({where: {username}})
+  session_data = tsNode43 // {id: user.id, token: jwt.sign(payload)}
+  RETURN Success(session_data.token)
+ELSE
+  RETURN Failure(AuthError::InvalidCredentials)
+END
+
+OUTPUT: session_update, result

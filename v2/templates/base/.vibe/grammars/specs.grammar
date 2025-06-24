@@ -1,0 +1,80 @@
+# Specifications Grammar - FOPL-inspired declarative language
+
+## Grammar Rules
+
+```bnf
+specification := header sections+
+
+header := "#!/grammars/specs parse" newline
+          "# Feature:" feature_name newline
+
+sections := intent_section | inputs_section | outputs_section | 
+            examples_section | constraints_section | invariants_section |
+            side_effects_section | failure_modes_section
+
+intent_section := "## Intent" newline
+                  intent_statement newline
+
+intent_statement := action_verb subject "WITH" inputs "RETURNING" outputs
+
+inputs_section := "## Inputs" newline
+                  type_definitions+
+
+outputs_section := "## Outputs" newline
+                   success_type newline
+                   failure_types newline
+
+type_definitions := identifier ":" type_expression newline
+
+examples_section := "## Examples" newline
+                   example_call+ 
+
+constraints_section := "## Constraints" newline
+                      constraint_expression+
+
+invariants_section := "## Invariants" newline
+                     invariant_expression+
+```
+
+## Built-in Types
+- `string` - Text values
+- `number` - Numeric values  
+- `boolean` - True/false values
+- `JWT<T>` - JSON Web Token with payload type T
+- `{field: type}` - Object types
+- `Array<T>` - Array of type T
+- `Union = A | B` - Union types
+
+## Operators
+- `WITH` - Function parameter specification
+- `RETURNING` - Function return specification  
+- `⟺` - Logical equivalence (if and only if)
+- `∀` - Universal quantifier (for all)
+- `∃` - Existential quantifier (there exists)
+- `>`, `<`, `>=`, `<=` - Comparison operators
+
+## Example Usage
+```specs
+#!/grammars/specs parse
+
+# Feature: User Authentication
+## Intent
+AUTHENTICATE user WITH credentials RETURNING session_token
+
+## Inputs  
+credentials: {username: string, password: string}
+
+## Outputs
+SUCCESS: session_token: JWT<UserClaims>
+FAILURE: AuthError = InvalidCredentials | AccountLocked
+
+## Examples
+authenticate({username: "alice", password: "secret123"}) → "eyJ..."
+
+## Constraints  
+password.length >= 8
+rate_limit(username) < 5_attempts_per_hour
+
+## Invariants
+valid_session(token) ⟺ user_exists(decode(token).sub)
+```

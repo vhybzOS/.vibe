@@ -1,0 +1,70 @@
+==========================================
+Test basic pseudo-kernel syntax
+==========================================
+
+#!/grammars/pseudo-kernel parse
+
+# Main Algorithm
+
+## Purpose
+
+Test the LLM-native syntax
+
+```pseudo
+fn authenticate(credentials: AuthRequest) -> Result<Token, AuthError> {
+  let validation = validate_credentials(credentials);
+  if validation.valid {
+    return create_session(validation.user);
+  } else {
+    return AuthError::InvalidCredentials;
+  }
+}
+
+let agent = spawn_subagent("development", { context_limit: 200000 });
+execute(main_algorithm, agent);
+```
+
+## Context Links
+
+- [session-mgmt.md] - Session management
+- [.vibe/code.db] - Database storage
+
+---
+
+(source_file
+  (shebang)
+  (markdown_header)
+  (markdown_header)
+  (paragraph)
+  (pseudo_code_block
+    (function_definition
+      (identifier)
+      (parameter_list
+        (parameter (identifier) (type_annotation))
+      )
+      (type_annotation)
+      (block
+        (let_binding (identifier) (function_call))
+        (if_statement
+          (property_access (identifier) (identifier))
+          (block
+            (return_statement (function_call))
+          )
+          (block
+            (return_statement (property_access (identifier) (identifier)))
+          )
+        )
+      )
+    )
+    (let_binding
+      (identifier)
+      (system_function_call)
+    )
+    (expression_statement
+      (system_function_call)
+    )
+  )
+  (markdown_header)
+  (context_link)
+  (context_link)
+)
